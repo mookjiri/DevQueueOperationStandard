@@ -1,1 +1,1 @@
-# https://mookjiri.github.io/Deadmoney/
+# https://mookjiri.github.io/DevQueueOperationStandard/
