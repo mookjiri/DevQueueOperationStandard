@@ -70,6 +70,8 @@
   <!-- Hidden File Inputs (BA Only) -->
   <input type="file" id="import-json-input" accept=".json,application/json" class="hidden" onchange="handleImportJSONFile(event)" />
   <input type="file" id="import-excel-input" accept=".xlsx,.xls,.csv" class="hidden" onchange="handleImportExcelFile(event)" />
+  <input type="file" id="import-users-excel-input" accept=".xlsx,.xls,.csv" class="hidden" onchange="handleImportUsersExcelFile(event)" />
+  <input type="file" id="import-orgs-excel-input" accept=".xlsx,.xls,.csv" class="hidden" onchange="handleImportOrgsExcelFile(event)" />
 
   <!-- App Shell -->
   <div class="min-h-screen flex flex-col lg:flex-row">
@@ -199,16 +201,10 @@
         </div>
         <div id="ba-backup-actions" class="grid grid-cols-2 gap-1.5">
           <button type="button" onclick="exportBackupJSON()" class="py-1.5 px-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-slate-600 text-[11px] font-medium transition flex items-center justify-center gap-1" title="สำรองข้อมูล JSON">
-            <i class="fa-solid fa-download"></i> Export
+            <i class="fa-solid fa-download"></i> Export JSON
           </button>
           <button type="button" onclick="triggerImportJSON()" class="py-1.5 px-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-slate-600 text-[11px] font-medium transition flex items-center justify-center gap-1" title="นำเข้าข้อมูล JSON">
-            <i class="fa-solid fa-upload"></i> Import
-          </button>
-          <button type="button" onclick="confirmResetDemo()" class="py-1.5 px-2 rounded-lg border border-slate-200 bg-white hover:bg-amber-50 hover:text-amber-700 hover:border-amber-200 text-slate-600 text-[11px] font-medium transition flex items-center justify-center gap-1" title="คืนค่าข้อมูลตัวอย่าง">
-            <i class="fa-solid fa-rotate"></i> Demo Data
-          </button>
-          <button type="button" onclick="confirmClearAllData()" class="py-1.5 px-2 rounded-lg border border-rose-200 bg-rose-50/60 hover:bg-rose-600 hover:text-white text-rose-700 text-[11px] font-semibold transition flex items-center justify-center gap-1" title="ล้างข้อมูลทั้งหมด">
-            <i class="fa-solid fa-trash-can"></i> ล้างทั้งหมด
+            <i class="fa-solid fa-upload"></i> Import JSON
           </button>
         </div>
       </div>
@@ -775,7 +771,23 @@
 
               <div class="lg:col-span-2 space-y-6">
                 <div class="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
-                  <div class="p-4 border-b border-slate-100 font-bold text-slate-900">รายชื่อสมาชิกในทีมและความจุมาตรฐาน</div>
+                  <div class="p-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-2">
+                  <span class="font-bold text-slate-900">รายชื่อสมาชิกในทีมและความจุมาตรฐาน</span>
+                  <div class="flex flex-wrap items-center gap-1.5">
+                    <button type="button" onclick="downloadUsersImportExcelTemplate()" class="px-2.5 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-semibold inline-flex items-center gap-1.5 transition" title="ดาวน์โหลดเทมเพลต Excel สมาชิกทีม">
+                      <i class="fa-solid fa-file-excel"></i> Template สมาชิก
+                    </button>
+                    <button type="button" onclick="triggerImportUsersExcel()" class="px-2.5 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-xs font-semibold inline-flex items-center gap-1.5 transition" title="นำเข้าสมาชิกทีมจากไฟล์ Excel">
+                      <i class="fa-solid fa-file-import"></i> Import Excel
+                    </button>
+                  </div>
+                </div>
+                <div id="users-excel-import-summary" class="hidden mx-4 mt-3 rounded-xl border border-emerald-200 bg-emerald-50/70 p-3 text-xs text-emerald-950 flex items-start justify-between gap-2">
+                  <div id="users-excel-import-summary-text"></div>
+                  <button type="button" onclick="document.getElementById('users-excel-import-summary').classList.add('hidden')" class="text-emerald-700 hover:text-emerald-950 p-0.5">
+                    <i class="fa-solid fa-xmark"></i>
+                  </button>
+                </div>
                   <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse text-sm">
                       <thead class="bg-slate-50 text-xs text-slate-500 uppercase">
@@ -793,7 +805,11 @@
                 </div>
 
                 <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
-                  <h3 class="font-bold text-base text-slate-900">บันทึกวันลา / วันหยุดประจำปีของสมาชิก</h3>
+                  <div class="flex items-center justify-between gap-2">
+                    <h3 id="leave-form-title" class="font-bold text-base text-slate-900">บันทึกวันลา / วันหยุดประจำปีของสมาชิก</h3>
+                    <button type="button" onclick="resetLeaveForm()" class="text-xs text-slate-500 hover:text-slate-800 underline">ล้างฟอร์มวันลา</button>
+                  </div>
+                  <input type="hidden" id="edit-leave-id" />
                   <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
                     <div>
                       <label class="block text-xs font-medium text-slate-600 mb-1">เลือกสมาชิก</label>
@@ -808,8 +824,8 @@
                       <input type="text" id="leave-reason" placeholder="ลาพักร้อน / หยุดนักขัตฤกษ์" class="w-full text-sm rounded-xl border border-slate-200 px-3 py-2" />
                     </div>
                     <div class="flex items-end">
-                      <button type="button" onclick="addUserLeave()" class="w-full bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium py-2 px-4 rounded-xl">
-                        <i class="fa-solid fa-calendar-plus mr-1"></i> เพิ่มวันลา
+                      <button type="button" id="leave-submit-btn" onclick="saveUserLeave()" class="w-full bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium py-2 px-4 rounded-xl">
+                        <i class="fa-solid fa-calendar-plus mr-1"></i> บันทึกวันลา
                       </button>
                     </div>
                   </div>
@@ -823,7 +839,8 @@
           <div id="admin-sub-orgs" class="admin-sub-view hidden">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
-                <h3 class="font-bold text-base text-slate-900">เพิ่มหน่วยงานภายใน / บริษัทลูก</h3>
+                <h3 id="org-form-title" class="font-bold text-base text-slate-900">เพิ่มหน่วยงานภายใน / บริษัทลูก</h3>
+                <input type="hidden" id="edit-org-id" />
                 <div>
                   <label class="block text-xs font-medium text-slate-600 mb-1">ประเภทหน่วยงาน *</label>
                   <select id="org-type" class="w-full text-sm rounded-xl border border-slate-200 px-3 py-2 bg-white">
@@ -845,14 +862,33 @@
                     <input type="color" id="org-color" value="#4f46e5" class="w-full h-10 rounded-xl border border-slate-200 p-1 cursor-pointer" />
                   </div>
                 </div>
-                <button type="button" onclick="addOrganization()" class="w-full bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium py-2.5 rounded-xl">
-                  <i class="fa-solid fa-plus mr-1"></i> บันทึกหน่วยงาน
-                </button>
+                <div class="flex gap-2 pt-1">
+                  <button type="button" onclick="saveOrganization()" class="flex-1 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium py-2.5 rounded-xl">
+                    <i class="fa-solid fa-floppy-disk mr-1"></i> บันทึกหน่วยงาน
+                  </button>
+                  <button type="button" onclick="resetOrgForm()" class="px-3.5 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm hover:bg-slate-50">
+                    ยกเลิก
+                  </button>
+                </div>
               </div>
 
               <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
-                <div class="p-4 border-b border-slate-100">
+                <div class="p-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-2">
                   <h3 class="font-bold text-slate-900">รายการแผนกภายในและบริษัทลูกทั้งหมด</h3>
+                  <div class="flex flex-wrap items-center gap-1.5">
+                    <button type="button" onclick="downloadOrgsImportExcelTemplate()" class="px-2.5 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-semibold inline-flex items-center gap-1.5 transition" title="ดาวน์โหลดเทมเพลต Excel หน่วยงานภายใน / บริษัทลูก">
+                      <i class="fa-solid fa-file-excel"></i> Template หน่วยงาน
+                    </button>
+                    <button type="button" onclick="triggerImportOrgsExcel()" class="px-2.5 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-xs font-semibold inline-flex items-center gap-1.5 transition" title="นำเข้าหน่วยงานภายใน / บริษัทลูกจากไฟล์ Excel">
+                      <i class="fa-solid fa-file-import"></i> Import Excel
+                    </button>
+                  </div>
+                </div>
+                <div id="orgs-excel-import-summary" class="hidden mx-4 mt-3 rounded-xl border border-emerald-200 bg-emerald-50/70 p-3 text-xs text-emerald-950 flex items-start justify-between gap-2">
+                  <div id="orgs-excel-import-summary-text"></div>
+                  <button type="button" onclick="document.getElementById('orgs-excel-import-summary').classList.add('hidden')" class="text-emerald-700 hover:text-emerald-950 p-0.5">
+                    <i class="fa-solid fa-xmark"></i>
+                  </button>
                 </div>
                 <div class="overflow-x-auto">
                   <table class="w-full text-left border-collapse text-sm">
@@ -2526,66 +2562,296 @@
       if (state.auditLogs.length > 200) state.auditLogs.pop();
     }
 
-    function confirmResetDemo() {
+    function downloadUsersImportExcelTemplate() {
       if (!isBA()) {
-        showToast('เฉพาะ Role BA เท่านั้นที่คืนค่าข้อมูลตัวอย่างได้', 'error');
+        showToast('เฉพาะ Role BA เท่านั้นที่ดาวน์โหลดเทมเพลตนำเข้าสมาชิกได้', 'error');
         return;
       }
-      showConfirmModal({
-        title: 'คืนค่าข้อมูลตัวอย่าง',
-        message: 'ยืนยันคืนค่าข้อมูลตัวอย่างทั้งหมดกลับเป็นค่าเริ่มต้นของ Dev Queue Operation Standard?',
-        okText: 'คืนค่าตัวอย่าง',
-        danger: false,
-        onConfirm: () => {
-          const roleKeep = state.activeRole;
-          const nextState = JSON.parse(JSON.stringify(defaultState));
-          nextState.activeRole = roleKeep;
-          setMainStateReference(nextState);
-          resetDashboardMultiFilters();
-          saveState();
-          populateAllSelects();
-          applyRolePermissions();
-          refreshCurrentView();
-          showToast('คืนค่าข้อมูลตัวอย่างเรียบร้อยแล้ว', 'success');
+      if (!window.XLSX) {
+        showToast('ไม่พบไลบรารี Excel (SheetJS) กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต', 'error');
+        return;
+      }
+
+      const templateRows = [
+        {
+          Name: 'สมชาย (ภูมิ)',
+          Position: 'Backend / API Developer',
+          Role: 'Member',
+          DailyCapacity: 8
+        },
+        {
+          Name: 'กัญญา (มิ้นท์)',
+          Position: 'QA / Test Engineer',
+          Role: 'Member',
+          DailyCapacity: 8
         }
-      });
+      ];
+
+      const guideRows = [
+        { Column: 'Name', Required: 'ใช่', Rule: 'ชื่อ-นามสกุล หรือชื่อเล่นในทีม (หากตรงกับชื่อเดิมจะเป็นการอัปเดต)', Example: 'สมชาย (ภูมิ)' },
+        { Column: 'Position', Required: 'ใช่', Rule: 'ตำแหน่งงาน เช่น Frontend Dev, Backend Dev, QA Engineer', Example: 'Backend Developer' },
+        { Column: 'Role', Required: 'ไม่บังคับ', Rule: 'Member | Manager | BA (ค่าเริ่มต้นคือ Member)', Example: 'Member' },
+        { Column: 'DailyCapacity', Required: 'ไม่บังคับ', Rule: 'ความจุชั่วโมงทำงานต่อวัน (0.5 - 24, ค่าเริ่มต้นคือ 8)', Example: 8 }
+      ];
+
+      const wb = window.XLSX.utils.book_new();
+      const wsUsers = window.XLSX.utils.json_to_sheet(templateRows);
+      wsUsers['!cols'] = [{ wch: 24 }, { wch: 28 }, { wch: 14 }, { wch: 16 }];
+      window.XLSX.utils.book_append_sheet(wb, wsUsers, 'Users_Template');
+
+      const wsGuide = window.XLSX.utils.json_to_sheet(guideRows);
+      wsGuide['!cols'] = [{ wch: 16 }, { wch: 12 }, { wch: 56 }, { wch: 24 }];
+      window.XLSX.utils.book_append_sheet(wb, wsGuide, 'Guide_Reference');
+
+      window.XLSX.writeFile(wb, `DevQueue_Users_Import_Template_${toLocalDateStr(new Date())}.xlsx`);
+      showToast('ดาวน์โหลดเทมเพลต Excel สำหรับนำเข้าสมาชิกทีมเรียบร้อยแล้ว', 'success');
     }
 
-    function confirmClearAllData() {
+    function triggerImportUsersExcel() {
       if (!isBA()) {
-        showToast('เฉพาะ Role BA เท่านั้นที่ล้างข้อมูลได้', 'error');
+        showToast('เฉพาะ Role BA เท่านั้นที่นำเข้าข้อมูลสมาชิกได้', 'error');
         return;
       }
-      showConfirmModal({
-        title: 'ล้างข้อมูลทั้งหมด',
-        message: 'ยืนยันล้างข้อมูลใบงาน วันลา และประวัติ Audit Log ทั้งหมดหรือไม่? (สมาชิกและหน่วยงานตั้งต้นจะยังคงอยู่)',
-        okText: 'ดำเนินการต่อ',
-        danger: true,
-        onConfirm: () => {
-          showConfirmModal({
-            title: 'ยืนยันการลบข้อมูลอีกครั้ง',
-            message: 'ข้อมูลใบงานทั้งหมดจะถูกลบออกทันที คุณแน่ใจหรือไม่?',
-            okText: 'ยืนยันล้างทั้งหมด',
-            danger: true,
-            onConfirm: () => {
-              state.tasks = [];
-              state.leaves = [];
-              state.auditLogs = [];
-              dashMultiFilters.status = [];
-              dashMultiFilters.sprint = [];
-              dashMultiFilters.source = [];
-              dashMultiFilters.org = [];
-              dashMultiFilters.member = [];
-              updateMultiLabelsAndChips();
-              addAuditLog('CLEAR_ALL_DATA', '-', 'ล้างข้อมูลใบงาน วันลา และประวัติทั้งหมดในระบบ');
-              saveState();
-              populateAllSelects();
-              refreshCurrentView();
-              showToast('ล้างข้อมูลใบงานทั้งหมดเรียบร้อยแล้ว', 'info');
+      document.getElementById('import-users-excel-input')?.click();
+    }
+
+    function handleImportUsersExcelFile(event) {
+      if (!isBA()) return;
+      const file = event.target.files?.[0];
+      event.target.value = '';
+      if (!file) return;
+      if (!window.XLSX) {
+        showToast('ไม่พบไลบรารี Excel (SheetJS)', 'error');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const wb = window.XLSX.read(data, { type: 'array' });
+          const sheetName = wb.SheetNames.includes('Users_Template') ? 'Users_Template' : wb.SheetNames[0];
+          const ws = wb.Sheets[sheetName];
+          const rows = window.XLSX.utils.sheet_to_json(ws, { defval: '' });
+
+          if (!Array.isArray(rows) || rows.length === 0) {
+            showToast('ไม่พบข้อมูลแถวสมาชิกในไฟล์ Excel', 'warning');
+            return;
+          }
+
+          let addedCount = 0;
+          let updatedCount = 0;
+          let skippedCount = 0;
+
+          rows.forEach((row) => {
+            const name = String(row.Name || row.name || row['ชื่อ-นามสกุล'] || row['ชื่อ'] || '').trim();
+            const position = String(row.Position || row.position || row['ตำแหน่ง'] || '').trim();
+            if (!name || !position) {
+              skippedCount++;
+              return;
+            }
+
+            const rawRole = String(row.Role || row.role || row['บทบาท'] || 'Member').trim();
+            const roleMap = { ba: 'BA', manager: 'Manager', member: 'Member' };
+            const role = roleMap[rawRole.toLowerCase()] || rawRole || 'Member';
+
+            const capRaw = parseFloat(row.DailyCapacity ?? row.dailyCapacity ?? row['ความจุ/วัน'] ?? row['Capacity'] ?? 8);
+            const dailyCapacity = (!isNaN(capRaw) && capRaw >= 0.5 && capRaw <= 24) ? capRaw : 8;
+
+            const existingIdx = state.users.findIndex(u => u.name.trim().toLowerCase() === name.toLowerCase());
+            if (existingIdx !== -1) {
+              state.users[existingIdx] = {
+                ...state.users[existingIdx],
+                name,
+                position,
+                role,
+                dailyCapacity
+              };
+              updatedCount++;
+            } else {
+              state.users.push({
+                id: 'u_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+                name,
+                position,
+                role,
+                dailyCapacity
+              });
+              addedCount++;
             }
           });
+
+          addAuditLog('IMPORT_USERS_EXCEL', '-', `นำเข้าสมาชิกจาก Excel ${file.name}: เพิ่มใหม่ ${addedCount}, อัปเดต ${updatedCount}, ข้าม ${skippedCount}`);
+          saveState();
+          populateAllSelects();
+          renderAdminUsers();
+          renderAdminLeaves();
+          renderDashboard();
+
+          const box = document.getElementById('users-excel-import-summary');
+          const txt = document.getElementById('users-excel-import-summary-text');
+          if (box && txt) {
+            box.classList.remove('hidden');
+            txt.innerHTML = `<div class="font-bold">ผลการนำเข้าสมาชิก: ${escapeHTML(file.name)}</div><div>เพิ่มใหม่ <b>${addedCount}</b> คน • อัปเดต <b>${updatedCount}</b> คน • ข้าม <b>${skippedCount}</b> แถว</div>`;
+          }
+
+          showToast(`นำเข้าสมาชิกสำเร็จ (เพิ่ม ${addedCount} / อัปเดต ${updatedCount} / ข้าม ${skippedCount})`, 'success');
+        } catch (err) {
+          console.error(err);
+          showToast('ไม่สามารถอ่านไฟล์ Excel สมาชิกได้', 'error');
         }
-      });
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function downloadOrgsImportExcelTemplate() {
+      if (!isBA()) {
+        showToast('เฉพาะ Role BA เท่านั้นที่ดาวน์โหลดเทมเพลตนำเข้าหน่วยงานได้', 'error');
+        return;
+      }
+      if (!window.XLSX) {
+        showToast('ไม่พบไลบรารี Excel (SheetJS) กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต', 'error');
+        return;
+      }
+
+      const templateRows = [
+        {
+          Type: 'Internal',
+          Code: 'OPS',
+          Name: 'ฝ่ายปฏิบัติการระบบและโครงสร้างพื้นฐาน',
+          Color: '#4f46e5',
+          Active: 'TRUE'
+        },
+        {
+          Type: 'External',
+          Code: 'PEX',
+          Name: 'บจก. แปซิฟิก เอ็กซ์เพรส (บริษัทลูก)',
+          Color: '#0d9488',
+          Active: 'TRUE'
+        }
+      ];
+
+      const guideRows = [
+        { Column: 'Type', Required: 'ใช่', Rule: 'Internal (แผนกภายใน) หรือ External (บริษัทลูกภายนอก)', Example: 'Internal' },
+        { Column: 'Code', Required: 'ใช่', Rule: 'รหัสย่อหน่วยงาน (หากตรงกับ Code เดิมจะเป็นการอัปเดต)', Example: 'OPS' },
+        { Column: 'Name', Required: 'ใช่', Rule: 'ชื่อหน่วยงานหรือชื่อบริษัทลูก', Example: 'ฝ่ายปฏิบัติการระบบ' },
+        { Column: 'Color', Required: 'ไม่บังคับ', Rule: 'รหัสสี HEX เช่น #4f46e5 หรือ #0d9488', Example: '#4f46e5' },
+        { Column: 'Active', Required: 'ไม่บังคับ', Rule: 'TRUE (ใช้งาน) หรือ FALSE (ปิดใช้งาน, ค่าเริ่มต้นคือ TRUE)', Example: 'TRUE' }
+      ];
+
+      const wb = window.XLSX.utils.book_new();
+      const wsOrgs = window.XLSX.utils.json_to_sheet(templateRows);
+      wsOrgs['!cols'] = [{ wch: 14 }, { wch: 14 }, { wch: 42 }, { wch: 14 }, { wch: 12 }];
+      window.XLSX.utils.book_append_sheet(wb, wsOrgs, 'Orgs_Template');
+
+      const wsGuide = window.XLSX.utils.json_to_sheet(guideRows);
+      wsGuide['!cols'] = [{ wch: 14 }, { wch: 12 }, { wch: 56 }, { wch: 20 }];
+      window.XLSX.utils.book_append_sheet(wb, wsGuide, 'Guide_Reference');
+
+      window.XLSX.writeFile(wb, `DevQueue_Orgs_Import_Template_${toLocalDateStr(new Date())}.xlsx`);
+      showToast('ดาวน์โหลดเทมเพลต Excel สำหรับนำเข้าหน่วยงาน / บริษัทลูกเรียบร้อยแล้ว', 'success');
+    }
+
+    function triggerImportOrgsExcel() {
+      if (!isBA()) {
+        showToast('เฉพาะ Role BA เท่านั้นที่นำเข้าข้อมูลหน่วยงานได้', 'error');
+        return;
+      }
+      document.getElementById('import-orgs-excel-input')?.click();
+    }
+
+    function handleImportOrgsExcelFile(event) {
+      if (!isBA()) return;
+      const file = event.target.files?.[0];
+      event.target.value = '';
+      if (!file) return;
+      if (!window.XLSX) {
+        showToast('ไม่พบไลบรารี Excel (SheetJS)', 'error');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const wb = window.XLSX.read(data, { type: 'array' });
+          const sheetName = wb.SheetNames.includes('Orgs_Template') ? 'Orgs_Template' : wb.SheetNames[0];
+          const ws = wb.Sheets[sheetName];
+          const rows = window.XLSX.utils.sheet_to_json(ws, { defval: '' });
+
+          if (!Array.isArray(rows) || rows.length === 0) {
+            showToast('ไม่พบข้อมูลแถวหน่วยงานในไฟล์ Excel', 'warning');
+            return;
+          }
+
+          let addedCount = 0;
+          let updatedCount = 0;
+          let skippedCount = 0;
+
+          rows.forEach((row) => {
+            const code = String(row.Code || row.code || row['รหัสย่อ'] || row['รหัส'] || '').trim().toUpperCase();
+            const name = String(row.Name || row.name || row['ชื่อหน่วยงาน'] || row['ชื่อ'] || '').trim();
+            if (!code || !name) {
+              skippedCount++;
+              return;
+            }
+
+            const rawType = String(row.Type || row.type || row['ประเภท'] || row['ประเภทหน่วยงาน'] || 'Internal').trim().toLowerCase();
+            const type = (rawType === 'external' || rawType.includes('บริษัทลูก') || rawType.includes('ภายนอก')) ? 'External' : 'Internal';
+
+            const rawColor = String(row.Color || row.color || row['สี'] || '').trim();
+            const color = /^#[0-9a-fA-F]{6}$/.test(rawColor) ? rawColor : (type === 'Internal' ? '#4f46e5' : '#0d9488');
+
+            const rawActive = String(row.Active ?? row.active ?? row['สถานะ'] ?? 'TRUE').trim().toLowerCase();
+            const active = !['false', '0', 'no', 'inactive', 'ปิดใช้งาน'].includes(rawActive);
+
+            const existingIdx = state.organizations.findIndex(o => o.code.trim().toUpperCase() === code);
+            if (existingIdx !== -1) {
+              const orgId = state.organizations[existingIdx].id;
+              state.organizations[existingIdx] = {
+                ...state.organizations[existingIdx],
+                type,
+                code,
+                name,
+                color,
+                active
+              };
+              state.tasks.forEach(t => {
+                if (t.orgId === orgId) t.source = type;
+              });
+              updatedCount++;
+            } else {
+              state.organizations.push({
+                id: 'org_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+                type,
+                code,
+                name,
+                color,
+                active
+              });
+              addedCount++;
+            }
+          });
+
+          addAuditLog('IMPORT_ORGS_EXCEL', '-', `นำเข้าหน่วยงานจาก Excel ${file.name}: เพิ่มใหม่ ${addedCount}, อัปเดต ${updatedCount}, ข้าม ${skippedCount}`);
+          saveState();
+          populateAllSelects();
+          renderAdminOrgs();
+          refreshCurrentView();
+
+          const box = document.getElementById('orgs-excel-import-summary');
+          const txt = document.getElementById('orgs-excel-import-summary-text');
+          if (box && txt) {
+            box.classList.remove('hidden');
+            txt.innerHTML = `<div class="font-bold">ผลการนำเข้าหน่วยงาน / บริษัทลูก: ${escapeHTML(file.name)}</div><div>เพิ่มใหม่ <b>${addedCount}</b> แห่ง • อัปเดต <b>${updatedCount}</b> แห่ง • ข้าม <b>${skippedCount}</b> แถว</div>`;
+          }
+
+          showToast(`นำเข้าหน่วยงานสำเร็จ (เพิ่ม ${addedCount} / อัปเดต ${updatedCount} / ข้าม ${skippedCount})`, 'success');
+        } catch (err) {
+          console.error(err);
+          showToast('ไม่สามารถอ่านไฟล์ Excel หน่วยงานได้', 'error');
+        }
+      };
+      reader.readAsArrayBuffer(file);
     }
 
     function exportBackupJSON() {
@@ -3274,7 +3540,7 @@
           const oldAssignee = state.tasks[idx].assigneeId;
           let queueOrder = state.tasks[idx].queueOrder;
           if (assigneeId && assigneeId !== oldAssignee) {
-            const memberQueue = state.tasks.filter(t => t.assigneeId === assigneeId && t.status !== 'Completed');
+            const memberQueue = state.tasks.filter(t => t.assigneeId === assigneeId && t.id !== editId && t.status !== 'Completed');
             queueOrder = memberQueue.length + 1;
           } else if (!assigneeId) {
             queueOrder = 0;
@@ -3289,6 +3555,9 @@
             estimatedHours, priority, assigneeId, queueOrder,
             overrideWarning: hasConflict
           };
+          if (oldAssignee && oldAssignee !== assigneeId) {
+            normalizeMemberQueueOrder(oldAssignee);
+          }
           addAuditLog('UPDATE_TASK', state.tasks[idx].code, `แก้ไขใบงาน "${title}" [${horizon}] ${hasConflict ? '(Override Overlap)' : ''}`);
           showToast(`อัปเดตใบงาน ${state.tasks[idx].code} เรียบร้อย`, 'success');
         }
@@ -3669,14 +3938,24 @@
       }).join('');
     }
 
+    function normalizeMemberQueueOrder(memberId) {
+      if (!memberId) return;
+      const remaining = state.tasks
+        .filter(t => t.assigneeId === memberId && t.status !== 'Completed')
+        .sort((a, b) => (a.queueOrder || 999) - (b.queueOrder || 999));
+      remaining.forEach((t, idx) => { t.queueOrder = idx + 1; });
+    }
+
     function unassignTaskToPool(taskId) {
       if (!isBA()) return;
       const task = state.tasks.find(t => t.id === taskId);
       if (!task) return;
-      const prevUser = state.users.find(u => u.id === task.assigneeId);
+      const prevAssigneeId = task.assigneeId;
+      const prevUser = state.users.find(u => u.id === prevAssigneeId);
       task.assigneeId = '';
       task.queueOrder = 0;
       task.overrideWarning = false;
+      if (prevAssigneeId) normalizeMemberQueueOrder(prevAssigneeId);
       addAuditLog('UNASSIGN_POOL', task.code, `ดึงใบงานออกจากคิวของ ${prevUser ? prevUser.name : '-'} กลับเข้า Pool`);
       saveState();
       renderCoordinatorQueue();
@@ -4185,12 +4464,16 @@
       renderDashboard();
     }
 
-    function openAvailableMembersModal(availableMembers) {
+    let lastAvailableMembersCache = [];
+    let lastOverlappingTasksCache = [];
+
+    function openAvailableMembersModal(availableMembers = null) {
+      const list = Array.isArray(availableMembers) ? availableMembers : lastAvailableMembersCache;
       const body = document.getElementById('avail-modal-body');
-      if (availableMembers.length === 0) {
+      if (!list || list.length === 0) {
         body.innerHTML = `<div class="text-center py-8 text-slate-400">ไม่มีสมาชิกที่มีคิวว่างต่ำกว่าเกณฑ์ในช่วงเวลาที่เลือก</div>`;
       } else {
-        body.innerHTML = availableMembers.map(m => `
+        body.innerHTML = list.map(m => `
           <div class="p-3.5 rounded-xl border border-emerald-200 bg-emerald-50/40 flex items-center justify-between gap-3">
             <div>
               <div class="font-bold text-slate-900">${escapeHTML(m.user.name)} <span class="text-xs font-normal text-slate-500">(${escapeHTML(m.user.position)})</span></div>
@@ -4203,12 +4486,13 @@
       document.getElementById('avail-list-modal').classList.remove('hidden');
     }
 
-    function openOverlappingTasksModal(overlappingTasks) {
+    function openOverlappingTasksModal(overlappingTasks = null) {
+      const list = Array.isArray(overlappingTasks) ? overlappingTasks : lastOverlappingTasksCache;
       const body = document.getElementById('overlap-modal-body');
-      if (overlappingTasks.length === 0) {
+      if (!list || list.length === 0) {
         body.innerHTML = `<div class="text-center py-8 text-slate-400">ไม่พบรายการงานที่ทับซ้อนหรือเกินความจุ</div>`;
       } else {
-        body.innerHTML = overlappingTasks.map(t => {
+        body.innerHTML = list.map(t => {
           const user = state.users.find(u => u.id === t.assigneeId);
           const analysis = analyzeTaskConflicts(t, t.id);
           return `
@@ -4356,6 +4640,8 @@
         : memberMetrics;
 
       const availableMembers = visibleMemberMetrics.filter(m => m.utilPercent < thresholdPct);
+      lastAvailableMembersCache = availableMembers;
+      lastOverlappingTasksCache = overlappingTasks;
 
       document.getElementById('kpi-grid').innerHTML = `
         <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-2xs flex flex-col justify-between">
@@ -4406,7 +4692,7 @@
           <div class="mt-2 text-[11px] ${overdueCount > 0 ? 'text-amber-700 font-semibold' : 'text-slate-400'}">คลิกเพื่อกรองงานเลยกำหนด</div>
         </div>
 
-        <div onclick="openAvailableMembersModal(${encodeURIComponent(JSON.stringify(availableMembers)).replace(/"/g, '&quot;')})" class="cursor-pointer bg-white p-4 sm:p-5 rounded-2xl border border-emerald-200 shadow-2xs flex flex-col justify-between hover:border-emerald-400 transition">
+        <div onclick="openAvailableMembersModal()" class="cursor-pointer bg-white p-4 sm:p-5 rounded-2xl border border-emerald-200 shadow-2xs flex flex-col justify-between hover:border-emerald-400 transition">
           <div class="flex items-center justify-between text-slate-500 text-xs font-medium">
             <span>สมาชิกคิวว่าง (&lt;${thresholdPct}%)</span>
             <span class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center"><i class="fa-solid fa-user-check"></i></span>
@@ -4418,7 +4704,7 @@
           <div class="mt-2 text-[11px] text-emerald-700 font-medium">คลิกเพื่อดูรายชื่อคนคิวว่าง</div>
         </div>
 
-        <div onclick="openOverlappingTasksModal(${encodeURIComponent(JSON.stringify(overlappingTasks)).replace(/"/g, '&quot;')})" class="cursor-pointer bg-white p-4 sm:p-5 rounded-2xl border ${overlapCount > 0 ? 'border-rose-300 ring-2 ring-rose-100' : 'border-slate-200'} shadow-2xs flex flex-col justify-between hover:border-rose-400 transition">
+        <div onclick="openOverlappingTasksModal()" class="cursor-pointer bg-white p-4 sm:p-5 rounded-2xl border ${overlapCount > 0 ? 'border-rose-300 ring-2 ring-rose-100' : 'border-slate-200'} shadow-2xs flex flex-col justify-between hover:border-rose-400 transition">
           <div class="flex items-center justify-between text-slate-500 text-xs font-medium">
             <span>งานทับซ้อน / เกินความจุ</span>
             <span class="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center"><i class="fa-solid fa-triangle-exclamation"></i></span>
@@ -4739,7 +5025,7 @@
             <td class="py-3 px-4 text-center text-xs text-amber-700 font-semibold">${leaveCnt} วัน</td>
             <td class="py-3 px-4 text-right space-x-1">
               <button type="button" onclick="editUser('${u.id}')" class="px-2.5 py-1 rounded-lg border border-slate-200 hover:bg-slate-100 text-xs">แก้ไข</button>
-              ${state.users.length > 1 && taskCnt === 0 ? `<button type="button" onclick="deleteUser('${u.id}')" class="px-2.5 py-1 rounded-lg border border-rose-200 text-rose-600 hover:bg-rose-50 text-xs">ลบ</button>` : ''}
+              ${state.users.length > 1 ? `<button type="button" onclick="deleteUser('${u.id}')" class="px-2.5 py-1 rounded-lg border border-rose-200 text-rose-600 hover:bg-rose-50 text-xs" title="${taskCnt > 0 ? 'ลบสมาชิกและคืน ' + taskCnt + ' งานเข้า Pool' : 'ลบสมาชิก'}">ลบ</button>` : ''}
             </td>
           </tr>
         `;
@@ -4806,15 +5092,33 @@
       if (!isBA()) return;
       const u = state.users.find(x => x.id === id);
       if (!u) return;
+      if (state.users.length <= 1) {
+        showToast('ต้องมีสมาชิกในระบบอย่างน้อย 1 คน', 'warning');
+        return;
+      }
+      const assignedTasks = state.tasks.filter(t => t.assigneeId === id);
+      const warnExtra = assignedTasks.length > 0
+        ? ` (ใบงานที่มอบหมายให้ ${u.name} จำนวน ${assignedTasks.length} รายการ จะถูกย้ายกลับเข้า Pool อัตโนมัติ)`
+        : '';
       showConfirmModal({
         title: 'ยืนยันการลบสมาชิก',
-        message: `ยืนยันลบสมาชิก ${u.name} ออกจากระบบ?`,
+        message: `ยืนยันลบสมาชิก ${u.name} ออกจากระบบ?${warnExtra}`,
         okText: 'ลบสมาชิก',
         danger: true,
         onConfirm: () => {
+          state.tasks.forEach(t => {
+            if (t.assigneeId === id) {
+              t.assigneeId = '';
+              t.queueOrder = 0;
+              t.overrideWarning = false;
+            }
+          });
           state.users = state.users.filter(x => x.id !== id);
           state.leaves = state.leaves.filter(l => l.userId !== id);
-          addAuditLog('DELETE_USER', '-', `ลบสมาชิก ${u.name}`);
+          if (document.getElementById('edit-user-id').value === id) {
+            resetUserForm();
+          }
+          addAuditLog('DELETE_USER', '-', `ลบสมาชิก ${u.name} และคืนใบงาน ${assignedTasks.length} รายการเข้า Pool`);
           saveState();
           populateAllSelects();
           renderAdminUsers();
@@ -4824,35 +5128,81 @@
       });
     }
 
-    function addUserLeave() {
+    function editLeave(leaveId) {
+      if (!isBA()) return;
+      const lv = state.leaves.find(x => x.id === leaveId);
+      if (!lv) return;
+      document.getElementById('edit-leave-id').value = lv.id;
+      document.getElementById('leave-form-title').textContent = 'แก้ไขรายการวันลา / วันหยุด';
+      document.getElementById('leave-user-id').value = lv.userId;
+      document.getElementById('leave-date').value = lv.date;
+      document.getElementById('leave-reason').value = lv.reason || '';
+      document.getElementById('leave-submit-btn').innerHTML = '<i class="fa-solid fa-floppy-disk mr-1"></i> อัปเดตวันลา';
+    }
+
+    function resetLeaveForm() {
+      document.getElementById('edit-leave-id').value = '';
+      document.getElementById('leave-form-title').textContent = 'บันทึกวันลา / วันหยุดประจำปีของสมาชิก';
+      document.getElementById('leave-date').value = '';
+      document.getElementById('leave-reason').value = '';
+      const btn = document.getElementById('leave-submit-btn');
+      if (btn) btn.innerHTML = '<i class="fa-solid fa-calendar-plus mr-1"></i> บันทึกวันลา';
+    }
+
+    function saveUserLeave() {
       if (!isBA()) {
-        showToast('เฉพาะ Role BA เท่านั้นที่บันทึกวันลาได้', 'error');
+        showToast('เฉพาะ Role BA เท่านั้นที่จัดการวันลาได้', 'error');
         return;
       }
+      const editId = document.getElementById('edit-leave-id')?.value || '';
       const userId = document.getElementById('leave-user-id').value;
       const date = document.getElementById('leave-date').value;
       const reason = document.getElementById('leave-reason').value.trim() || 'ลาหยุด';
-      if (!userId || !date) {
-        showToast('กรุณาเลือกสมาชิกและวันที่ลา', 'error');
+      if (!userId || !date || !parseLocalDate(date)) {
+        showToast('กรุณาเลือกสมาชิกและระบุวันที่ลาที่ถูกต้อง', 'error');
         return;
       }
-      state.leaves.push({ id: 'lv_' + Date.now(), userId, date, reason });
       const u = state.users.find(x => x.id === userId);
-      addAuditLog('ADD_LEAVE', '-', `บันทึกวันลาของ ${u ? u.name : userId} วันที่ ${formatThaiDate(date)} (${reason})`);
-      document.getElementById('leave-reason').value = '';
+      if (editId) {
+        const idx = state.leaves.findIndex(x => x.id === editId);
+        if (idx !== -1) {
+          state.leaves[idx] = { ...state.leaves[idx], userId, date, reason };
+          addAuditLog('UPDATE_LEAVE', '-', `แก้ไขวันลาของ ${u ? u.name : userId} เป็น ${formatThaiDate(date)} (${reason})`);
+          showToast('อัปเดตข้อมูลวันลาเรียบร้อยแล้ว', 'success');
+        }
+      } else {
+        state.leaves.push({ id: 'lv_' + Date.now(), userId, date, reason });
+        addAuditLog('ADD_LEAVE', '-', `บันทึกวันลาของ ${u ? u.name : userId} วันที่ ${formatThaiDate(date)} (${reason})`);
+        showToast('บันทึกวันลาเรียบร้อยแล้ว', 'success');
+      }
+      resetLeaveForm();
       saveState();
       renderAdminUsers();
       renderAdminLeaves();
-      showToast('บันทึกวันลาเรียบร้อยแล้ว', 'success');
     }
 
     function removeLeave(leaveId) {
       if (!isBA()) return;
-      state.leaves = state.leaves.filter(l => l.id !== leaveId);
-      saveState();
-      renderAdminUsers();
-      renderAdminLeaves();
-      showToast('ลบรายการวันลาแล้ว', 'info');
+      const lv = state.leaves.find(x => x.id === leaveId);
+      if (!lv) return;
+      const u = state.users.find(x => x.id === lv.userId);
+      showConfirmModal({
+        title: 'ยืนยันการลบวันลา',
+        message: `ยืนยันลบรายการวันลาของ ${u ? escapeHTML(u.name) : '-'} วันที่ ${escapeHTML(formatThaiDate(lv.date))} (${escapeHTML(lv.reason)})?`,
+        okText: 'ลบวันลา',
+        danger: true,
+        onConfirm: () => {
+          state.leaves = state.leaves.filter(l => l.id !== leaveId);
+          if (document.getElementById('edit-leave-id')?.value === leaveId) {
+            resetLeaveForm();
+          }
+          addAuditLog('DELETE_LEAVE', '-', `ลบวันลาของ ${u ? u.name : '-'} วันที่ ${formatThaiDate(lv.date)}`);
+          saveState();
+          renderAdminUsers();
+          renderAdminLeaves();
+          showToast('ลบรายการวันลาเรียบร้อยแล้ว', 'info');
+        }
+      });
     }
 
     function renderAdminLeaves() {
@@ -4866,7 +5216,8 @@
         return `
           <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-medium">
             <b>${u ? escapeHTML(u.name) : '-'}</b> • ${escapeHTML(formatThaiDate(l.date))} (${escapeHTML(l.reason)})
-            <button type="button" onclick="removeLeave('${l.id}')" class="text-amber-700 hover:text-rose-600"><i class="fa-solid fa-xmark"></i></button>
+            <button type="button" onclick="editLeave('${l.id}')" class="text-amber-700 hover:text-brand-700" title="แก้ไขวันลา"><i class="fa-solid fa-pen"></i></button>
+            <button type="button" onclick="removeLeave('${l.id}')" class="text-amber-700 hover:text-rose-600" title="ลบวันลา"><i class="fa-solid fa-xmark"></i></button>
           </span>
         `;
       }).join('');
@@ -4874,30 +5225,60 @@
 
     function renderAdminOrgs() {
       const tbody = document.getElementById('admin-orgs-tbody');
-      tbody.innerHTML = state.organizations.map(o => `
-        <tr>
-          <td class="py-3 px-4">
-            <span class="inline-flex items-center gap-2 font-bold text-xs px-2.5 py-1 rounded-lg" style="background:${escapeHTML(o.color)}18;color:${escapeHTML(o.color)}">
-              <span class="w-2.5 h-2.5 rounded-full" style="background:${escapeHTML(o.color)}"></span>${escapeHTML(o.code)}
-            </span>
-          </td>
-          <td class="py-3 px-4 font-semibold text-slate-800">${escapeHTML(o.name)}</td>
-          <td class="py-3 px-4 text-xs">${o.type === 'Internal' ? '<span class="text-indigo-700 font-semibold">Internal</span>' : '<span class="text-teal-700 font-semibold">External</span>'}</td>
-          <td class="py-3 px-4 text-center">${o.active ? '<span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">ใช้งานอยู่</span>' : '<span class="text-xs font-medium text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">ปิดใช้งาน</span>'}</td>
-          <td class="py-3 px-4 text-right">
-            <button type="button" onclick="toggleOrgActive('${o.id}')" class="px-3 py-1 rounded-lg border border-slate-200 hover:bg-slate-100 text-xs font-medium">
-              ${o.active ? 'ปิดใช้งาน' : 'เปิดใช้งาน'}
-            </button>
-          </td>
-        </tr>
-      `).join('');
+      tbody.innerHTML = state.organizations.map(o => {
+        const refTaskCount = state.tasks.filter(t => t.orgId === o.id).length;
+        return `
+          <tr>
+            <td class="py-3 px-4">
+              <span class="inline-flex items-center gap-2 font-bold text-xs px-2.5 py-1 rounded-lg" style="background:${escapeHTML(o.color)}18;color:${escapeHTML(o.color)}">
+                <span class="w-2.5 h-2.5 rounded-full" style="background:${escapeHTML(o.color)}"></span>${escapeHTML(o.code)}
+              </span>
+            </td>
+            <td class="py-3 px-4">
+              <div class="font-semibold text-slate-800">${escapeHTML(o.name)}</div>
+              <div class="text-[11px] text-slate-400">เชื่อมโยง ${refTaskCount} ใบงาน</div>
+            </td>
+            <td class="py-3 px-4 text-xs">${o.type === 'Internal' ? '<span class="text-indigo-700 font-semibold">Internal</span>' : '<span class="text-teal-700 font-semibold">External</span>'}</td>
+            <td class="py-3 px-4 text-center">${o.active ? '<span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">ใช้งานอยู่</span>' : '<span class="text-xs font-medium text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">ปิดใช้งาน</span>'}</td>
+            <td class="py-3 px-4 text-right whitespace-nowrap space-x-1">
+              <button type="button" onclick="editOrganization('${o.id}')" class="px-2.5 py-1 rounded-lg border border-slate-200 hover:bg-slate-100 text-xs font-medium">แก้ไข</button>
+              <button type="button" onclick="toggleOrgActive('${o.id}')" class="px-2.5 py-1 rounded-lg border border-slate-200 hover:bg-slate-100 text-xs font-medium">
+                ${o.active ? 'ปิดใช้งาน' : 'เปิดใช้งาน'}
+              </button>
+              ${state.organizations.length > 1 ? `<button type="button" onclick="deleteOrganization('${o.id}')" class="px-2.5 py-1 rounded-lg border border-rose-200 text-rose-600 hover:bg-rose-50 text-xs font-medium">ลบ</button>` : ''}
+            </td>
+          </tr>
+        `;
+      }).join('');
     }
 
-    function addOrganization() {
+    function editOrganization(id) {
+      if (!isBA()) return;
+      const org = state.organizations.find(x => x.id === id);
+      if (!org) return;
+      document.getElementById('edit-org-id').value = org.id;
+      document.getElementById('org-form-title').textContent = `แก้ไขหน่วยงาน: ${org.code}`;
+      document.getElementById('org-type').value = org.type;
+      document.getElementById('org-name').value = org.name;
+      document.getElementById('org-code').value = org.code;
+      document.getElementById('org-color').value = org.color || '#4f46e5';
+    }
+
+    function resetOrgForm() {
+      document.getElementById('edit-org-id').value = '';
+      document.getElementById('org-form-title').textContent = 'เพิ่มหน่วยงานภายใน / บริษัทลูก';
+      document.getElementById('org-type').value = 'Internal';
+      document.getElementById('org-name').value = '';
+      document.getElementById('org-code').value = '';
+      document.getElementById('org-color').value = '#4f46e5';
+    }
+
+    function saveOrganization() {
       if (!isBA()) {
-        showToast('เฉพาะ Role BA เท่านั้นที่เพิ่มหน่วยงานได้', 'error');
+        showToast('เฉพาะ Role BA เท่านั้นที่จัดการหน่วยงานได้', 'error');
         return;
       }
+      const editId = document.getElementById('edit-org-id')?.value || '';
       const type = document.getElementById('org-type').value;
       const name = document.getElementById('org-name').value.trim();
       const code = document.getElementById('org-code').value.trim().toUpperCase();
@@ -4906,14 +5287,76 @@
         showToast('กรุณากรอกชื่อหน่วยงานและรหัสย่อ', 'error');
         return;
       }
-      state.organizations.push({ id: 'org_' + Date.now(), type, name, code, color, active: true });
-      addAuditLog('ADD_ORG', '-', `เพิ่มหน่วยงาน ${type}: ${code} - ${name}`);
-      document.getElementById('org-name').value = '';
-      document.getElementById('org-code').value = '';
+      const duplicate = state.organizations.find(o => o.code.toUpperCase() === code && o.id !== editId);
+      if (duplicate) {
+        showToast(`รหัสย่อ "${code}" มีอยู่ในระบบแล้ว`, 'warning');
+        return;
+      }
+
+      if (editId) {
+        const idx = state.organizations.findIndex(x => x.id === editId);
+        if (idx !== -1) {
+          state.organizations[idx] = { ...state.organizations[idx], type, name, code, color };
+          state.tasks.forEach(t => {
+            if (t.orgId === editId) t.source = type;
+          });
+          addAuditLog('UPDATE_ORG', '-', `แก้ไขหน่วยงาน ${code} (${name}) [${type}]`);
+          showToast('อัปเดตข้อมูลหน่วยงานเรียบร้อยแล้ว', 'success');
+        }
+      } else {
+        state.organizations.push({ id: 'org_' + Date.now(), type, name, code, color, active: true });
+        addAuditLog('ADD_ORG', '-', `เพิ่มหน่วยงาน ${type}: ${code} - ${name}`);
+        showToast('เพิ่มหน่วยงานใหม่เรียบร้อยแล้ว', 'success');
+      }
+
+      resetOrgForm();
       saveState();
       populateAllSelects();
       renderAdminOrgs();
-      showToast('เพิ่มหน่วยงานใหม่เรียบร้อยแล้ว', 'success');
+      refreshCurrentView();
+    }
+
+    function deleteOrganization(id) {
+      if (!isBA()) return;
+      const org = state.organizations.find(x => x.id === id);
+      if (!org) return;
+      if (state.organizations.length <= 1) {
+        showToast('ต้องมีหน่วยงานในระบบอย่างน้อย 1 แห่ง', 'warning');
+        return;
+      }
+      const replacement = state.organizations.find(x => x.id !== id && x.active) || state.organizations.find(x => x.id !== id);
+      const affectedTasks = state.tasks.filter(t => t.orgId === id);
+      const warnMsg = affectedTasks.length > 0 && replacement
+        ? ` (ใบงานที่ผูกกับ ${org.code} จำนวน ${affectedTasks.length} รายการ จะถูกย้ายไปที่ ${replacement.code} อัตโนมัติ)`
+        : '';
+
+      showConfirmModal({
+        title: 'ยืนยันการลบหน่วยงาน',
+        message: `ยืนยันลบหน่วยงาน ${org.code} - ${org.name}?${warnMsg}`,
+        okText: 'ลบหน่วยงาน',
+        danger: true,
+        onConfirm: () => {
+          if (replacement) {
+            state.tasks.forEach(t => {
+              if (t.orgId === id) {
+                t.orgId = replacement.id;
+                t.source = replacement.type;
+              }
+            });
+          }
+          dashMultiFilters.org = (dashMultiFilters.org || []).filter(oid => oid !== id);
+          state.organizations = state.organizations.filter(x => x.id !== id);
+          if (document.getElementById('edit-org-id')?.value === id) {
+            resetOrgForm();
+          }
+          addAuditLog('DELETE_ORG', '-', `ลบหน่วยงาน ${org.code} (${org.name})`);
+          saveState();
+          populateAllSelects();
+          renderAdminOrgs();
+          refreshCurrentView();
+          showToast('ลบหน่วยงานเรียบร้อยแล้ว', 'info');
+        }
+      });
     }
 
     function toggleOrgActive(id) {
@@ -4942,6 +5385,7 @@
       state.rules.availableThresholdPercent = pct;
       addAuditLog('UPDATE_RULES', '-', `อัปเดตกฎระบบ: Overlap=${mode}, คิวว่าง < ${pct}%`);
       saveState();
+      renderDashboard();
       showToast('บันทึกการตั้งค่ากฎระบบเรียบร้อยแล้ว', 'success');
     }
 
