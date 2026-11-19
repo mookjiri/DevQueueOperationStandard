@@ -385,6 +385,7 @@
                     <th class="py-3 px-4 font-semibold">ผู้รับผิดชอบ</th>
                     <th class="py-3 px-4 font-semibold">สถานะ</th>
                     <th class="py-3 px-4 font-semibold text-right">ชม.ประเมิน</th>
+                    <th id="dash-tasks-th-action" class="py-3 px-4 font-semibold text-center">จัดการ</th>
                   </tr>
                 </thead>
                 <tbody id="dash-tasks-tbody" class="divide-y divide-slate-100 text-sm"></tbody>
@@ -663,13 +664,24 @@
             </div>
           </div>
 
-          <div id="all-tasks-summary" class="flex flex-wrap items-center gap-2 text-xs"></div>
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div id="all-tasks-summary" class="flex flex-wrap items-center gap-2 text-xs"></div>
+            <div id="bulk-delete-bar" class="hidden flex items-center gap-2">
+              <span id="bulk-selected-count" class="text-xs font-bold text-rose-700 bg-rose-50 border border-rose-200 px-3 py-1.5 rounded-xl">เลือก 0 รายการ</span>
+              <button type="button" onclick="deleteSelectedTasks()" class="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-2xs inline-flex items-center gap-1.5 transition">
+                <i class="fa-solid fa-trash-can"></i> ลบงานที่เลือก
+              </button>
+            </div>
+          </div>
 
           <div class="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
             <div class="overflow-x-auto">
               <table class="w-full text-left border-collapse min-w-[1080px]">
                 <thead>
                   <tr class="bg-slate-50 text-slate-500 text-xs uppercase border-b border-slate-200">
+                    <th class="py-3.5 px-3 w-10 text-center">
+                      <input type="checkbox" id="all-tasks-select-all" onchange="toggleSelectAllFilteredTasks(this.checked)" class="rounded text-brand-600 focus:ring-brand-500 border-slate-300 cursor-pointer" title="เลือกทั้งหมดในหน้านี้" />
+                    </th>
                     <th class="py-3.5 px-4 font-semibold">รหัสงาน / Sprint</th>
                     <th class="py-3.5 px-4 font-semibold">ชื่องาน & ประเภท / AC</th>
                     <th class="py-3.5 px-4 font-semibold">แหล่งที่มา / หน่วยงาน</th>
@@ -1200,11 +1212,18 @@
         </div>
       </div>
 
-      <div class="px-6 py-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center justify-end gap-2">
-        <button type="button" onclick="closeTaskModal()" class="px-4 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-700 text-sm font-medium hover:bg-slate-100">ยกเลิก</button>
-        <button id="btn-save-task" type="button" onclick="saveTask()" class="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold shadow-2xs">
-          บันทึกใบงาน (Save Task)
-        </button>
+      <div class="px-6 py-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div>
+          <button id="btn-modal-delete-task" type="button" onclick="deleteTaskFromEditModal()" class="hidden px-4 py-2.5 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-700 text-sm font-semibold transition inline-flex items-center gap-1.5">
+            <i class="fa-solid fa-trash-can"></i> ลบใบงานนี้
+          </button>
+        </div>
+        <div class="flex items-center justify-end gap-2">
+          <button type="button" onclick="closeTaskModal()" class="px-4 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-700 text-sm font-medium hover:bg-slate-100">ยกเลิก</button>
+          <button id="btn-save-task" type="button" onclick="saveTask()" class="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold shadow-2xs">
+            บันทึกใบงาน (Save Task)
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -1242,6 +1261,15 @@
             <span id="det-ac-progress" class="text-xs font-bold text-emerald-700">0/0</span>
           </div>
           <div id="det-ac-list" class="space-y-1.5 bg-slate-50 p-3 rounded-xl border border-slate-200"></div>
+        </div>
+
+        <div id="det-ba-quick-actions" class="hidden flex items-center justify-end gap-2 border-t border-slate-100 pt-3">
+          <button type="button" onclick="editTaskFromDetailModal()" class="px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold inline-flex items-center gap-1.5 transition">
+            <i class="fa-solid fa-pen"></i> แก้ไขใบงาน
+          </button>
+          <button type="button" onclick="deleteTaskFromDetailModal()" class="px-3.5 py-2 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-700 text-xs font-semibold inline-flex items-center gap-1.5 transition">
+            <i class="fa-solid fa-trash-can"></i> ลบใบงานนี้
+          </button>
         </div>
 
         <div id="det-status-editor" class="space-y-3 border-t border-slate-100 pt-4">
@@ -3279,6 +3307,7 @@
       if (existing) {
         document.getElementById('task-modal-title').textContent = `แก้ไขใบงาน ${existing.code}`;
         document.getElementById('task-edit-id').value = existing.id;
+        document.getElementById('btn-modal-delete-task')?.classList.remove('hidden');
 
         const hVal = getTaskHorizon(existing);
         const hRadio = document.querySelector(`input[name="task-horizon"][value="${hVal}"]`);
@@ -3315,6 +3344,7 @@
       } else {
         document.getElementById('task-modal-title').textContent = 'สร้างใบงานใหม่ (Create User Story / Task)';
         document.getElementById('task-edit-id').value = '';
+        document.getElementById('btn-modal-delete-task')?.classList.add('hidden');
         const curRadio = document.querySelector('input[name="task-horizon"][value="CURRENT"]');
         if (curRadio) curRadio.checked = true;
         const intRadio = document.querySelector('input[name="task-source"][value="Internal"]');
@@ -3603,7 +3633,9 @@
       refreshCurrentView();
     }
 
-    function deleteTask(taskId) {
+    let selectedTaskIdsForBulkDelete = new Set();
+
+    function deleteTask(taskId, onDeletedCallback = null) {
       if (!isBA()) {
         showToast('เฉพาะ Role BA เท่านั้นที่ลบใบงานได้', 'error');
         return;
@@ -3617,11 +3649,112 @@
         okText: 'ลบใบงาน',
         danger: true,
         onConfirm: () => {
-          state.tasks.splice(idx, 1);
+          const currIdx = state.tasks.findIndex(t => t.id === taskId);
+          if (currIdx !== -1) {
+            const prevAssignee = state.tasks[currIdx].assigneeId;
+            state.tasks.splice(currIdx, 1);
+            if (prevAssignee) normalizeMemberQueueOrder(prevAssignee);
+          }
+          selectedTaskIdsForBulkDelete.delete(taskId);
           addAuditLog('DELETE_TASK', deleted.code, `ลบใบงาน "${deleted.title}" ออกจากระบบ`);
           saveState();
+          if (typeof onDeletedCallback === 'function') onDeletedCallback();
           refreshCurrentView();
           showToast(`ลบใบงาน ${deleted.code} เรียบร้อยแล้ว`, 'info');
+        }
+      });
+    }
+
+    function deleteTaskFromEditModal() {
+      const taskId = document.getElementById('task-edit-id')?.value;
+      if (!taskId) return;
+      deleteTask(taskId, () => {
+        closeTaskModal();
+      });
+    }
+
+    function editTaskFromDetailModal() {
+      const taskId = document.getElementById('det-task-id')?.value;
+      if (!taskId) return;
+      closeDetailModal();
+      openCreateTaskModal(taskId);
+    }
+
+    function deleteTaskFromDetailModal() {
+      const taskId = document.getElementById('det-task-id')?.value;
+      if (!taskId) return;
+      deleteTask(taskId, () => {
+        closeDetailModal();
+      });
+    }
+
+    function toggleTaskBulkSelect(taskId, checked) {
+      if (checked) selectedTaskIdsForBulkDelete.add(taskId);
+      else selectedTaskIdsForBulkDelete.delete(taskId);
+      updateBulkDeleteBarUI();
+    }
+
+    function toggleSelectAllFilteredTasks(checked) {
+      const checkboxes = document.querySelectorAll('.all-task-row-checkbox');
+      checkboxes.forEach(cb => {
+        cb.checked = checked;
+        const tid = cb.dataset.taskid;
+        if (tid) {
+          if (checked) selectedTaskIdsForBulkDelete.add(tid);
+          else selectedTaskIdsForBulkDelete.delete(tid);
+        }
+      });
+      updateBulkDeleteBarUI();
+    }
+
+    function updateBulkDeleteBarUI() {
+      selectedTaskIdsForBulkDelete.forEach(id => {
+        if (!state.tasks.some(t => t.id === id)) selectedTaskIdsForBulkDelete.delete(id);
+      });
+      const bar = document.getElementById('bulk-delete-bar');
+      const cntEl = document.getElementById('bulk-selected-count');
+      const count = selectedTaskIdsForBulkDelete.size;
+      if (bar && cntEl) {
+        bar.classList.toggle('hidden', count === 0 || !isBA());
+        cntEl.textContent = `เลือก ${count} รายการ`;
+      }
+      const allCheckboxes = Array.from(document.querySelectorAll('.all-task-row-checkbox'));
+      const selectAllEl = document.getElementById('all-tasks-select-all');
+      if (selectAllEl) {
+        selectAllEl.checked = allCheckboxes.length > 0 && allCheckboxes.every(cb => cb.checked);
+      }
+    }
+
+    function deleteSelectedTasks() {
+      if (!isBA()) {
+        showToast('เฉพาะ Role BA เท่านั้นที่ลบใบงานได้', 'error');
+        return;
+      }
+      const ids = Array.from(selectedTaskIdsForBulkDelete).filter(id => state.tasks.some(t => t.id === id));
+      if (ids.length === 0) return;
+
+      showConfirmModal({
+        title: `ยืนยันการลบใบงาน ${ids.length} รายการ`,
+        message: `คุณกำลังจะลบใบงานที่เลือกทั้งหมด ${ids.length} รายการออกจากระบบอย่างถาวร ยืนยันหรือไม่?`,
+        okText: `ลบทั้งหมด (${ids.length})`,
+        danger: true,
+        onConfirm: () => {
+          const affectedMembers = new Set();
+          const deletedCodes = [];
+          state.tasks = state.tasks.filter(t => {
+            if (ids.includes(t.id)) {
+              if (t.assigneeId) affectedMembers.add(t.assigneeId);
+              deletedCodes.push(t.code);
+              return false;
+            }
+            return true;
+          });
+          affectedMembers.forEach(uid => normalizeMemberQueueOrder(uid));
+          selectedTaskIdsForBulkDelete.clear();
+          addAuditLog('BULK_DELETE_TASKS', deletedCodes.slice(0, 5).join(', '), `ลบใบงานแบบกลุ่มจำนวน ${deletedCodes.length} รายการ (${deletedCodes.join(', ')})`);
+          saveState();
+          refreshCurrentView();
+          showToast(`ลบใบงานเรียบร้อยแล้ว ${deletedCodes.length} รายการ`, 'info');
         }
       });
     }
@@ -3737,6 +3870,9 @@
                           <div class="flex items-center gap-1">
                             ${getTaskTypeBadgeHTML(t.taskType)}
                             <span class="text-[10px] font-bold bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded">${t.storyPoints || 3} SP</span>
+                            <button type="button" onclick="event.stopPropagation(); deleteTask('${t.id}')" class="p-1 rounded hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition" title="ลบใบงาน">
+                              <i class="fa-solid fa-trash-can text-[11px]"></i>
+                            </button>
                           </div>
                         </div>
 
@@ -3819,12 +3955,20 @@
       } else {
         unassignedContainer.innerHTML = unassigned.map(t => `
           <div class="p-3.5 rounded-xl border border-slate-200 bg-slate-50/70 hover:bg-white transition space-y-2.5">
-            <div class="flex items-center justify-between">
+            <div class="flex items-center justify-between gap-1">
               <div class="flex items-center gap-1.5">
                 <span class="text-xs font-bold text-brand-700">${escapeHTML(t.code)}</span>
                 ${getTaskTypeBadgeHTML(t.taskType)}
               </div>
-              ${getPriorityBadgeHTML(t.priority)}
+              <div class="flex items-center gap-1">
+                ${getPriorityBadgeHTML(t.priority)}
+                <button type="button" onclick="openCreateTaskModal('${t.id}')" class="p-1 rounded hover:bg-slate-200/70 text-slate-400 hover:text-brand-700 transition" title="แก้ไขใบงาน">
+                  <i class="fa-solid fa-pen text-[11px]"></i>
+                </button>
+                <button type="button" onclick="deleteTask('${t.id}')" class="p-1 rounded hover:bg-rose-100 text-slate-400 hover:text-rose-600 transition" title="ลบใบงาน">
+                  <i class="fa-solid fa-trash-can text-[11px]"></i>
+                </button>
+              </div>
             </div>
             <div class="font-semibold text-sm text-slate-900 leading-snug">${escapeHTML(t.title)}</div>
             <div class="flex flex-wrap items-center gap-1.5">${getOrgBadgeHTML(t.orgId, t.source)} ${getHorizonBadgeHTML(t, todayStr)}</div>
@@ -3931,6 +4075,9 @@
               </button>
               <button type="button" onclick="openCreateTaskModal('${t.id}')" class="p-2 rounded-lg border border-slate-200 hover:bg-brand-50 hover:text-brand-700 text-slate-600" title="แก้ไขใบงาน">
                 <i class="fa-solid fa-pen"></i>
+              </button>
+              <button type="button" onclick="deleteTask('${t.id}')" class="p-2 rounded-lg border border-slate-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 text-slate-500" title="ลบใบงาน">
+                <i class="fa-solid fa-trash-can"></i>
               </button>
             </div>
           </div>
@@ -4103,7 +4250,8 @@
 
       const tbody = document.getElementById('all-tasks-tbody');
       if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" class="py-12 text-center text-slate-400">ไม่พบข้อมูลใบงานตามเงื่อนไขที่กรอง</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9" class="py-12 text-center text-slate-400">ไม่พบข้อมูลใบงานตามเงื่อนไขที่กรอง</td></tr>`;
+        updateBulkDeleteBarUI();
         return;
       }
 
@@ -4115,8 +4263,12 @@
         const acTotal = (t.checklist || []).length;
         const acDone = (t.checklist || []).filter(c => c.done).length;
 
+        const isChecked = selectedTaskIdsForBulkDelete.has(t.id);
         return `
-          <tr class="hover:bg-slate-50/90 transition">
+          <tr class="hover:bg-slate-50/90 transition ${isChecked ? 'bg-rose-50/30' : ''}">
+            <td class="py-3.5 px-3 text-center">
+              <input type="checkbox" data-taskid="${t.id}" ${isChecked ? 'checked' : ''} onchange="toggleTaskBulkSelect('${t.id}', this.checked)" class="all-task-row-checkbox rounded text-brand-600 focus:ring-brand-500 border-slate-300 cursor-pointer" />
+            </td>
             <td class="py-3.5 px-4 whitespace-nowrap">
               <div class="font-bold text-brand-700">${escapeHTML(t.code)}</div>
               <div class="text-[11px] text-slate-500">${escapeHTML(t.sprint || '-')}</div>
@@ -4172,6 +4324,7 @@
           </tr>
         `;
       }).join('');
+      updateBulkDeleteBarUI();
     }
 
     function renderMyQueue() {
@@ -4249,9 +4402,14 @@
               </div>
             </div>
 
-            <button type="button" onclick="openDetailModal('${t.id}')" class="w-full py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-brand-600 text-white text-xs sm:text-sm font-medium transition flex items-center justify-center gap-2">
-              <i class="fa-solid fa-pen-to-square"></i> ตรวจ Checklist / อัปเดตสถานะ & ลงเวลา
-            </button>
+            <div class="flex items-center gap-2">
+              <button type="button" onclick="openDetailModal('${t.id}')" class="flex-1 py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-brand-600 text-white text-xs sm:text-sm font-medium transition flex items-center justify-center gap-2">
+                <i class="fa-solid fa-pen-to-square"></i> ตรวจ Checklist / อัปเดตสถานะ & ลงเวลา
+              </button>
+              <button type="button" onclick="deleteTask('${t.id}')" class="py-2.5 px-3 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-600 text-xs sm:text-sm transition" title="ลบใบงาน">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            </div>
           </div>
         `;
       }).join('');
@@ -4272,6 +4430,7 @@
       document.getElementById('det-viewonly-badge').classList.toggle('hidden', ba);
       document.getElementById('det-title').textContent = t.title;
 
+      document.getElementById('det-ba-quick-actions')?.classList.toggle('hidden', !ba);
       document.getElementById('det-status-editor').classList.toggle('hidden', !ba);
       document.getElementById('det-timelog-form').classList.toggle('hidden', !ba);
 
@@ -4745,10 +4904,14 @@
       const dashCountPill = document.getElementById('dash-task-count-pill');
       if (dashCountPill) dashCountPill.textContent = `${filteredTasks.length} รายการ`;
 
+      const dashThAction = document.getElementById('dash-tasks-th-action');
+      if (dashThAction) dashThAction.classList.toggle('hidden', !isBA());
+
       const dashTbody = document.getElementById('dash-tasks-tbody');
       if (dashTbody) {
+        const baMode = isBA();
         if (filteredTasks.length === 0) {
-          dashTbody.innerHTML = `<tr><td colspan="6" class="py-10 text-center text-slate-400">ไม่พบรายการงานตามเงื่อนไข Checkbox ที่เลือก</td></tr>`;
+          dashTbody.innerHTML = `<tr><td colspan="${baMode ? 7 : 6}" class="py-10 text-center text-slate-400">ไม่พบรายการงานตามเงื่อนไข Checkbox ที่เลือก</td></tr>`;
         } else {
           dashTbody.innerHTML = filteredTasks.map(t => {
             const user = state.users.find(u => u.id === t.assigneeId);
@@ -4769,6 +4932,18 @@
                 <td class="py-3 px-4 whitespace-nowrap text-xs font-medium text-slate-700">${user ? escapeHTML(user.name) : '<span class="text-amber-700">ยังไม่ระบุ</span>'}</td>
                 <td class="py-3 px-4 whitespace-nowrap">${getStatusBadgeHTML(t.status)}</td>
                 <td class="py-3 px-4 whitespace-nowrap text-right font-bold text-slate-800">${t.estimatedHours} <span class="text-xs font-normal text-slate-400">ชม.</span></td>
+                ${baMode ? `
+                  <td class="py-3 px-4 whitespace-nowrap text-center" onclick="event.stopPropagation()">
+                    <div class="inline-flex items-center gap-1">
+                      <button type="button" onclick="openCreateTaskModal('${t.id}')" class="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-600 text-xs" title="แก้ไขใบงาน">
+                        <i class="fa-solid fa-pen"></i>
+                      </button>
+                      <button type="button" onclick="deleteTask('${t.id}')" class="p-1.5 rounded-lg border border-slate-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 text-slate-500 text-xs" title="ลบใบงาน">
+                        <i class="fa-solid fa-trash-can"></i>
+                      </button>
+                    </div>
+                  </td>
+                ` : ''}
               </tr>
             `;
           }).join('');
