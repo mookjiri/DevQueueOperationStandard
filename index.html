@@ -42,7 +42,30 @@
 <body class="bg-slate-50 text-slate-800 font-sans antialiased selection:bg-brand-100 selection:text-brand-900">
 
   <!-- Toast Container -->
-  <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 sm:px-0"></div>
+  <div id="toast-container" class="fixed top-4 right-4 z-[70] flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 sm:px-0"></div>
+
+  <!-- Custom Confirm Modal (Replaces native confirm() safely inside iframes) -->
+  <div id="custom-confirm-modal" class="fixed inset-0 z-[80] hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden">
+      <div class="px-5 py-4 bg-slate-50 border-b border-slate-200 flex items-center gap-2.5">
+        <div id="confirm-icon-wrap" class="w-9 h-9 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <h3 id="confirm-modal-title" class="font-bold text-base text-slate-900">ยืนยันการดำเนินการ</h3>
+      </div>
+      <div class="p-5 space-y-4">
+        <p id="confirm-modal-message" class="text-sm text-slate-600 leading-relaxed"></p>
+        <div class="flex items-center justify-end gap-2 pt-2">
+          <button type="button" id="confirm-cancel-btn" class="px-4 py-2 rounded-xl border border-slate-300 bg-white text-slate-700 text-sm font-medium hover:bg-slate-100 transition">
+            ยกเลิก
+          </button>
+          <button type="button" id="confirm-ok-btn" class="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold shadow-2xs transition">
+            ยืนยัน
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Hidden File Inputs (BA Only) -->
   <input type="file" id="import-json-input" accept=".json,application/json" class="hidden" onchange="handleImportJSONFile(event)" />
@@ -208,12 +231,15 @@
                     <i class="fa-solid fa-eye mr-1"></i> โหมดดูข้อมูลเท่านั้น (View Only)
                   </span>
                 </div>
-                <p class="text-xs sm:text-sm text-slate-500">ภาพรวมสถานะงาน งานปัจจุบัน แพลนงานในอนาคต รายชื่องานทั้งหมด และความเสี่ยง</p>
+                <p class="text-xs sm:text-sm text-slate-500">ภาพรวมสถานะงาน งานปัจจุบัน แพลนงานในอนาคต รายชื่องานทั้งหมด และความเสี่ยง (เลือกฟิลเตอร์ Checkbox ได้หลายรายการ)</p>
               </div>
               <div class="flex flex-wrap items-center gap-2">
                 <button type="button" onclick="setDashPreset('this_week')" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700">สัปดาห์นี้</button>
                 <button type="button" onclick="setDashPreset('this_month')" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-brand-50 hover:bg-brand-100 text-brand-700 font-semibold">เดือนนี้ (Default)</button>
                 <button type="button" onclick="setDashPreset('all')" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700">ทั้งหมด</button>
+                <button type="button" onclick="resetDashboardMultiFilters()" class="px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 bg-white hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200 text-slate-600 transition" title="ล้างฟิลเตอร์ Checkbox ทั้งหมด">
+                  <i class="fa-solid fa-rotate-left mr-1"></i> ล้างฟิลเตอร์
+                </button>
               </div>
             </div>
 
@@ -240,6 +266,7 @@
               </div>
             </div>
 
+            <!-- Date Range + 5 Multi-Select Checkbox Dropdowns -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-3 pt-2 border-t border-slate-100">
               <div>
                 <label class="block text-[11px] font-medium text-slate-500 mb-1">วันที่เริ่มต้น</label>
@@ -249,44 +276,90 @@
                 <label class="block text-[11px] font-medium text-slate-500 mb-1">วันที่สิ้นสุด</label>
                 <input type="date" id="dash-end" onchange="renderDashboard()" class="w-full text-sm rounded-xl border-slate-200 border px-3 py-2 focus:ring-2 focus:ring-brand-500 outline-none" />
               </div>
-              <div>
+
+              <!-- 1. Multi-Select Status -->
+              <div class="relative multi-filter-dropdown" data-filter-key="status">
                 <label class="block text-[11px] font-medium text-slate-500 mb-1">สถานะงาน (Status)</label>
-                <select id="dash-status" onchange="renderDashboard()" class="w-full text-sm rounded-xl border-slate-200 border px-3 py-2 bg-white focus:ring-2 focus:ring-brand-500 outline-none">
-                  <option value="ALL">ทุกสถานะ</option>
-                  <option value="Queued">Queued</option>
-                  <option value="In Progress">In Progress</option>
-                  <option value="In Review">In Review</option>
-                  <option value="Blocked">Blocked</option>
-                  <option value="Completed">Completed</option>
-                </select>
+                <button type="button" onclick="toggleMultiDropdown('status', event)" class="w-full text-left text-xs sm:text-sm rounded-xl border border-slate-200 px-3 py-2 bg-white hover:border-brand-400 flex items-center justify-between gap-2 transition">
+                  <span id="ms-label-status" class="truncate font-medium text-slate-700">ทุกสถานะ</span>
+                  <i class="fa-solid fa-chevron-down text-[10px] text-slate-400 shrink-0"></i>
+                </button>
+                <div id="ms-panel-status" class="hidden absolute left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl z-30 p-2.5 space-y-2 min-w-[210px]">
+                  <div class="flex items-center justify-between text-[11px] pb-1.5 border-b border-slate-100">
+                    <button type="button" onclick="selectAllMulti('status')" class="text-brand-600 font-semibold hover:underline">เลือกทั้งหมด</button>
+                    <button type="button" onclick="clearMulti('status')" class="text-slate-500 hover:text-rose-600">ล้างค่า</button>
+                  </div>
+                  <div id="ms-options-status" class="space-y-1 max-h-52 overflow-y-auto"></div>
+                </div>
               </div>
-              <div>
+
+              <!-- 2. Multi-Select Sprint -->
+              <div class="relative multi-filter-dropdown" data-filter-key="sprint">
                 <label class="block text-[11px] font-medium text-slate-500 mb-1">Sprint / รอบส่งมอบ</label>
-                <select id="dash-sprint" onchange="renderDashboard()" class="w-full text-sm rounded-xl border-slate-200 border px-3 py-2 bg-white focus:ring-2 focus:ring-brand-500 outline-none">
-                  <option value="ALL">ทุก Sprint</option>
-                </select>
+                <button type="button" onclick="toggleMultiDropdown('sprint', event)" class="w-full text-left text-xs sm:text-sm rounded-xl border border-slate-200 px-3 py-2 bg-white hover:border-brand-400 flex items-center justify-between gap-2 transition">
+                  <span id="ms-label-sprint" class="truncate font-medium text-slate-700">ทุก Sprint</span>
+                  <i class="fa-solid fa-chevron-down text-[10px] text-slate-400 shrink-0"></i>
+                </button>
+                <div id="ms-panel-sprint" class="hidden absolute left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl z-30 p-2.5 space-y-2 min-w-[220px]">
+                  <div class="flex items-center justify-between text-[11px] pb-1.5 border-b border-slate-100">
+                    <button type="button" onclick="selectAllMulti('sprint')" class="text-brand-600 font-semibold hover:underline">เลือกทั้งหมด</button>
+                    <button type="button" onclick="clearMulti('sprint')" class="text-slate-500 hover:text-rose-600">ล้างค่า</button>
+                  </div>
+                  <div id="ms-options-sprint" class="space-y-1 max-h-52 overflow-y-auto"></div>
+                </div>
               </div>
-              <div>
+
+              <!-- 3. Multi-Select Source -->
+              <div class="relative multi-filter-dropdown" data-filter-key="source">
                 <label class="block text-[11px] font-medium text-slate-500 mb-1">แหล่งที่มา (Source)</label>
-                <select id="dash-source" onchange="renderDashboard()" class="w-full text-sm rounded-xl border-slate-200 border px-3 py-2 bg-white focus:ring-2 focus:ring-brand-500 outline-none">
-                  <option value="ALL">ทั้งหมด (Int & Ext)</option>
-                  <option value="Internal">Internal (ภายใน)</option>
-                  <option value="External">External (ภายนอก)</option>
-                </select>
+                <button type="button" onclick="toggleMultiDropdown('source', event)" class="w-full text-left text-xs sm:text-sm rounded-xl border border-slate-200 px-3 py-2 bg-white hover:border-brand-400 flex items-center justify-between gap-2 transition">
+                  <span id="ms-label-source" class="truncate font-medium text-slate-700">ทั้งหมด (Int & Ext)</span>
+                  <i class="fa-solid fa-chevron-down text-[10px] text-slate-400 shrink-0"></i>
+                </button>
+                <div id="ms-panel-source" class="hidden absolute left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl z-30 p-2.5 space-y-2 min-w-[190px]">
+                  <div class="flex items-center justify-between text-[11px] pb-1.5 border-b border-slate-100">
+                    <button type="button" onclick="selectAllMulti('source')" class="text-brand-600 font-semibold hover:underline">เลือกทั้งหมด</button>
+                    <button type="button" onclick="clearMulti('source')" class="text-slate-500 hover:text-rose-600">ล้างค่า</button>
+                  </div>
+                  <div id="ms-options-source" class="space-y-1 max-h-52 overflow-y-auto"></div>
+                </div>
               </div>
-              <div>
+
+              <!-- 4. Multi-Select Organization -->
+              <div class="relative multi-filter-dropdown" data-filter-key="org">
                 <label class="block text-[11px] font-medium text-slate-500 mb-1">แผนก / บริษัทลูก</label>
-                <select id="dash-org" onchange="renderDashboard()" class="w-full text-sm rounded-xl border-slate-200 border px-3 py-2 bg-white focus:ring-2 focus:ring-brand-500 outline-none">
-                  <option value="ALL">ทุกหน่วยงาน</option>
-                </select>
+                <button type="button" onclick="toggleMultiDropdown('org', event)" class="w-full text-left text-xs sm:text-sm rounded-xl border border-slate-200 px-3 py-2 bg-white hover:border-brand-400 flex items-center justify-between gap-2 transition">
+                  <span id="ms-label-org" class="truncate font-medium text-slate-700">ทุกหน่วยงาน</span>
+                  <i class="fa-solid fa-chevron-down text-[10px] text-slate-400 shrink-0"></i>
+                </button>
+                <div id="ms-panel-org" class="hidden absolute left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl z-30 p-2.5 space-y-2 min-w-[250px]">
+                  <div class="flex items-center justify-between text-[11px] pb-1.5 border-b border-slate-100">
+                    <button type="button" onclick="selectAllMulti('org')" class="text-brand-600 font-semibold hover:underline">เลือกทั้งหมด</button>
+                    <button type="button" onclick="clearMulti('org')" class="text-slate-500 hover:text-rose-600">ล้างค่า</button>
+                  </div>
+                  <div id="ms-options-org" class="space-y-1 max-h-52 overflow-y-auto"></div>
+                </div>
               </div>
-              <div>
+
+              <!-- 5. Multi-Select Team Member -->
+              <div class="relative multi-filter-dropdown" data-filter-key="member">
                 <label class="block text-[11px] font-medium text-slate-500 mb-1">สมาชิกในทีม</label>
-                <select id="dash-member" onchange="renderDashboard()" class="w-full text-sm rounded-xl border-slate-200 border px-3 py-2 bg-white focus:ring-2 focus:ring-brand-500 outline-none">
-                  <option value="ALL">ทุกคนในทีม</option>
-                </select>
+                <button type="button" onclick="toggleMultiDropdown('member', event)" class="w-full text-left text-xs sm:text-sm rounded-xl border border-slate-200 px-3 py-2 bg-white hover:border-brand-400 flex items-center justify-between gap-2 transition">
+                  <span id="ms-label-member" class="truncate font-medium text-slate-700">ทุกคนในทีม</span>
+                  <i class="fa-solid fa-chevron-down text-[10px] text-slate-400 shrink-0"></i>
+                </button>
+                <div id="ms-panel-member" class="hidden absolute right-0 sm:left-0 sm:right-auto mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl z-30 p-2.5 space-y-2 min-w-[240px]">
+                  <div class="flex items-center justify-between text-[11px] pb-1.5 border-b border-slate-100">
+                    <button type="button" onclick="selectAllMulti('member')" class="text-brand-600 font-semibold hover:underline">เลือกทั้งหมด</button>
+                    <button type="button" onclick="clearMulti('member')" class="text-slate-500 hover:text-rose-600">ล้างค่า</button>
+                  </div>
+                  <div id="ms-options-member" class="space-y-1 max-h-52 overflow-y-auto"></div>
+                </div>
               </div>
             </div>
+
+            <!-- Active Multi-Filter Chips Summary -->
+            <div id="dash-active-filter-chips" class="hidden flex-wrap items-center gap-1.5 pt-2 border-t border-slate-100 text-xs"></div>
           </div>
 
           <div id="kpi-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4"></div>
@@ -297,18 +370,13 @@
             <div class="p-4 sm:p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <h3 class="font-bold text-base text-slate-900">รายชื่องานทั้งหมดในระบบ (Dashboard Task List)</h3>
-                <p class="text-xs text-slate-500">แสดงรายชื่องานตามเงื่อนไขที่เลือก — คลิกที่แถวเพื่อดูรายละเอียดหรืออัปเดตสถานะ</p>
+                <p class="text-xs text-slate-500">แสดงรายชื่องานตามเงื่อนไข Checkbox ที่เลือก — คลิกที่แถวเพื่อดูรายละเอียดหรืออัปเดตสถานะ</p>
               </div>
               <div class="flex flex-wrap items-center gap-2">
                 <span id="dash-task-count-pill" class="text-xs font-bold bg-brand-50 text-brand-700 px-3 py-1 rounded-full">0 รายการ</span>
-                <select id="dash-list-status-quick" onchange="syncDashStatusFilter(this.value)" class="text-xs font-semibold rounded-xl border border-slate-200 px-3 py-1.5 bg-slate-50 text-slate-700">
-                  <option value="ALL">ฟิลเตอร์สถานะ: ทั้งหมด</option>
-                  <option value="Queued">Queued (รอคิว)</option>
-                  <option value="In Progress">In Progress (กำลังทำ)</option>
-                  <option value="In Review">In Review (รอ QA)</option>
-                  <option value="Blocked">Blocked (ติดปัญหา)</option>
-                  <option value="Completed">Completed (เสร็จสิ้น)</option>
-                </select>
+                <button type="button" onclick="clearMulti('status')" class="text-xs font-semibold rounded-xl border border-slate-200 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-700 transition">
+                  <i class="fa-solid fa-filter mr-1"></i> แสดงทุกสถานะ
+                </button>
               </div>
             </div>
             <div class="overflow-x-auto max-h-[420px] overflow-y-auto">
@@ -332,7 +400,7 @@
             <div class="lg:col-span-5 bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs flex flex-col justify-between space-y-4">
               <div>
                 <h3 class="font-bold text-base text-slate-900">สัดส่วนงาน & ความคืบหน้าภาพรวม</h3>
-                <p class="text-xs text-slate-500">แยกตามแหล่งที่มา ประเภทงาน (Feature/Bug) และสถานะปัจจุบัน</p>
+                <p class="text-xs text-slate-500">แยกตามแหล่งที่มา ประเภทงาน (Feature/Bug) และสถานะปัจจุบัน (คลิกเพื่อสลับกรองสถานะ)</p>
               </div>
               <div id="chart-source-ratio" class="space-y-3"></div>
               <div id="chart-type-breakdown" class="space-y-2 pt-2 border-t border-slate-100"></div>
@@ -343,7 +411,7 @@
               <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                 <div>
                   <h3 class="font-bold text-base text-slate-900">กราฟเปรียบเทียบภาระงานรายบุคคล (% Utilization)</h3>
-                  <p class="text-xs text-slate-500">เส้นประสีเขียวคือเกณฑ์คิวว่าง (&lt; <span id="chart-lbl-threshold">75</span>%) — คลิกที่แถบเพื่อกรองดูรายคน</p>
+                  <p class="text-xs text-slate-500">เส้นประสีเขียวคือเกณฑ์คิวว่าง (&lt; <span id="chart-lbl-threshold">75</span>%) — คลิกที่แถบเพื่อสลับฟิลเตอร์รายคน</p>
                 </div>
                 <span class="text-xs font-semibold text-brand-700 bg-brand-50 px-2.5 py-1 rounded-lg self-start" id="chart-total-sp">0 Story Points</span>
               </div>
@@ -517,6 +585,14 @@
                   <i class="fa-solid fa-plus"></i> เพิ่มใบงานใหม่
                 </button>
               </div>
+            </div>
+
+            <!-- Excel Import Summary Banner -->
+            <div id="excel-import-summary" class="hidden rounded-xl border border-emerald-200 bg-emerald-50/70 p-3.5 text-xs text-emerald-950 flex items-start justify-between gap-3">
+              <div id="excel-import-summary-text" class="space-y-0.5"></div>
+              <button type="button" onclick="document.getElementById('excel-import-summary').classList.add('hidden')" class="text-emerald-700 hover:text-emerald-950 p-1">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
             </div>
 
             <div class="relative">
@@ -1280,6 +1356,19 @@
       if (syncBtn) syncBtn.classList.toggle('hidden', !meta.enabled);
     }
 
+    // Populates Firebase Admin form fields without disrupting an active listener
+    window.syncFirebaseFormInputs = function() {
+      const meta = loadFirebaseMeta();
+      const cfgInput = document.getElementById('fb-config-json');
+      const wsInput = document.getElementById('fb-workspace-id');
+      if (cfgInput && document.activeElement !== cfgInput) {
+        cfgInput.value = meta.configJson || DEFAULT_FIREBASE_CONFIG_JSON;
+      }
+      if (wsInput && document.activeElement !== wsInput) {
+        wsInput.value = meta.workspaceId || 'default-operation-room';
+      }
+    };
+
     async function teardownFirebase() {
       if (fbSyncTimer) {
         clearTimeout(fbSyncTimer);
@@ -1298,10 +1387,7 @@
 
     window.connectFirebaseFromMeta = async function(silent = false) {
       const meta = loadFirebaseMeta();
-      const cfgInput = document.getElementById('fb-config-json');
-      const wsInput = document.getElementById('fb-workspace-id');
-      if (cfgInput) cfgInput.value = meta.configJson || DEFAULT_FIREBASE_CONFIG_JSON;
-      if (wsInput) wsInput.value = meta.workspaceId || 'default-operation-room';
+      window.syncFirebaseFormInputs();
 
       if (!meta.enabled || !meta.configJson) {
         await teardownFirebase();
@@ -1471,6 +1557,19 @@
     const SYSTEM_NAME = 'Dev Queue Operation Standard';
     const STORAGE_KEY = 'dev_queue_operation_standard_v3';
 
+    const ALL_STATUSES = ['Queued', 'In Progress', 'In Review', 'Blocked', 'Completed'];
+    const ALL_SOURCES = ['Internal', 'External'];
+
+    // Multi-Select Checkbox Filter State for Executive Dashboard
+    // Empty array [] means "All selected / No restriction"
+    const dashMultiFilters = {
+      status: [],
+      sprint: [],
+      source: [],
+      org: [],
+      member: []
+    };
+
     function escapeHTML(str) {
       if (str === null || str === undefined) return '';
       return String(str)
@@ -1496,25 +1595,29 @@
       if (!dateStr || typeof dateStr !== 'string') return null;
       const parts = dateStr.split('-').map(Number);
       if (parts.length !== 3 || parts.some(isNaN)) return null;
-      return new Date(parts[0], parts[1] - 1, parts[2], 0, 0, 0, 0);
+      const dt = new Date(parts[0], parts[1] - 1, parts[2], 0, 0, 0, 0);
+      if (dt.getFullYear() !== parts[0] || dt.getMonth() !== parts[1] - 1 || dt.getDate() !== parts[2]) {
+        return null;
+      }
+      return dt;
     }
 
     function getRelativeDate(offsetDays) {
       const d = new Date();
       d.setHours(0, 0, 0, 0);
-      d.setDate(d.getDate() + offsetDays);
+      d.setDate(d.getDate() + (parseInt(offsetDays, 10) || 0));
       return toLocalDateStr(d);
     }
 
     function formatThaiDate(dateStr, emptyText = 'ยังไม่ระบุวัน') {
-      if (!dateStr) return emptyText;
+      if (!dateStr || typeof dateStr !== 'string') return emptyText;
       const parts = dateStr.split('-');
       if (parts.length !== 3) return emptyText;
       const [y, m, d] = parts;
       const mIdx = parseInt(m, 10) - 1;
       const dayNum = parseInt(d, 10);
       const months = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
-      if (isNaN(mIdx) || mIdx < 0 || mIdx > 11 || isNaN(dayNum)) return emptyText;
+      if (isNaN(mIdx) || mIdx < 0 || mIdx > 11 || isNaN(dayNum) || dayNum < 1 || dayNum > 31) return emptyText;
       return `${dayNum} ${months[mIdx]} ${y}`;
     }
 
@@ -1526,9 +1629,50 @@
       return `${formatThaiDate(startDate)} - ${formatThaiDate(endDate)}`;
     }
 
+    // Custom Confirm Modal helper (avoids native confirm() inside sandboxed iframes)
+    function showConfirmModal({ title = 'ยืนยันการดำเนินการ', message = '', okText = 'ยืนยัน', danger = false, onConfirm = null }) {
+      const modal = document.getElementById('custom-confirm-modal');
+      const titleEl = document.getElementById('confirm-modal-title');
+      const msgEl = document.getElementById('confirm-modal-message');
+      const okBtn = document.getElementById('confirm-ok-btn');
+      const cancelBtn = document.getElementById('confirm-cancel-btn');
+      const iconWrap = document.getElementById('confirm-icon-wrap');
+
+      if (!modal || !titleEl || !msgEl || !okBtn || !cancelBtn) {
+        if (typeof onConfirm === 'function') onConfirm();
+        return;
+      }
+
+      titleEl.textContent = title;
+      msgEl.textContent = message;
+      okBtn.textContent = okText;
+
+      if (danger) {
+        okBtn.className = 'px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-sm font-semibold shadow-2xs transition';
+        if (iconWrap) iconWrap.className = 'w-9 h-9 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center shrink-0';
+      } else {
+        okBtn.className = 'px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold shadow-2xs transition';
+        if (iconWrap) iconWrap.className = 'w-9 h-9 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0';
+      }
+
+      const cleanup = () => {
+        modal.classList.add('hidden');
+        okBtn.onclick = null;
+        cancelBtn.onclick = null;
+      };
+
+      cancelBtn.onclick = cleanup;
+      okBtn.onclick = () => {
+        cleanup();
+        if (typeof onConfirm === 'function') onConfirm();
+      };
+
+      modal.classList.remove('hidden');
+    }
+
     function getTaskHorizon(task, todayStr = getRelativeDate(0)) {
-      if (task.horizon === 'FUTURE') return 'FUTURE';
-      if (task.startDate && task.startDate > todayStr) return 'FUTURE';
+      if (task && task.horizon === 'FUTURE') return 'FUTURE';
+      if (task && task.startDate && task.startDate > todayStr) return 'FUTURE';
       return 'CURRENT';
     }
 
@@ -1797,26 +1941,235 @@
       }
     }
 
+    // MULTI-SELECT CHECKBOX FILTER LOGIC (EXECUTIVE DASHBOARD)
+    function toggleMultiDropdown(key, event) {
+      if (event) event.stopPropagation();
+      const panel = document.getElementById(`ms-panel-${key}`);
+      if (!panel) return;
+      const willOpen = panel.classList.contains('hidden');
+      closeAllMultiDropdowns();
+      if (willOpen) {
+        renderMultiOptions(key);
+        panel.classList.remove('hidden');
+      }
+    }
+
+    function closeAllMultiDropdowns() {
+      document.querySelectorAll('[id^="ms-panel-"]').forEach(el => el.classList.add('hidden'));
+    }
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.multi-filter-dropdown')) {
+        closeAllMultiDropdowns();
+      }
+    });
+
+    function getMultiCandidates(key) {
+      if (key === 'status') {
+        return ALL_STATUSES.map(st => ({ value: st, label: st }));
+      }
+      if (key === 'sprint') {
+        const sprints = Array.from(new Set(state.tasks.map(t => (t.sprint || '').trim()).filter(Boolean)));
+        return sprints.map(s => ({ value: s, label: s }));
+      }
+      if (key === 'source') {
+        return [
+          { value: 'Internal', label: 'Internal (ภายใน)' },
+          { value: 'External', label: 'External (ภายนอก)' }
+        ];
+      }
+      if (key === 'org') {
+        return state.organizations.map(o => ({
+          value: o.id,
+          label: `[${o.type === 'Internal' ? 'Int' : 'Ext'}] ${o.code} - ${o.name.split('(')[0].trim()}`
+        }));
+      }
+      if (key === 'member') {
+        return [
+          ...state.users.map(u => ({ value: u.id, label: u.name })),
+          { value: '__UNASSIGNED__', label: 'ยังไม่มอบหมาย (Unassigned)' }
+        ];
+      }
+      return [];
+    }
+
+    function renderMultiOptions(key) {
+      const container = document.getElementById(`ms-options-${key}`);
+      if (!container) return;
+      const candidates = getMultiCandidates(key);
+      const selected = dashMultiFilters[key] || [];
+
+      if (candidates.length === 0) {
+        container.innerHTML = `<div class="text-xs text-slate-400 py-2 text-center">ไม่มีตัวเลือก</div>`;
+        return;
+      }
+
+      container.innerHTML = candidates.map(item => {
+        const checked = selected.includes(item.value);
+        return `
+          <label onclick="event.stopPropagation()" class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-50 cursor-pointer text-xs text-slate-700 select-none">
+            <input type="checkbox" value="${escapeHTML(item.value)}" ${checked ? 'checked' : ''}
+                   onchange="onMultiCheckboxChange('${key}', this.value, this.checked)"
+                   class="rounded text-brand-600 focus:ring-brand-500 border-slate-300" />
+            <span class="truncate font-medium">${escapeHTML(item.label)}</span>
+          </label>
+        `;
+      }).join('');
+    }
+
+    function onMultiCheckboxChange(key, value, checked) {
+      const curr = new Set(dashMultiFilters[key] || []);
+      if (checked) curr.add(value);
+      else curr.delete(value);
+      dashMultiFilters[key] = Array.from(curr);
+      updateMultiLabelsAndChips();
+      renderDashboard();
+    }
+
+    function selectAllMulti(key) {
+      const candidates = getMultiCandidates(key);
+      dashMultiFilters[key] = candidates.map(c => c.value);
+      renderMultiOptions(key);
+      updateMultiLabelsAndChips();
+      renderDashboard();
+    }
+
+    function clearMulti(key) {
+      dashMultiFilters[key] = [];
+      renderMultiOptions(key);
+      updateMultiLabelsAndChips();
+      renderDashboard();
+    }
+
+    function resetDashboardMultiFilters() {
+      dashMultiFilters.status = [];
+      dashMultiFilters.sprint = [];
+      dashMultiFilters.source = [];
+      dashMultiFilters.org = [];
+      dashMultiFilters.member = [];
+      dashFocusMode = 'ALL';
+      dashHorizonMode = 'ALL';
+      setDashFocus('ALL');
+      setDashHorizon('ALL');
+      updateMultiLabelsAndChips();
+      renderDashboard();
+      showToast('ล้างฟิลเตอร์ Checkbox ทั้งหมดแล้ว', 'info');
+    }
+
+    function updateMultiLabelsAndChips() {
+      const defaults = {
+        status: 'ทุกสถานะ',
+        sprint: 'ทุก Sprint',
+        source: 'ทั้งหมด (Int & Ext)',
+        org: 'ทุกหน่วยงาน',
+        member: 'ทุกคนในทีม'
+      };
+      const catNames = {
+        status: 'สถานะ',
+        sprint: 'Sprint',
+        source: 'แหล่งที่มา',
+        org: 'หน่วยงาน',
+        member: 'สมาชิก'
+      };
+
+      const chips = [];
+
+      Object.keys(defaults).forEach(key => {
+        const sel = dashMultiFilters[key] || [];
+        const candidates = getMultiCandidates(key);
+        const labelEl = document.getElementById(`ms-label-${key}`);
+
+        if (labelEl) {
+          if (sel.length === 0) {
+            labelEl.textContent = defaults[key];
+            labelEl.className = 'truncate font-medium text-slate-700';
+          } else if (sel.length === 1) {
+            const found = candidates.find(c => c.value === sel[0]);
+            labelEl.textContent = found ? found.label : sel[0];
+            labelEl.className = 'truncate font-bold text-brand-700';
+          } else {
+            labelEl.textContent = `เลือกแล้ว ${sel.length} รายการ`;
+            labelEl.className = 'truncate font-bold text-brand-700';
+          }
+        }
+
+        sel.forEach(val => {
+          const found = candidates.find(c => c.value === val);
+          const textVal = found ? found.label : val;
+          chips.push(`
+            <button type="button" onclick="onMultiCheckboxChange('${key}', '${escapeHTML(val).replace(/'/g, "\\'")}', false)"
+                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-brand-50 text-brand-700 border border-brand-200 font-medium hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200 transition">
+              <span class="text-[10px] uppercase opacity-75">${catNames[key]}:</span>
+              <span>${escapeHTML(textVal)}</span>
+              <i class="fa-solid fa-xmark text-[10px]"></i>
+            </button>
+          `);
+        });
+      });
+
+      const chipWrap = document.getElementById('dash-active-filter-chips');
+      if (chipWrap) {
+        if (chips.length > 0) {
+          chipWrap.classList.remove('hidden');
+          chipWrap.classList.add('flex');
+          chipWrap.innerHTML = `<span class="text-slate-400 font-medium mr-1">ฟิลเตอร์ที่เลือก:</span>` + chips.join('');
+        } else {
+          chipWrap.classList.add('hidden');
+          chipWrap.classList.remove('flex');
+          chipWrap.innerHTML = '';
+        }
+      }
+    }
+
+    function syncStatusFilterFromPill(statusVal) {
+      const curr = new Set(dashMultiFilters.status || []);
+      if (curr.has(statusVal)) {
+        curr.delete(statusVal);
+        showToast(`ยกเลิกกรองสถานะ ${statusVal}`, 'info');
+      } else {
+        curr.add(statusVal);
+        showToast(`เพิ่มกรองสถานะ ${statusVal}`, 'info');
+      }
+      dashMultiFilters.status = Array.from(curr);
+      updateMultiLabelsAndChips();
+      renderDashboard();
+    }
+
+    function toggleMemberFilterFromChart(userId) {
+      const curr = new Set(dashMultiFilters.member || []);
+      if (curr.has(userId)) {
+        curr.delete(userId);
+      } else {
+        curr.add(userId);
+      }
+      dashMultiFilters.member = Array.from(curr);
+      updateMultiLabelsAndChips();
+      renderDashboard();
+    }
+
     // EXCEL TEMPLATE DOWNLOAD & IMPORT (BA ONLY)
     function normalizeExcelDate(val) {
-      if (!val && val !== 0) return '';
+      if (val === null || val === undefined || val === '') return '';
       if (val instanceof Date && !isNaN(val.getTime())) {
         return toLocalDateStr(val);
       }
-      if (typeof val === 'number' && window.XLSX?.SSF?.parse_date_code) {
+      if (typeof val === 'number' && !isNaN(val) && window.XLSX?.SSF?.parse_date_code) {
         const dt = window.XLSX.SSF.parse_date_code(val);
         if (dt && dt.y && dt.m && dt.d) {
-          return `${String(dt.y).padStart(4, '0')}-${String(dt.m).padStart(2, '0')}-${String(dt.d).padStart(2, '0')}`;
+          const candidate = `${String(dt.y).padStart(4, '0')}-${String(dt.m).padStart(2, '0')}-${String(dt.d).padStart(2, '0')}`;
+          return parseLocalDate(candidate) ? candidate : '';
         }
       }
       const s = String(val).trim();
       const isoMatch = s.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);
       if (isoMatch) {
-        return `${isoMatch[1]}-${isoMatch[2].padStart(2, '0')}-${isoMatch[3].padStart(2, '0')}`;
+        const candidate = `${isoMatch[1]}-${isoMatch[2].padStart(2, '0')}-${isoMatch[3].padStart(2, '0')}`;
+        return parseLocalDate(candidate) ? candidate : '';
       }
       const dmyMatch = s.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
       if (dmyMatch) {
-        return `${dmyMatch[3]}-${dmyMatch[2].padStart(2, '0')}-${dmyMatch[1].padStart(2, '0')}`;
+        const candidate = `${dmyMatch[3]}-${dmyMatch[2].padStart(2, '0')}-${dmyMatch[1].padStart(2, '0')}`;
+        return parseLocalDate(candidate) ? candidate : '';
       }
       return '';
     }
@@ -1948,19 +2301,29 @@
 
           let addedCount = 0;
           let updatedCount = 0;
+          let skippedCount = 0;
           const fallbackOrg = state.organizations.find(o => o.active) || state.organizations[0];
 
           rows.forEach((row) => {
-            const title = String(row.Title || row.title || row['ชื่องาน'] || '').trim();
-            if (!title) return;
+            const title = String(row.Title || row.title || row['ชื่องาน'] || row['ชื่องาน / User Story'] || '').trim();
+            if (!title) {
+              skippedCount++;
+              return;
+            }
 
             const rawHorizon = String(row.Horizon || row.horizon || row['ช่วงแผนงาน'] || '').trim().toUpperCase();
-            const startDate = normalizeExcelDate(row.StartDate || row.startDate || row['วันเริ่มต้น']);
-            const endDate = normalizeExcelDate(row.EndDate || row.endDate || row['วันสิ้นสุด']);
+            let startDate = normalizeExcelDate(row.StartDate || row.startDate || row['วันเริ่มต้น']);
+            let endDate = normalizeExcelDate(row.EndDate || row.endDate || row['วันสิ้นสุด']);
+            if (startDate && endDate && startDate > endDate) {
+              const tmp = startDate;
+              startDate = endDate;
+              endDate = tmp;
+            }
+
             const todayStr = getRelativeDate(0);
-            const horizon = rawHorizon === 'FUTURE' || rawHorizon === 'แพลนอนาคต'
+            const horizon = (rawHorizon === 'FUTURE' || rawHorizon === 'แพลนอนาคต')
               ? 'FUTURE'
-              : (rawHorizon === 'CURRENT' || rawHorizon === 'งานปัจจุบัน'
+              : ((rawHorizon === 'CURRENT' || rawHorizon === 'งานปัจจุบัน')
                 ? 'CURRENT'
                 : (startDate && startDate > todayStr ? 'FUTURE' : 'CURRENT'));
 
@@ -1968,40 +2331,41 @@
             const rawType = String(row.TaskType || row.taskType || row['ประเภทงาน'] || 'Feature').trim();
             const taskType = validTypes.includes(rawType) ? rawType : 'Feature';
 
-            const sprint = String(row.Sprint || row.sprint || 'Sprint 24 (Nov)').trim() || 'Backlog';
-            const storyPoints = parseInt(row.StoryPoints || row.storyPoints || 3, 10) || 3;
-            const description = String(row.Description || row.description || '').trim();
+            const sprint = String(row.Sprint || row.sprint || row['Sprint'] || 'Sprint 24 (Nov)').trim() || 'Backlog';
+            const spNum = parseInt(row.StoryPoints ?? row.storyPoints ?? row['StoryPoints'] ?? 3, 10);
+            const storyPoints = (!isNaN(spNum) && spNum > 0) ? spNum : 3;
+            const description = String(row.Description || row.description || row['รายละเอียด'] || '').trim();
 
-            const rawChecklist = String(row.Checklist || row.checklist || '').trim();
+            const rawChecklist = String(row.Checklist || row.checklist || row['Checklist'] || '').trim();
             const checklist = rawChecklist
               ? rawChecklist.split('|').map(s => s.trim()).filter(Boolean).map(text => ({ text, done: false }))
               : [];
 
-            const rawOrgCode = String(row.OrgCode || row.orgCode || '').trim().toUpperCase();
+            const rawOrgCode = String(row.OrgCode || row.orgCode || row['รหัสหน่วยงาน'] || '').trim().toUpperCase();
             const matchedOrg = state.organizations.find(o => o.code.toUpperCase() === rawOrgCode);
-            const rawSource = String(row.Source || row.source || (matchedOrg ? matchedOrg.type : 'Internal')).trim();
+            const rawSource = String(row.Source || row.source || row['แหล่งที่มา'] || (matchedOrg ? matchedOrg.type : 'Internal')).trim();
             const source = rawSource.toLowerCase() === 'external' ? 'External' : 'Internal';
             const orgId = matchedOrg ? matchedOrg.id : (fallbackOrg ? fallbackOrg.id : '');
-            const slaRef = String(row.SlaRef || row.slaRef || '').trim();
+            const slaRef = String(row.SlaRef || row.slaRef || row['SLA'] || '').trim();
 
-            const estNum = parseFloat(row.EstimatedHours || row.estimatedHours);
+            const estNum = parseFloat(row.EstimatedHours ?? row.estimatedHours ?? row['ชั่วโมงประเมิน']);
             const estimatedHours = (!isNaN(estNum) && estNum > 0) ? estNum : 16;
 
             const validPriorities = ['Critical', 'High', 'Medium', 'Low'];
-            const rawPrio = String(row.Priority || row.priority || 'Medium').trim();
+            const rawPrio = String(row.Priority || row.priority || row['ความสำคัญ'] || 'Medium').trim();
             const priority = validPriorities.includes(rawPrio) ? rawPrio : 'Medium';
 
             const validStatuses = ['Queued', 'In Progress', 'In Review', 'Blocked', 'Completed'];
-            const rawStatus = String(row.Status || row.status || 'Queued').trim();
+            const rawStatus = String(row.Status || row.status || row['สถานะ'] || 'Queued').trim();
             const status = validStatuses.includes(rawStatus) ? rawStatus : 'Queued';
 
-            const rawAssignee = String(row.AssigneeName || row.assigneeName || '').trim().toLowerCase();
+            const rawAssignee = String(row.AssigneeName || row.assigneeName || row['ผู้รับผิดชอบ'] || '').trim().toLowerCase();
             const matchedUser = rawAssignee
               ? state.users.find(u => u.name.toLowerCase().includes(rawAssignee) || u.id.toLowerCase() === rawAssignee)
               : null;
             const assigneeId = matchedUser ? matchedUser.id : '';
 
-            const rawCode = String(row.Code || row.code || '').trim();
+            const rawCode = String(row.Code || row.code || row['รหัสงาน'] || '').trim();
             const existingIdx = rawCode ? state.tasks.findIndex(t => t.code.toLowerCase() === rawCode.toLowerCase()) : -1;
 
             if (existingIdx !== -1) {
@@ -2060,11 +2424,22 @@
             }
           });
 
-          addAuditLog('IMPORT_EXCEL', '-', `นำเข้าไฟล์ Excel ${file.name}: เพิ่มใหม่ ${addedCount} รายการ, อัปเดต ${updatedCount} รายการ`);
+          addAuditLog('IMPORT_EXCEL', '-', `นำเข้าไฟล์ Excel ${file.name}: เพิ่มใหม่ ${addedCount}, อัปเดต ${updatedCount}, ข้าม ${skippedCount}`);
           saveState();
           populateAllSelects();
           refreshCurrentView();
-          showToast(`นำเข้า Excel สำเร็จ (เพิ่ม ${addedCount} / อัปเดต ${updatedCount} ใบงาน)`, 'success');
+
+          const summaryBox = document.getElementById('excel-import-summary');
+          const summaryText = document.getElementById('excel-import-summary-text');
+          if (summaryBox && summaryText) {
+            summaryBox.classList.remove('hidden');
+            summaryText.innerHTML = `
+              <div class="font-bold text-sm">ผลการนำเข้าไฟล์ Excel: ${escapeHTML(file.name)}</div>
+              <div>เพิ่มใบงานใหม่ <b>${addedCount}</b> รายการ • อัปเดตใบงานเดิม <b>${updatedCount}</b> รายการ • ข้ามแถวที่ไม่มีชื่องาน <b>${skippedCount}</b> รายการ</div>
+            `;
+          }
+
+          showToast(`นำเข้า Excel สำเร็จ (เพิ่ม ${addedCount} / อัปเดต ${updatedCount} / ข้าม ${skippedCount})`, 'success');
         } catch (err) {
           console.error(err);
           showToast('ไม่สามารถอ่านไฟล์ Excel ได้ กรุณาตรวจสอบรูปแบบไฟล์', 'error');
@@ -2162,20 +2537,24 @@
         showToast('เฉพาะ Role BA เท่านั้นที่คืนค่าข้อมูลตัวอย่างได้', 'error');
         return;
       }
-      if (!confirm('ยืนยันคืนค่าข้อมูลตัวอย่างทั้งหมดกลับเป็นค่าเริ่มต้นของ Dev Queue Operation Standard?')) return;
-      const roleKeep = state.activeRole;
-      const nextState = JSON.parse(JSON.stringify(defaultState));
-      nextState.activeRole = roleKeep;
-      setMainStateReference(nextState);
-      dashFocusMode = 'ALL';
-      dashHorizonMode = 'ALL';
-      saveState();
-      populateAllSelects();
-      applyRolePermissions();
-      setDashFocus('ALL');
-      setDashHorizon('ALL');
-      refreshCurrentView();
-      showToast('คืนค่าข้อมูลตัวอย่างเรียบร้อยแล้ว', 'success');
+      showConfirmModal({
+        title: 'คืนค่าข้อมูลตัวอย่าง',
+        message: 'ยืนยันคืนค่าข้อมูลตัวอย่างทั้งหมดกลับเป็นค่าเริ่มต้นของ Dev Queue Operation Standard?',
+        okText: 'คืนค่าตัวอย่าง',
+        danger: false,
+        onConfirm: () => {
+          const roleKeep = state.activeRole;
+          const nextState = JSON.parse(JSON.stringify(defaultState));
+          nextState.activeRole = roleKeep;
+          setMainStateReference(nextState);
+          resetDashboardMultiFilters();
+          saveState();
+          populateAllSelects();
+          applyRolePermissions();
+          refreshCurrentView();
+          showToast('คืนค่าข้อมูลตัวอย่างเรียบร้อยแล้ว', 'success');
+        }
+      });
     }
 
     function confirmClearAllData() {
@@ -2183,17 +2562,36 @@
         showToast('เฉพาะ Role BA เท่านั้นที่ล้างข้อมูลได้', 'error');
         return;
       }
-      if (!confirm('ยืนยันล้างข้อมูลใบงาน วันลา และประวัติ Audit Log ทั้งหมดหรือไม่?')) return;
-      if (!confirm('ยืนยันอีกครั้ง: ข้อมูลใบงานทั้งหมดจะถูกลบออกทันที (สมาชิกและหน่วยงานตั้งต้นจะยังคงอยู่)')) return;
-
-      state.tasks = [];
-      state.leaves = [];
-      state.auditLogs = [];
-      addAuditLog('CLEAR_ALL_DATA', '-', 'ล้างข้อมูลใบงาน วันลา และประวัติทั้งหมดในระบบ');
-      saveState();
-      populateAllSelects();
-      refreshCurrentView();
-      showToast('ล้างข้อมูลใบงานทั้งหมดเรียบร้อยแล้ว', 'info');
+      showConfirmModal({
+        title: 'ล้างข้อมูลทั้งหมด',
+        message: 'ยืนยันล้างข้อมูลใบงาน วันลา และประวัติ Audit Log ทั้งหมดหรือไม่? (สมาชิกและหน่วยงานตั้งต้นจะยังคงอยู่)',
+        okText: 'ดำเนินการต่อ',
+        danger: true,
+        onConfirm: () => {
+          showConfirmModal({
+            title: 'ยืนยันการลบข้อมูลอีกครั้ง',
+            message: 'ข้อมูลใบงานทั้งหมดจะถูกลบออกทันที คุณแน่ใจหรือไม่?',
+            okText: 'ยืนยันล้างทั้งหมด',
+            danger: true,
+            onConfirm: () => {
+              state.tasks = [];
+              state.leaves = [];
+              state.auditLogs = [];
+              dashMultiFilters.status = [];
+              dashMultiFilters.sprint = [];
+              dashMultiFilters.source = [];
+              dashMultiFilters.org = [];
+              dashMultiFilters.member = [];
+              updateMultiLabelsAndChips();
+              addAuditLog('CLEAR_ALL_DATA', '-', 'ล้างข้อมูลใบงาน วันลา และประวัติทั้งหมดในระบบ');
+              saveState();
+              populateAllSelects();
+              refreshCurrentView();
+              showToast('ล้างข้อมูลใบงานทั้งหมดเรียบร้อยแล้ว', 'info');
+            }
+          });
+        }
+      });
     }
 
     function exportBackupJSON() {
@@ -2278,22 +2676,24 @@
     }
 
     function getTaskDailyHours(task) {
-      const est = parseFloat(task.estimatedHours) || 0;
-      if (!task.startDate || !task.endDate || task.startDate > task.endDate) {
-        return Number(est.toFixed(2));
+      const est = parseFloat(task?.estimatedHours);
+      const safeEst = (!isNaN(est) && est > 0) ? est : 0;
+      if (!task?.startDate || !task?.endDate || task.startDate > task.endDate) {
+        return Number(safeEst.toFixed(2));
       }
       const days = enumerateDates(task.startDate, task.endDate);
       const count = Math.max(1, days.length);
-      return Number((est / count).toFixed(2));
+      return Number((safeEst / count).toFixed(2));
     }
 
     function analyzeTaskConflicts(candidateTask, ignoreTaskId = null) {
-      if (!candidateTask.assigneeId || !candidateTask.startDate || !candidateTask.endDate || candidateTask.startDate > candidateTask.endDate) {
+      if (!candidateTask?.assigneeId || !candidateTask?.startDate || !candidateTask?.endDate || candidateTask.startDate > candidateTask.endDate) {
         return { hasConflict: false, conflictDates: [], messages: [], conflictingTaskCodes: [] };
       }
 
       const user = state.users.find(u => u.id === candidateTask.assigneeId);
-      const capacity = user ? (parseFloat(user.dailyCapacity) || 8) : 8;
+      const capNum = parseFloat(user?.dailyCapacity);
+      const capacity = (!isNaN(capNum) && capNum > 0) ? capNum : 8;
       const candidateDays = enumerateDates(candidateTask.startDate, candidateTask.endDate);
       const candDailyHrs = getTaskDailyHours(candidateTask);
 
@@ -2313,7 +2713,7 @@
         const leave = userLeaves.find(l => l.date === dateStr);
         if (leave) {
           conflictDates.push(dateStr);
-          messages.push(`วันที่ ${formatThaiDate(dateStr)} ตรงกับวันลา/วันหยุดของ ${escapeHTML(user ? user.name : '')} (${escapeHTML(leave.reason)})`);
+          messages.push(`วันที่ ${formatThaiDate(dateStr)} ตรงกับวันลา/วันหยุดของ ${escapeHTML(user ? user.name : '')} (${escapeHTML(leave.reason || 'ลาหยุด')})`);
         }
 
         const overlappingOnDay = userTasks.filter(t => dateStr >= t.startDate && dateStr <= t.endDate);
@@ -2346,12 +2746,13 @@
       return state.tasks.filter(t => {
         if (t.status === 'Completed' || !t.assigneeId) return false;
         const analysis = analyzeTaskConflicts(t, t.id);
-        return analysis.hasConflict || t.overrideWarning;
+        return analysis.hasConflict || Boolean(t.overrideWarning);
       });
     }
 
     function showToast(message, type = 'info') {
       const container = document.getElementById('toast-container');
+      if (!container) return;
       const colors = {
         success: 'bg-emerald-600 text-white',
         warning: 'bg-amber-600 text-white',
@@ -2366,7 +2767,7 @@
       };
       const el = document.createElement('div');
       el.className = `${colors[type] || colors.info} pointer-events-auto px-4 py-3 rounded-xl shadow-lg text-xs sm:text-sm font-medium flex items-center gap-2.5 transition-all duration-300`;
-      el.innerHTML = `<i class="fa-solid ${icons[type]}"></i><span class="flex-1">${escapeHTML(message)}</span>`;
+      el.innerHTML = `<i class="fa-solid ${icons[type] || icons.info}"></i><span class="flex-1">${escapeHTML(message)}</span>`;
       container.appendChild(el);
       setTimeout(() => {
         el.style.opacity = '0';
@@ -2414,6 +2815,7 @@
     function refreshCurrentView() {
       updateBadges();
       populateSprintSelects();
+      updateMultiLabelsAndChips();
       if (currentTab === 'dashboard') renderDashboard();
       if (!isBA()) return;
       if (currentTab === 'kanban') renderKanbanBoard();
@@ -2460,8 +2862,8 @@
       const color = org ? org.color : (isInt ? '#4f46e5' : '#0d9488');
       return `
         <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-[11px] font-medium border"
-              style="background-color: ${color}14; color: ${color}; border-color: ${color}35;">
-          <span class="w-1.5 h-1.5 rounded-full" style="background-color: ${color}"></span>
+              style="background-color: ${escapeHTML(color)}14; color: ${escapeHTML(color)}; border-color: ${escapeHTML(color)}35;">
+          <span class="w-1.5 h-1.5 rounded-full" style="background-color: ${escapeHTML(color)}"></span>
           <span>${isInt ? 'Int' : 'Ext'}: ${label}</span>
         </span>
       `;
@@ -2490,11 +2892,11 @@
     }
 
     function populateSprintSelects() {
-      const sprints = Array.from(new Set(state.tasks.map(t => t.sprint).filter(Boolean)));
+      const sprints = Array.from(new Set(state.tasks.map(t => (t.sprint || '').trim()).filter(Boolean)));
       const options = '<option value="ALL">ทุก Sprint</option>' +
         sprints.map(s => `<option value="${escapeHTML(s)}">${escapeHTML(s)}</option>`).join('');
 
-      ['dash-sprint', 'kanban-sprint-filter', 'filter-task-sprint'].forEach(id => {
+      ['kanban-sprint-filter', 'filter-task-sprint'].forEach(id => {
         const el = document.getElementById(id);
         if (el) {
           const prev = el.value;
@@ -2502,27 +2904,20 @@
           if (prev && (prev === 'ALL' || sprints.includes(prev))) el.value = prev;
         }
       });
+
+      // Prune deleted sprints from multi-select filter
+      dashMultiFilters.sprint = (dashMultiFilters.sprint || []).filter(s => sprints.includes(s));
     }
 
     function populateAllSelects() {
-      const dashOrg = document.getElementById('dash-org');
-      if (dashOrg) {
-        const prev = dashOrg.value;
-        dashOrg.innerHTML = '<option value="ALL">ทุกหน่วยงาน</option>' +
-          state.organizations.map(o => `<option value="${o.id}">[${o.type}] ${escapeHTML(o.code)} - ${escapeHTML(o.name)}</option>`).join('');
-        if (prev && state.organizations.some(o => o.id === prev)) dashOrg.value = prev;
-      }
-
       const memberOptions = state.users.map(u => `<option value="${u.id}">${escapeHTML(u.name)} (${escapeHTML(u.position)})</option>`).join('');
 
-      ['dash-member', 'kanban-member-filter'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) {
-          const prev = el.value;
-          el.innerHTML = '<option value="ALL">ทุกคนในทีม</option>' + memberOptions;
-          if (prev && state.users.some(u => u.id === prev)) el.value = prev;
-        }
-      });
+      const kanbanMember = document.getElementById('kanban-member-filter');
+      if (kanbanMember) {
+        const prev = kanbanMember.value;
+        kanbanMember.innerHTML = '<option value="ALL">ทุกคนในทีม</option>' + memberOptions;
+        if (prev && state.users.some(u => u.id === prev)) kanbanMember.value = prev;
+      }
 
       const filterAssignee = document.getElementById('filter-task-assignee');
       if (filterAssignee) {
@@ -2549,6 +2944,7 @@
       }
 
       populateSprintSelects();
+      updateMultiLabelsAndChips();
     }
 
     function toggleTaskSourceFields() {
@@ -2558,6 +2954,7 @@
       document.getElementById('field-group-external').classList.toggle('hidden', source !== 'External');
     }
 
+    // Bug fix: properly clean start/end dates when switching to CURRENT and recompute overlap live
     function handleTaskHorizonChange() {
       const checked = document.querySelector('input[name="task-horizon"]:checked');
       const horizon = checked ? checked.value : 'CURRENT';
@@ -2573,9 +2970,23 @@
             endEl.value = getRelativeDate(4);
           }
         }
-      } else if (horizon === 'CURRENT' && startEl.value > todayStr) {
-        startEl.value = '';
-        if (endEl.value && endEl.value < startEl.value) endEl.value = '';
+      } else if (horizon === 'CURRENT') {
+        let cleared = false;
+        if (startEl.value && startEl.value > todayStr) {
+          startEl.value = '';
+          cleared = true;
+        }
+        if (endEl.value && endEl.value > todayStr) {
+          endEl.value = '';
+          cleared = true;
+        }
+        if (startEl.value && endEl.value && startEl.value > endEl.value) {
+          endEl.value = '';
+          cleared = true;
+        }
+        if (cleared) {
+          showToast('ปรับวันที่ที่เกินปัจจุบันออกเพื่อให้สอดคล้องกับ "งานปัจจุบัน (Current)"', 'info');
+        }
       }
       checkModalOverlapLive();
     }
@@ -2939,12 +3350,19 @@
       const idx = state.tasks.findIndex(t => t.id === taskId);
       if (idx === -1) return;
       const deleted = state.tasks[idx];
-      if (!confirm(`ยืนยันลบใบงาน ${deleted.code} ("${deleted.title}")?`)) return;
-      state.tasks.splice(idx, 1);
-      addAuditLog('DELETE_TASK', deleted.code, `ลบใบงาน "${deleted.title}" ออกจากระบบ`);
-      saveState();
-      refreshCurrentView();
-      showToast(`ลบใบงาน ${deleted.code} เรียบร้อยแล้ว`, 'info');
+      showConfirmModal({
+        title: 'ยืนยันการลบใบงาน',
+        message: `ยืนยันลบใบงาน ${deleted.code} ("${deleted.title}") ออกจากระบบ?`,
+        okText: 'ลบใบงาน',
+        danger: true,
+        onConfirm: () => {
+          state.tasks.splice(idx, 1);
+          addAuditLog('DELETE_TASK', deleted.code, `ลบใบงาน "${deleted.title}" ออกจากระบบ`);
+          saveState();
+          refreshCurrentView();
+          showToast(`ลบใบงาน ${deleted.code} เรียบร้อยแล้ว`, 'info');
+        }
+      });
     }
 
     function exportTasksCSV() {
@@ -2956,7 +3374,7 @@
       const rows = state.tasks.map(t => {
         const org = state.organizations.find(o => o.id === t.orgId);
         const user = state.users.find(u => u.id === t.assigneeId);
-        const actualHrs = (t.timeLogs || []).reduce((s, l) => s + l.hours, 0);
+        const actualHrs = (t.timeLogs || []).reduce((s, l) => s + (parseFloat(l.hours) || 0), 0);
         return [
           t.code,
           getTaskHorizon(t),
@@ -3423,7 +3841,7 @@
 
       tbody.innerHTML = filtered.map(t => {
         const user = state.users.find(u => u.id === t.assigneeId);
-        const actualHrs = (t.timeLogs || []).reduce((s, l) => s + l.hours, 0);
+        const actualHrs = (t.timeLogs || []).reduce((s, l) => s + (parseFloat(l.hours) || 0), 0);
         const conflict = analyzeTaskConflicts(t, t.id);
         const isConflict = (conflict.hasConflict || t.overrideWarning) && t.status !== 'Completed';
         const acTotal = (t.checklist || []).length;
@@ -3512,8 +3930,8 @@
       }
 
       container.innerHTML = myTasks.map(t => {
-        const actualHrs = (t.timeLogs || []).reduce((s, l) => s + l.hours, 0);
-        const pct = Math.min(100, Math.round((actualHrs / Math.max(1, t.estimatedHours)) * 100));
+        const actualHrs = (t.timeLogs || []).reduce((s, l) => s + (parseFloat(l.hours) || 0), 0);
+        const pct = Math.min(100, Math.round((actualHrs / Math.max(1, parseFloat(t.estimatedHours) || 1)) * 100));
         const conflict = analyzeTaskConflicts(t, t.id);
         const isConflict = (conflict.hasConflict || t.overrideWarning) && t.status !== 'Completed';
         const acTotal = (t.checklist || []).length;
@@ -3722,7 +4140,7 @@
 
     function renderDetailTimeLogs(task) {
       const logs = task.timeLogs || [];
-      const total = logs.reduce((s, l) => s + l.hours, 0);
+      const total = logs.reduce((s, l) => s + (parseFloat(l.hours) || 0), 0);
       document.getElementById('det-hours-summary').textContent = `สะสมจริง: ${total} / ประเมิน ${task.estimatedHours} ชม.`;
 
       const histEl = document.getElementById('det-timelog-history');
@@ -3749,484 +4167,603 @@
         startEl.value = getRelativeDate(-2);
         endEl.value = getRelativeDate(5);
       } else if (preset === 'this_month') {
-        startEl.value = getRelativeDate(-7);
+        startEl.value = getRelativeDate(-14);
         endEl.value = getRelativeDate(14);
-      } else {
+      } else if (preset === 'all') {
         startEl.value = '';
         endEl.value = '';
       }
       renderDashboard();
     }
 
-    function setDashHorizon(mode) {
-      dashHorizonMode = mode;
+    function setDashHorizon(horizon) {
+      dashHorizonMode = horizon;
       document.querySelectorAll('.dash-horizon-btn').forEach(btn => {
-        const isActive = btn.id === `dash-horizon-${mode}`;
-        btn.className = isActive
-          ? 'dash-horizon-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-brand-600 text-white transition shadow-2xs'
-          : 'dash-horizon-btn px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 transition';
+        btn.className = 'dash-horizon-btn px-3 py-1.5 rounded-xl font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 transition';
       });
+      const active = document.getElementById(`dash-horizon-${horizon}`);
+      if (active) {
+        active.className = 'dash-horizon-btn px-3 py-1.5 rounded-xl font-semibold bg-brand-600 text-white transition';
+      }
       renderDashboard();
     }
 
     function setDashFocus(mode) {
       dashFocusMode = mode;
       document.querySelectorAll('.dash-focus-btn').forEach(btn => {
-        const isActive = btn.id === `dash-focus-${mode}`;
-        btn.className = isActive
-          ? 'dash-focus-btn px-3 py-1 rounded-full text-xs font-semibold bg-slate-900 text-white transition shadow-2xs'
-          : 'dash-focus-btn px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 transition';
+        btn.classList.remove('ring-2', 'ring-offset-1', 'ring-slate-900');
       });
+      const active = document.getElementById(`dash-focus-${mode}`);
+      if (active) active.classList.add('ring-2', 'ring-offset-1', 'ring-slate-900');
       renderDashboard();
     }
 
-    function syncDashStatusFilter(val) {
-      const mainSel = document.getElementById('dash-status');
-      const quickSel = document.getElementById('dash-list-status-quick');
-      if (mainSel) mainSel.value = val;
-      if (quickSel) quickSel.value = val;
-      renderDashboard();
+    function getFilteredDashboardTasks() {
+      const fStart = document.getElementById('dash-start')?.value || '';
+      const fEnd = document.getElementById('dash-end')?.value || '';
+      const todayStr = getRelativeDate(0);
+
+      const selStatus = dashMultiFilters.status || [];
+      const selSprint = dashMultiFilters.sprint || [];
+      const selSource = dashMultiFilters.source || [];
+      const selOrg = dashMultiFilters.org || [];
+      const selMember = dashMultiFilters.member || [];
+
+      return state.tasks.filter(t => {
+        if (!matchesHorizonFilter(t, dashHorizonMode, todayStr)) return false;
+
+        // Date overlap check when both start/end are given, or single-bound check when only one is given
+        if (fStart && fEnd) {
+          if (t.startDate && t.endDate) {
+            if (t.endDate < fStart || t.startDate > fEnd) return false;
+          } else if (t.startDate && t.startDate > fEnd) {
+            return false;
+          } else if (t.endDate && t.endDate < fStart) {
+            return false;
+          }
+        } else {
+          if (fStart && t.endDate && t.endDate < fStart) return false;
+          if (fEnd && t.startDate && t.startDate > fEnd) return false;
+        }
+
+        if (selStatus.length > 0 && !selStatus.includes(t.status)) return false;
+        if (selSprint.length > 0 && !selSprint.includes((t.sprint || '').trim())) return false;
+        if (selSource.length > 0 && !selSource.includes(t.source)) return false;
+        if (selOrg.length > 0 && !selOrg.includes(t.orgId)) return false;
+
+        if (selMember.length > 0) {
+          const matchesAssigned = t.assigneeId && selMember.includes(t.assigneeId);
+          const matchesUnassigned = !t.assigneeId && selMember.includes('__UNASSIGNED__');
+          if (!matchesAssigned && !matchesUnassigned) return false;
+        }
+
+        if (dashFocusMode === 'Blocked') return t.status === 'Blocked';
+        if (dashFocusMode === 'Overdue') return t.status !== 'Completed' && t.endDate && t.endDate < todayStr;
+        if (dashFocusMode === 'Overlap') {
+          const c = analyzeTaskConflicts(t, t.id);
+          return t.status !== 'Completed' && (c.hasConflict || t.overrideWarning);
+        }
+        return true;
+      });
     }
 
     function renderDashboard() {
-      const dStart = document.getElementById('dash-start').value;
-      const dEnd = document.getElementById('dash-end').value;
-      const dStatus = document.getElementById('dash-status').value;
-      const dSprint = document.getElementById('dash-sprint').value;
-      const dSource = document.getElementById('dash-source').value;
-      const dOrg = document.getElementById('dash-org').value;
-      const dMember = document.getElementById('dash-member').value;
-      const ba = isBA();
+      updateMultiLabelsAndChips();
+      const tasks = getFilteredDashboardTasks();
       const todayStr = getRelativeDate(0);
+      const fStart = document.getElementById('dash-start')?.value || getRelativeDate(-14);
+      const fEnd = document.getElementById('dash-end')?.value || getRelativeDate(14);
+      const rangeDays = Math.max(1, enumerateDates(fStart <= fEnd ? fStart : fEnd, fStart <= fEnd ? fEnd : fStart).length);
+      const availThreshold = parseFloat(state.rules?.availableThresholdPercent) || 75;
 
-      const quickSel = document.getElementById('dash-list-status-quick');
-      if (quickSel && quickSel.value !== dStatus) quickSel.value = dStatus;
+      const totalTasks = tasks.length;
+      const internalTasks = tasks.filter(t => t.source === 'Internal').length;
+      const externalTasks = tasks.filter(t => t.source === 'External').length;
+      const currentTasksCount = tasks.filter(t => getTaskHorizon(t, todayStr) === 'CURRENT').length;
+      const futureTasksCount = tasks.filter(t => getTaskHorizon(t, todayStr) === 'FUTURE').length;
+      const completedTasks = tasks.filter(t => t.status === 'Completed').length;
+      const blockedTasks = tasks.filter(t => t.status === 'Blocked').length;
 
-      document.getElementById('lbl-avail-threshold').textContent = state.rules.availableThresholdPercent;
-      const chartThresh = document.getElementById('chart-lbl-threshold');
-      if (chartThresh) chartThresh.textContent = state.rules.availableThresholdPercent;
+      const memberMetrics = state.users.map(u => {
+        const uTasks = tasks.filter(t => t.assigneeId === u.id && t.status !== 'Completed');
+        const allUserActiveTasks = state.tasks.filter(t => t.assigneeId === u.id && t.status !== 'Completed');
+        const allUserCompletedTasks = state.tasks.filter(t => t.assigneeId === u.id && t.status === 'Completed');
+        const allUserTasks = [...allUserActiveTasks, ...allUserCompletedTasks];
 
-      const baseFiltered = state.tasks.filter(t => {
-        const effStart = t.startDate || t.endDate || '';
-        const effEnd = t.endDate || t.startDate || '';
-        if (dStart && effEnd && effEnd < dStart) return false;
-        if (dEnd && effStart && effStart > dEnd) return false;
-        if (dStatus !== 'ALL' && t.status !== dStatus) return false;
-        if (dSprint !== 'ALL' && t.sprint !== dSprint) return false;
-        if (dSource !== 'ALL' && t.source !== dSource) return false;
-        if (dOrg !== 'ALL' && t.orgId !== dOrg) return false;
-        if (dMember !== 'ALL' && t.assigneeId !== dMember) return false;
+        const estHours = uTasks.reduce((s, t) => s + (parseFloat(t.estimatedHours) || 0), 0);
+        const spSum = uTasks.reduce((s, t) => s + (t.storyPoints || 0), 0);
+        const intCount = uTasks.filter(t => t.source === 'Internal').length;
+        const extCount = uTasks.filter(t => t.source === 'External').length;
+        const inProgressTitles = uTasks.filter(t => t.status === 'In Progress').map(t => t.title);
 
-        if (!matchesHorizonFilter(t, dashHorizonMode, todayStr)) return false;
-        return true;
-      });
+        const leavesInRange = state.leaves.filter(l => l.userId === u.id && l.date >= fStart && l.date <= fEnd).length;
+        const capNum = parseFloat(u.dailyCapacity);
+        const safeCap = (!isNaN(capNum) && capNum > 0) ? capNum : 8;
+        const netCapacityHours = Math.max(1, (rangeDays - leavesInRange) * safeCap);
+        const utilPercent = Math.round((estHours / netCapacityHours) * 100);
 
-      const filteredTasks = baseFiltered.filter(t => {
-        if (dashFocusMode === 'Blocked') return t.status === 'Blocked';
-        if (dashFocusMode === 'Overdue') return t.status !== 'Completed' && t.endDate && t.endDate < todayStr;
-        if (dashFocusMode === 'Overlap') return t.status !== 'Completed' && (analyzeTaskConflicts(t, t.id).hasConflict || t.overrideWarning);
-        return true;
-      });
-
-      const dashCountPill = document.getElementById('dash-task-count-pill');
-      if (dashCountPill) dashCountPill.textContent = `${filteredTasks.length} รายการ`;
-
-      const dashTbody = document.getElementById('dash-tasks-tbody');
-      if (dashTbody) {
-        if (filteredTasks.length === 0) {
-          dashTbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-slate-400 text-xs">ไม่มีรายชื่องานตามเงื่อนไขที่กรอง</td></tr>`;
-        } else {
-          dashTbody.innerHTML = filteredTasks.map(t => {
-            const user = state.users.find(u => u.id === t.assigneeId);
-            return `
-              <tr onclick="openDetailModal('${t.id}')" class="hover:bg-slate-50/90 cursor-pointer transition">
-                <td class="py-3 px-4 whitespace-nowrap">
-                  <span class="font-bold text-brand-700 text-xs">${escapeHTML(t.code)}</span>
-                  <div class="mt-0.5">${getHorizonBadgeHTML(t, todayStr)}</div>
-                </td>
-                <td class="py-3 px-4">
-                  <div class="font-semibold text-slate-900 text-xs sm:text-sm">${escapeHTML(t.title)}</div>
-                  <div class="flex items-center gap-1.5 mt-0.5">
-                    ${getTaskTypeBadgeHTML(t.taskType)}
-                    ${getOrgBadgeHTML(t.orgId, t.source)}
-                  </div>
-                </td>
-                <td class="py-3 px-4 whitespace-nowrap text-xs text-slate-600">${escapeHTML(formatDateRangeLabel(t.startDate, t.endDate))}</td>
-                <td class="py-3 px-4 whitespace-nowrap text-xs font-medium text-slate-700">${user ? escapeHTML(user.name) : '<span class="text-amber-700">ยังไม่ระบุ</span>'}</td>
-                <td class="py-3 px-4 whitespace-nowrap">${getStatusBadgeHTML(t.status)}</td>
-                <td class="py-3 px-4 whitespace-nowrap text-right text-xs font-bold text-slate-800">${t.estimatedHours} ชม.</td>
-              </tr>
-            `;
-          }).join('');
-        }
-      }
-
-      const activeTasks = filteredTasks.filter(t => t.status !== 'Completed');
-      const intActive = activeTasks.filter(t => t.source === 'Internal').length;
-      const extActive = activeTasks.filter(t => t.source === 'External').length;
-      const inProgressCount = filteredTasks.filter(t => t.status === 'In Progress').length;
-      const blockedTasks = filteredTasks.filter(t => t.status === 'Blocked');
-      const overdueTasks = activeTasks.filter(t => t.endDate && t.endDate < todayStr);
-
-      const overlappingTasks = activeTasks.filter(t => {
-        const res = analyzeTaskConflicts(t, t.id);
-        return res.hasConflict || t.overrideWarning;
-      });
-
-      const riskBanner = document.getElementById('dash-risk-banner');
-      if (blockedTasks.length > 0 || overdueTasks.length > 0) {
-        riskBanner.className = 'bg-rose-50 border border-rose-200 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3';
-        riskBanner.innerHTML = `
-          <div class="flex items-start gap-3">
-            <div class="w-9 h-9 rounded-xl bg-rose-600 text-white flex items-center justify-center shrink-0">
-              <i class="fa-solid fa-bell"></i>
-            </div>
-            <div class="text-xs sm:text-sm space-y-0.5">
-              <div class="font-bold text-rose-950">แจ้งเตือนความเสี่ยงโครงการ (Risk Spotlight)</div>
-              <div class="text-rose-800">
-                พบงานติดปัญหา (Blocked) <b>${blockedTasks.length}</b> รายการ และงานเลยกำหนดส่ง (Overdue) <b>${overdueTasks.length}</b> รายการ
-              </div>
-            </div>
-          </div>
-          ${ba ? `<button type="button" onclick="switchTab('kanban')" class="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shrink-0 self-start sm:self-center">
-            ตรวจสอบบน Task Board
-          </button>` : ''}
-        `;
-      } else {
-        riskBanner.className = 'hidden';
-      }
-
-      const targetUsers = dMember === 'ALL' ? state.users : state.users.filter(u => u.id === dMember);
-      const totalMembers = targetUsers.length;
-      const evalStart = dStart || getRelativeDate(-3);
-      const evalEnd = dEnd || getRelativeDate(14);
-      const evalDates = enumerateDates(evalStart, evalEnd);
-
-      let availableMembersCount = 0;
-      let sumUtilization = 0;
-      let sumTasksPerMember = 0;
-
-      const memberStats = targetUsers.map(user => {
-        const uTasks = activeTasks.filter(t => t.assigneeId === user.id);
-        const uInt = uTasks.filter(t => t.source === 'Internal').length;
-        const uExt = uTasks.filter(t => t.source === 'External').length;
-        const uSP = uTasks.reduce((s, t) => s + (t.storyPoints || 0), 0);
-        const inProgTask = uTasks.find(t => t.status === 'In Progress');
-
-        let totalCapHours = 0;
-        let bookedHours = 0;
-        const cap = parseFloat(user.dailyCapacity) || 8;
-
-        evalDates.forEach(day => {
-          const isLeave = state.leaves.some(l => l.userId === user.id && l.date === day);
-          if (!isLeave) totalCapHours += cap;
-
-          uTasks.forEach(t => {
-            if (t.startDate && t.endDate && day >= t.startDate && day <= t.endDate) {
-              bookedHours += getTaskDailyHours(t);
+        let hasConflict = false;
+        let conflictDetail = '';
+        allUserActiveTasks.forEach(t => {
+          const c = analyzeTaskConflicts(t, t.id);
+          if (c.hasConflict || t.overrideWarning) {
+            hasConflict = true;
+            if (!conflictDetail) {
+              conflictDetail = c.messages[0] || `${t.code}: มีการบันทึกแบบทับซ้อน`;
             }
-          });
+          }
         });
 
-        const utilPct = totalCapHours > 0 ? Math.round((bookedHours / totalCapHours) * 100) : (bookedHours > 0 ? 100 : 0);
-        if (utilPct < state.rules.availableThresholdPercent) availableMembersCount++;
-
-        sumUtilization += utilPct;
-        sumTasksPerMember += uTasks.length;
-
-        let nextAvail = todayStr;
-        const allUserActive = state.tasks.filter(t => t.assigneeId === user.id && t.status !== 'Completed' && t.endDate);
-        if (allUserActive.length > 0) {
-          let maxEnd = '';
-          allUserActive.forEach(t => { if (t.endDate > maxEnd) maxEnd = t.endDate; });
-          if (maxEnd >= nextAvail) {
-            const d = parseLocalDate(maxEnd);
-            if (d) {
-              d.setDate(d.getDate() + 1);
-              nextAvail = toLocalDateStr(d);
-            }
+        let latestEndDate = '';
+        allUserTasks.forEach(t => {
+          if (t.endDate && t.endDate > latestEndDate) latestEndDate = t.endDate;
+        });
+        let nextAvailableDate = todayStr;
+        if (latestEndDate && latestEndDate >= todayStr) {
+          const d = parseLocalDate(latestEndDate);
+          if (d) {
+            d.setDate(d.getDate() + 1);
+            nextAvailableDate = toLocalDateStr(d);
           }
         }
 
-        const hasConflict = uTasks.some(t => analyzeTaskConflicts(t, t.id).hasConflict || t.overrideWarning);
-
-        return { user, uTasks, uInt, uExt, uSP, inProgTask, utilPct, nextAvail, hasConflict };
+        return {
+          user: u,
+          tasks: uTasks,
+          estHours,
+          spSum,
+          intCount,
+          extCount,
+          inProgressTitles,
+          utilPercent,
+          isAvailable: utilPercent < availThreshold,
+          hasConflict,
+          conflictDetail,
+          nextAvailableDate
+        };
       });
 
-      const avgUtilization = totalMembers > 0 ? Math.round(sumUtilization / totalMembers) : 0;
-      const avgTasks = totalMembers > 0 ? (sumTasksPerMember / totalMembers).toFixed(1) : '0.0';
+      const availableMembers = memberMetrics.filter(m => m.isAvailable);
+      const overlappingTasksList = tasks.filter(t => {
+        if (t.status === 'Completed' || !t.assigneeId) return false;
+        const c = analyzeTaskConflicts(t, t.id);
+        return c.hasConflict || t.overrideWarning;
+      });
 
-      const totalActiveCount = Math.max(1, activeTasks.length);
-      const intPct = activeTasks.length > 0 ? Math.round((intActive / totalActiveCount) * 100) : 0;
-      const extPct = activeTasks.length > 0 ? 100 - intPct : 0;
+      const kpiCards = [
+        {
+          title: 'งานทั้งหมด (Total Tasks)',
+          value: totalTasks,
+          sub: `ปัจจุบัน ${currentTasksCount} • แพลนอนาคต ${futureTasksCount}`,
+          icon: 'fa-layer-group',
+          bgIcon: 'bg-brand-50 text-brand-600',
+          clickable: false
+        },
+        {
+          title: 'งานภายใน (Internal)',
+          value: internalTasks,
+          sub: `${totalTasks ? Math.round((internalTasks / totalTasks) * 100) : 0}% ของงานที่กรอง`,
+          icon: 'fa-building-user',
+          bgIcon: 'bg-indigo-50 text-indigo-600',
+          clickable: false
+        },
+        {
+          title: 'งานภายนอก / บ.ลูก',
+          value: externalTasks,
+          sub: `${totalTasks ? Math.round((externalTasks / totalTasks) * 100) : 0}% ของงานที่กรอง`,
+          icon: 'fa-city',
+          bgIcon: 'bg-teal-50 text-teal-600',
+          clickable: false
+        },
+        {
+          title: 'เสร็จสิ้น / ติดขัด',
+          value: `${completedTasks} / ${blockedTasks}`,
+          sub: `${blockedTasks > 0 ? 'มีงาน Blocked ต้องติดตาม!' : 'ไม่มีงานติดขัด'}`,
+          icon: 'fa-circle-check',
+          bgIcon: blockedTasks > 0 ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600',
+          clickable: false
+        },
+        {
+          title: `สมาชิกมีคิวว่าง (<${availThreshold}%)`,
+          value: `${availableMembers.length} / ${state.users.length}`,
+          sub: 'คลิกเพื่อดูรายชื่อคนพร้อมรับงาน',
+          icon: 'fa-user-check',
+          bgIcon: 'bg-emerald-50 text-emerald-600',
+          clickable: true,
+          onClick: 'openAvailableMembersModal()'
+        },
+        {
+          title: 'งานทับซ้อน / เกินความจุ',
+          value: overlappingTasksList.length,
+          sub: overlappingTasksList.length > 0 ? 'คลิกเพื่อตรวจสอบรายการชน' : 'ไม่พบวันทำงานชนกัน',
+          icon: 'fa-triangle-exclamation',
+          bgIcon: overlappingTasksList.length > 0 ? 'bg-rose-50 text-rose-600' : 'bg-slate-100 text-slate-500',
+          clickable: true,
+          onClick: 'openOverlapListModal()'
+        }
+      ];
+
+      document.getElementById('kpi-grid').innerHTML = kpiCards.map(k => `
+        <div ${k.clickable ? `onclick="${k.onClick}"` : ''}
+             class="bg-white p-4 rounded-2xl border ${k.title.includes('ทับซ้อน') && overlappingTasksList.length > 0 ? 'border-rose-300' : 'border-slate-200'} shadow-2xs flex flex-col justify-between gap-3 ${k.clickable ? 'cursor-pointer hover:border-brand-400 hover:shadow-md transition' : ''}">
+          <div class="flex items-start justify-between gap-2">
+            <span class="text-xs font-semibold text-slate-500 leading-snug">${k.title}</span>
+            <div class="w-9 h-9 rounded-xl ${k.bgIcon} flex items-center justify-center shrink-0">
+              <i class="fa-solid ${k.icon}"></i>
+            </div>
+          </div>
+          <div>
+            <div class="text-2xl font-bold text-slate-900">${k.value}</div>
+            <div class="text-[11px] ${k.clickable ? 'text-brand-600 font-semibold' : 'text-slate-400'} mt-0.5">${k.sub}</div>
+          </div>
+        </div>
+      `).join('');
+
+      const riskBanner = document.getElementById('dash-risk-banner');
+      const overdueTasks = tasks.filter(t => t.status !== 'Completed' && t.endDate && t.endDate < todayStr);
+      const blockedList = tasks.filter(t => t.status === 'Blocked');
+      if (blockedList.length > 0 || overdueTasks.length > 0 || overlappingTasksList.length > 0) {
+        riskBanner.classList.remove('hidden');
+        riskBanner.innerHTML = `
+          <div class="bg-amber-50/90 border border-amber-200 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-amber-950">
+            <div class="flex items-start gap-3">
+              <i class="fa-solid fa-bell text-amber-600 text-base mt-0.5"></i>
+              <div class="space-y-0.5">
+                <div class="font-bold text-sm">สรุปจุดเสี่ยงที่ต้องติดตาม (Actionable Risks)</div>
+                <div>
+                  ติดปัญหา (Blocked): <b>${blockedList.length}</b> งาน •
+                  เลยกำหนดส่ง (Overdue): <b>${overdueTasks.length}</b> งาน •
+                  ทับซ้อน/เกินความจุ: <b>${overlappingTasksList.length}</b> งาน
+                </div>
+              </div>
+            </div>
+            <div class="flex flex-wrap gap-2 shrink-0">
+              ${blockedList.length > 0 ? `<button type="button" onclick="setDashFocus('Blocked')" class="px-3 py-1.5 rounded-lg bg-rose-600 text-white font-semibold">ดูงาน Blocked</button>` : ''}
+              ${overdueTasks.length > 0 ? `<button type="button" onclick="setDashFocus('Overdue')" class="px-3 py-1.5 rounded-lg bg-amber-600 text-white font-semibold">ดูงาน Overdue</button>` : ''}
+            </div>
+          </div>
+        `;
+      } else {
+        riskBanner.classList.add('hidden');
+      }
+
+      renderDashboardTasksList(tasks, todayStr);
+      renderDashboardCharts(tasks, memberMetrics, availThreshold);
+      renderWorkloadTable(memberMetrics, availThreshold);
+      renderTimeline(memberMetrics, fStart <= fEnd ? fStart : fEnd, fStart <= fEnd ? fEnd : fStart, todayStr);
+    }
+
+    function renderDashboardTasksList(tasks, todayStr) {
+      const tbody = document.getElementById('dash-tasks-tbody');
+      const countPill = document.getElementById('dash-task-count-pill');
+      if (countPill) {
+        const totalSP = tasks.reduce((s, t) => s + (t.storyPoints || 0), 0);
+        countPill.textContent = `${tasks.length} รายการ (${totalSP} SP)`;
+      }
+      if (!tbody) return;
+
+      if (tasks.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="py-10 text-center text-slate-400">ไม่พบรายการงานตามฟิลเตอร์ Checkbox ที่เลือก</td></tr>`;
+        return;
+      }
+
+      const sorted = [...tasks].sort((a, b) => {
+        if (a.status === 'Completed' && b.status !== 'Completed') return 1;
+        if (a.status !== 'Completed' && b.status === 'Completed') return -1;
+        return (a.queueOrder || 999) - (b.queueOrder || 999);
+      });
+
+      tbody.innerHTML = sorted.map(t => {
+        const user = state.users.find(u => u.id === t.assigneeId);
+        const isOverdue = t.status !== 'Completed' && t.endDate && t.endDate < todayStr;
+        return `
+          <tr onclick="openDetailModal('${t.id}')" class="hover:bg-brand-50/40 cursor-pointer transition">
+            <td class="py-3 px-4 whitespace-nowrap">
+              <div class="font-bold text-brand-700 text-xs">${escapeHTML(t.code)}</div>
+              <div class="text-[11px] text-slate-400">${escapeHTML(t.sprint || '-')}</div>
+            </td>
+            <td class="py-3 px-4">
+              <div class="font-semibold text-slate-900">${escapeHTML(t.title)}</div>
+              <div class="flex flex-wrap items-center gap-1.5 mt-1">
+                ${getHorizonBadgeHTML(t, todayStr)}
+                ${getTaskTypeBadgeHTML(t.taskType)}
+                ${getOrgBadgeHTML(t.orgId, t.source)}
+                ${isOverdue ? `<span class="text-[10px] font-bold bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded">เลยกำหนด</span>` : ''}
+              </div>
+            </td>
+            <td class="py-3 px-4 whitespace-nowrap text-xs text-slate-600">${escapeHTML(formatDateRangeLabel(t.startDate, t.endDate))}</td>
+            <td class="py-3 px-4 whitespace-nowrap text-xs">
+              ${user
+                ? `<span class="font-semibold text-slate-800">${escapeHTML(user.name)}</span> <span class="text-slate-400">#${t.queueOrder || '-'}</span>`
+                : `<span class="text-amber-700 bg-amber-50 px-2 py-0.5 rounded font-medium">Unassigned</span>`
+              }
+            </td>
+            <td class="py-3 px-4 whitespace-nowrap">${getStatusBadgeHTML(t.status)}</td>
+            <td class="py-3 px-4 whitespace-nowrap text-right font-bold text-slate-800">${t.estimatedHours || 0} <span class="text-xs font-normal text-slate-400">ชม.</span></td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderDashboardCharts(tasks, memberMetrics, availThreshold) {
+      const total = tasks.length || 1;
+      const intCount = tasks.filter(t => t.source === 'Internal').length;
+      const extCount = tasks.filter(t => t.source === 'External').length;
+      const intPct = Math.round((intCount / total) * 100);
+      const extPct = tasks.length ? (100 - intPct) : 0;
 
       document.getElementById('chart-source-ratio').innerHTML = `
         <div class="space-y-1.5">
           <div class="flex justify-between text-xs font-semibold">
-            <span class="text-indigo-700"><i class="fa-solid fa-building-user mr-1"></i>Internal: ${intActive} งาน (${intPct}%)</span>
-            <span class="text-teal-700"><i class="fa-solid fa-city mr-1"></i>External: ${extActive} งาน (${extPct}%)</span>
+            <span class="text-indigo-700"><i class="fa-solid fa-building-user mr-1"></i>Internal: ${intCount} งาน (${intPct}%)</span>
+            <span class="text-teal-700">External: ${extCount} งาน (${extPct}%) <i class="fa-solid fa-city ml-1"></i></span>
           </div>
-          <div class="w-full h-3.5 bg-slate-100 rounded-full overflow-hidden flex">
-            <div class="bg-indigo-600 h-full transition-all duration-500" style="width: ${intPct}%"></div>
-            <div class="bg-teal-500 h-full transition-all duration-500" style="width: ${extPct}%"></div>
+          <div class="w-full h-3.5 rounded-full bg-slate-100 overflow-hidden flex">
+            <div class="bg-indigo-600 h-full transition-all" style="width: ${intPct}%"></div>
+            <div class="bg-teal-500 h-full transition-all" style="width: ${extPct}%"></div>
           </div>
         </div>
       `;
 
-      const featCount = filteredTasks.filter(t => (t.taskType || 'Feature') === 'Feature').length;
-      const bugCount = filteredTasks.filter(t => t.taskType === 'Bug Fix').length;
-      const enhCount = filteredTasks.filter(t => t.taskType === 'Enhancement').length;
-      const qaCount = filteredTasks.filter(t => t.taskType === 'UAT / QA' || t.taskType === 'DevOps').length;
-
+      const typeColors = {
+        'Feature': 'bg-indigo-500',
+        'Bug Fix': 'bg-rose-500',
+        'Enhancement': 'bg-sky-500',
+        'UAT / QA': 'bg-amber-500',
+        'DevOps': 'bg-slate-600'
+      };
+      const types = Object.keys(typeColors);
       document.getElementById('chart-type-breakdown').innerHTML = `
-        <div class="text-[11px] font-semibold text-slate-500">แยกตามประเภทงาน (Work Type)</div>
-        <div class="grid grid-cols-4 gap-2 text-center text-xs">
-          <div class="bg-indigo-50/70 rounded-lg p-1.5"><span class="font-bold text-indigo-700">${featCount}</span> <span class="text-[10px] text-slate-600 block">Feature</span></div>
-          <div class="bg-rose-50/70 rounded-lg p-1.5"><span class="font-bold text-rose-700">${bugCount}</span> <span class="text-[10px] text-slate-600 block">Bug Fix</span></div>
-          <div class="bg-sky-50/70 rounded-lg p-1.5"><span class="font-bold text-sky-700">${enhCount}</span> <span class="text-[10px] text-slate-600 block">Enhance</span></div>
-          <div class="bg-amber-50/70 rounded-lg p-1.5"><span class="font-bold text-amber-700">${qaCount}</span> <span class="text-[10px] text-slate-600 block">QA/Ops</span></div>
+        <div class="text-[11px] font-semibold text-slate-500">สัดส่วนตามประเภทงาน (Task Type)</div>
+        <div class="flex flex-wrap gap-2 text-[11px]">
+          ${types.map(tp => {
+            const cnt = tasks.filter(t => (t.taskType || 'Feature') === tp).length;
+            if (cnt === 0) return '';
+            return `
+              <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-slate-50 border border-slate-200 text-slate-700 font-medium">
+                <span class="w-2 h-2 rounded-full ${typeColors[tp]}"></span>${escapeHTML(tp)}: <b>${cnt}</b>
+              </span>
+            `;
+          }).join('') || `<span class="text-slate-400">ไม่มีข้อมูล</span>`}
         </div>
       `;
 
-      const qCount = filteredTasks.filter(t => t.status === 'Queued').length;
-      const revCount = filteredTasks.filter(t => t.status === 'In Review').length;
-      const blkCount = blockedTasks.length;
-      const cmpCount = filteredTasks.filter(t => t.status === 'Completed').length;
-
-      document.getElementById('chart-status-pills').innerHTML = `
-        <div onclick="syncDashStatusFilter('Queued')" class="cursor-pointer p-2 rounded-xl bg-slate-50 border border-slate-200 hover:border-slate-400 transition">
-          <div class="text-sm font-bold text-slate-800">${qCount}</div>
-          <div class="text-[10px] text-slate-500 font-medium">Queued</div>
-        </div>
-        <div onclick="syncDashStatusFilter('In Progress')" class="cursor-pointer p-2 rounded-xl bg-blue-50 border border-blue-100 hover:border-blue-300 transition">
-          <div class="text-sm font-bold text-blue-700">${inProgressCount}</div>
-          <div class="text-[10px] text-blue-600 font-medium">Doing</div>
-        </div>
-        <div onclick="syncDashStatusFilter('In Review')" class="cursor-pointer p-2 rounded-xl bg-purple-50 border border-purple-100 hover:border-purple-300 transition">
-          <div class="text-sm font-bold text-purple-700">${revCount}</div>
-          <div class="text-[10px] text-purple-600 font-medium">Review</div>
-        </div>
-        <div onclick="syncDashStatusFilter('Blocked')" class="cursor-pointer p-2 rounded-xl bg-rose-50 border border-rose-100 hover:border-rose-300 transition">
-          <div class="text-sm font-bold text-rose-700">${blkCount}</div>
-          <div class="text-[10px] text-rose-600 font-medium">Blocked</div>
-        </div>
-        <div onclick="syncDashStatusFilter('Completed')" class="cursor-pointer p-2 rounded-xl bg-emerald-50 border border-emerald-100 hover:border-emerald-300 transition col-span-2 sm:col-span-1">
-          <div class="text-sm font-bold text-emerald-700">${cmpCount}</div>
-          <div class="text-[10px] text-emerald-600 font-medium">Done</div>
-        </div>
-      `;
-
-      const totalActiveSP = activeTasks.reduce((s, t) => s + (t.storyPoints || 0), 0);
-      document.getElementById('chart-total-sp').textContent = `Active: ${totalActiveSP} Story Points`;
-
-      const thresh = state.rules.availableThresholdPercent;
-      document.getElementById('chart-member-bars').innerHTML = memberStats.map(st => {
-        const barCol = st.utilPct > 100 ? 'bg-rose-500' : (st.utilPct < thresh ? 'bg-emerald-500' : 'bg-blue-500');
-        const widthPct = Math.min(100, st.utilPct);
-        const clickHandler = ba
-          ? `onclick="document.getElementById('myqueue-user-select').value='${st.user.id}'; switchTab('my-queue');"`
-          : `onclick="document.getElementById('dash-member').value='${st.user.id}'; renderDashboard();"`;
+      const selectedStatuses = dashMultiFilters.status || [];
+      document.getElementById('chart-status-pills').innerHTML = ALL_STATUSES.map(st => {
+        const cnt = tasks.filter(t => t.status === st).length;
+        const isActive = selectedStatuses.includes(st);
         return `
-          <div ${clickHandler} class="cursor-pointer group space-y-1">
+          <button type="button" onclick="syncStatusFilterFromPill('${st}')"
+                  class="p-2 rounded-xl border ${isActive ? 'border-brand-600 bg-brand-50 ring-2 ring-brand-500/30' : 'border-slate-200 bg-slate-50/70'} hover:border-brand-300 transition text-center"
+                  title="คลิกเพื่อเพิ่ม/เอาออกสถานะ ${st} ในตัวกรอง Checkbox">
+            <div class="text-base font-bold text-slate-900">${cnt}</div>
+            <div class="text-[10px] font-medium text-slate-600 truncate">${st}</div>
+          </button>
+        `;
+      }).join('');
+
+      document.getElementById('chart-lbl-threshold').textContent = availThreshold;
+      const totalSP = tasks.reduce((s, t) => s + (t.storyPoints || 0), 0);
+      document.getElementById('chart-total-sp').textContent = `${totalSP} Story Points`;
+
+      const selectedMembers = dashMultiFilters.member || [];
+      document.getElementById('chart-member-bars').innerHTML = memberMetrics.map(m => {
+        const barWidth = Math.min(100, m.utilPercent);
+        const barColor = m.utilPercent > 100 ? 'bg-rose-500' : (m.isAvailable ? 'bg-emerald-500' : 'bg-blue-500');
+        const isSelected = selectedMembers.includes(m.user.id);
+        return `
+          <div onclick="toggleMemberFilterFromChart('${m.user.id}')"
+               class="space-y-1 p-2 rounded-xl ${isSelected ? 'bg-brand-50/80 ring-1 ring-brand-300' : 'hover:bg-slate-50'} cursor-pointer transition"
+               title="คลิกเพื่อสลับกรองสมาชิก ${escapeHTML(m.user.name)}">
             <div class="flex items-center justify-between text-xs">
-              <span class="font-semibold text-slate-800 group-hover:text-brand-600 transition">${escapeHTML(st.user.name)} <span class="text-slate-400 font-normal">(${st.uTasks.length} งาน • ${st.uSP} SP)</span></span>
-              <span class="font-bold ${st.utilPct > 100 ? 'text-rose-600' : (st.utilPct < thresh ? 'text-emerald-600' : 'text-blue-600')}">${st.utilPct}%</span>
+              <span class="font-semibold text-slate-800 truncate">${escapeHTML(m.user.name)} <span class="text-slate-400 font-normal">(${m.spSum} SP / ${m.estHours} ชม.)</span></span>
+              <span class="font-bold ${m.utilPercent > 100 ? 'text-rose-600' : (m.isAvailable ? 'text-emerald-700' : 'text-blue-700')}">${m.utilPercent}%</span>
             </div>
-            <div class="relative w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
-              <div class="${barCol} h-full rounded-full transition-all duration-500" style="width: ${widthPct}%"></div>
-              <div class="absolute top-0 bottom-0 border-r-2 border-dashed border-emerald-700/60" style="left: ${Math.min(100, thresh)}%"></div>
+            <div class="relative w-full h-3 rounded-full bg-slate-100 overflow-visible">
+              <div class="${barColor} h-3 rounded-full transition-all" style="width: ${barWidth}%"></div>
+              <div class="absolute top-[-2px] bottom-[-2px] border-r-2 border-dashed border-emerald-700/70" style="left: ${Math.min(100, availThreshold)}%" title="เกณฑ์คิวว่าง ${availThreshold}%"></div>
             </div>
           </div>
         `;
       }).join('');
+    }
 
-      window._latestAvailableMembers = memberStats.filter(st => st.utilPct < thresh);
+    function renderWorkloadTable(memberMetrics, availThreshold) {
+      document.getElementById('lbl-avail-threshold').textContent = availThreshold;
+      const tbody = document.getElementById('workload-table-body');
 
-      document.getElementById('kpi-grid').innerHTML = `
-        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
-          <div class="text-xs font-medium text-slate-500">1. งานค้างดำเนินการ (Active)</div>
-          <div class="text-2xl font-bold text-slate-900 mt-1">${activeTasks.length}</div>
-          <div class="text-[11px] mt-1.5 flex items-center gap-2">
-            <span class="text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded font-semibold">Int: ${intActive}</span>
-            <span class="text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded font-semibold">Ext: ${extActive}</span>
-          </div>
-        </div>
-
-        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
-          <div class="text-xs font-medium text-slate-500">2. กำลังพัฒนา (In Progress)</div>
-          <div class="text-2xl font-bold text-blue-600 mt-1">${inProgressCount}</div>
-          <div class="text-[11px] text-slate-400 mt-1.5">งานที่กำลังลงมือทำอยู่</div>
-        </div>
-
-        <div onclick="openOverlapListModal()" class="cursor-pointer bg-white p-4 rounded-2xl border ${overlappingTasks.length > 0 ? 'border-rose-300 bg-rose-50/40 hover:bg-rose-50' : 'border-slate-200'} shadow-2xs transition">
-          <div class="text-xs font-medium text-slate-500 flex items-center justify-between">
-            <span>3. งานทับซ้อน (Overlapping)</span>
-            <i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-rose-500"></i>
-          </div>
-          <div class="text-2xl font-bold ${overlappingTasks.length > 0 ? 'text-rose-600' : 'text-slate-800'} mt-1">${overlappingTasks.length}</div>
-          <div class="text-[11px] text-rose-600 font-medium mt-1.5">คลิกดูรายการที่ชนกัน</div>
-        </div>
-
-        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
-          <div class="text-xs font-medium text-slate-500">4. สมาชิกในทีม (Team Size)</div>
-          <div class="text-2xl font-bold text-slate-900 mt-1">${totalMembers} <span class="text-xs font-normal text-slate-400">คน</span></div>
-          <div class="text-[11px] text-slate-400 mt-1.5">Dev / QA / UX-UI</div>
-        </div>
-
-        <div onclick="openAvailableMembersModal()" class="cursor-pointer bg-white p-4 rounded-2xl border border-emerald-200 hover:bg-emerald-50/40 shadow-2xs transition">
-          <div class="text-xs font-medium text-slate-500 flex items-center justify-between">
-            <span>5. คนที่มีคิวว่าง (Available)</span>
-            <i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-emerald-600"></i>
-          </div>
-          <div class="text-2xl font-bold text-emerald-600 mt-1">${availableMembersCount} <span class="text-xs font-normal text-slate-400">คน</span></div>
-          <div class="text-[11px] text-emerald-700 font-medium mt-1.5">คลิกดูรายชื่อ (&lt; ${thresh}%)</div>
-        </div>
-
-        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
-          <div class="text-xs font-medium text-slate-500">6. ค่าเฉลี่ยภาระงาน (Avg Load)</div>
-          <div class="text-2xl font-bold text-brand-700 mt-1">${avgUtilization}%</div>
-          <div class="text-[11px] text-slate-500 mt-1.5">เฉลี่ย <b>${avgTasks}</b> งาน / คน</div>
-        </div>
-      `;
-
-      document.getElementById('workload-table-body').innerHTML = memberStats.map(st => {
-        let barColor = 'bg-blue-500';
-        let statusLabel = `<span class="text-xs font-semibold text-blue-700">${st.utilPct}% Normal</span>`;
-        if (st.utilPct > 100) {
-          barColor = 'bg-rose-500';
-          statusLabel = `<span class="text-xs font-bold text-rose-600">${st.utilPct}% Overloaded</span>`;
-        } else if (st.utilPct < thresh) {
-          barColor = 'bg-emerald-500';
-          statusLabel = `<span class="text-xs font-bold text-emerald-600">${st.utilPct}% Available</span>`;
-        }
+      tbody.innerHTML = memberMetrics.map(m => {
+        const barColor = m.utilPercent > 100 ? 'bg-rose-500' : (m.isAvailable ? 'bg-emerald-500' : 'bg-blue-500');
+        const badge = m.utilPercent > 100
+          ? `<span class="text-[10px] font-bold bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full">เกินกำลัง</span>`
+          : (m.isAvailable
+            ? `<span class="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">คิวว่าง</span>`
+            : `<span class="text-[10px] font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">ปกติ</span>`);
 
         return `
           <tr class="hover:bg-slate-50/80 transition">
             <td class="py-3.5 px-4">
-              <div class="font-bold text-slate-900">${escapeHTML(st.user.name)}</div>
-              <div class="text-xs text-slate-500">${escapeHTML(st.user.position)} (${st.user.dailyCapacity} ชม./วัน)</div>
+              <div class="font-bold text-slate-900">${escapeHTML(m.user.name)}</div>
+              <div class="text-xs text-slate-500">${escapeHTML(m.user.position)} (${m.user.dailyCapacity} ชม./วัน)</div>
             </td>
             <td class="py-3.5 px-4 text-center">
-              <span class="font-bold text-slate-900 text-base">${st.uTasks.length}</span>
-              <div class="text-[11px] text-slate-500">Int: ${st.uInt} / Ext: ${st.uExt}</div>
+              <span class="font-bold text-slate-800">${m.tasks.length}</span>
+              <div class="text-[11px] text-slate-500"><span class="text-indigo-600 font-medium">${m.intCount} Int</span> / <span class="text-teal-600 font-medium">${m.extCount} Ext</span></div>
             </td>
-            <td class="py-3.5 px-4 text-center font-bold text-brand-700">${st.uSP} SP</td>
-            <td class="py-3.5 px-4">
-              ${st.inProgTask
-                ? `<button type="button" onclick="openDetailModal('${st.inProgTask.id}')" class="text-left group"><span class="text-xs font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md group-hover:underline">${escapeHTML(st.inProgTask.code)}</span><div class="text-xs text-slate-700 mt-0.5 max-w-[200px] truncate">${escapeHTML(st.inProgTask.title)}</div></button>`
-                : `<span class="text-xs text-slate-400">- ไม่มีงาน In Progress -</span>`}
+            <td class="py-3.5 px-4 text-center font-bold text-brand-700">${m.spSum} SP</td>
+            <td class="py-3.5 px-4 max-w-[220px]">
+              ${m.inProgressTitles.length > 0
+                ? m.inProgressTitles.map(title => `<div class="text-xs font-medium text-blue-800 bg-blue-50 px-2 py-1 rounded-md mb-1 truncate" title="${escapeHTML(title)}"><i class="fa-solid fa-spinner fa-spin mr-1 text-[10px]"></i>${escapeHTML(title)}</div>`).join('')
+                : `<span class="text-xs text-slate-400">- ไม่มีงานกำลังทำ -</span>`
+              }
             </td>
             <td class="py-3.5 px-4">
-              <div class="flex items-center justify-between mb-1">${statusLabel}</div>
-              <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                <div class="${barColor} h-2 rounded-full" style="width: ${Math.min(100, st.utilPct)}%"></div>
+              <div class="flex items-center justify-between text-xs mb-1">
+                <span class="font-bold text-slate-800">${m.utilPercent}%</span>
+                ${badge}
               </div>
+              <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                <div class="${barColor} h-2 rounded-full" style="width: ${Math.min(100, m.utilPercent)}%"></div>
+              </div>
+              <div class="text-[10px] text-slate-400 mt-0.5">รวม ${m.estHours} ชม.</div>
             </td>
-            <td class="py-3.5 px-4 text-xs font-semibold text-slate-700">${escapeHTML(formatThaiDate(st.nextAvail, 'ว่างทันที'))}</td>
-            <td class="py-3.5 px-4">
-              ${st.hasConflict
-                ? `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-700"><i class="fa-solid fa-triangle-exclamation"></i> Overlap</span>`
-                : `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700"><i class="fa-solid fa-check"></i> ปกติ</span>`}
+            <td class="py-3.5 px-4 text-xs">
+              <span class="font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg inline-block">
+                <i class="fa-regular fa-calendar-check mr-1"></i>${escapeHTML(formatThaiDate(m.nextAvailableDate))}
+              </span>
+            </td>
+            <td class="py-3.5 px-4 text-xs">
+              ${m.hasConflict
+                ? `<span class="inline-flex items-center gap-1 font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2.5 py-1 rounded-lg" title="${escapeHTML(m.conflictDetail)}"><i class="fa-solid fa-triangle-exclamation"></i> ทับซ้อน</span>`
+                : `<span class="text-emerald-600 font-medium"><i class="fa-solid fa-check mr-1"></i>ปกติ</span>`
+              }
             </td>
           </tr>
         `;
       }).join('');
-
-      renderTimelineGrid(targetUsers, activeTasks, evalDates);
     }
 
-    function renderTimelineGrid(users, activeTasks, dates) {
+    function renderTimeline(memberMetrics, startStr, endStr, todayStr) {
       const container = document.getElementById('timeline-container');
-      const displayDates = dates.slice(0, 21);
-
-      if (displayDates.length === 0) {
-        container.innerHTML = `<div class="text-center text-xs text-slate-400 py-6">กรุณาเลือกช่วงวันที่ที่ถูกต้องเพื่อแสดง Timeline</div>`;
+      const dates = enumerateDates(startStr, endStr);
+      if (dates.length === 0) {
+        container.innerHTML = `<div class="text-center py-8 text-sm text-slate-400">กรุณาเลือกช่วงวันที่เริ่มต้นและสิ้นสุดให้ถูกต้อง</div>`;
         return;
       }
 
-      const currentYear = String(new Date().getFullYear());
-      let html = `<table class="w-full border-collapse text-xs min-w-[780px]"><thead><tr>
-        <th class="p-2.5 text-left font-bold text-slate-700 bg-slate-50 border border-slate-200 w-44 sticky left-0 z-10">สมาชิกในทีม</th>`;
+      const displayDates = dates.slice(0, 31);
+      const colMinW = displayDates.length > 16 ? 'min-w-[82px]' : 'min-w-[96px]';
 
+      let headerCells = `<th class="py-2.5 px-3 text-left text-xs font-semibold text-slate-500 bg-slate-50 sticky left-0 z-20 border-b border-r border-slate-200 min-w-[180px]">สมาชิกในทีม</th>`;
       displayDates.forEach(d => {
-        const isToday = d === getRelativeDate(0);
-        html += `<th class="p-2 text-center border border-slate-200 ${isToday ? 'bg-brand-50 text-brand-700 font-bold' : 'bg-slate-50 text-slate-500 font-medium'} min-w-[68px]">
-          ${formatThaiDate(d).replace(' ' + currentYear, '')}
-          ${isToday ? '<div class="text-[9px] uppercase text-brand-600">วันนี้</div>' : ''}
-        </th>`;
+        const isToday = d === todayStr;
+        const dt = parseLocalDate(d);
+        const dayName = dt ? dt.toLocaleDateString('th-TH', { weekday: 'short' }) : '';
+        headerCells += `
+          <th class="py-2 px-1.5 text-center text-[11px] border-b border-r border-slate-200 ${colMinW} ${isToday ? 'bg-brand-50 text-brand-800 font-bold' : 'bg-slate-50 text-slate-600'}">
+            <div>${escapeHTML(dayName)}</div>
+            <div>${escapeHTML(formatThaiDate(d).split(' ').slice(0, 2).join(' '))}</div>
+            ${isToday ? `<span class="inline-block text-[9px] bg-brand-600 text-white px-1.5 rounded-full mt-0.5">วันนี้</span>` : ''}
+          </th>
+        `;
       });
-      html += `</tr></thead><tbody>`;
 
-      users.forEach(user => {
-        const uTasks = activeTasks.filter(t => t.assigneeId === user.id);
-        const unscheduledTasks = uTasks.filter(t => !t.startDate || !t.endDate);
-        html += `<tr>
-          <td class="p-2.5 font-semibold text-slate-800 bg-white border border-slate-200 sticky left-0 z-10">
-            <div>${escapeHTML(user.name)}</div>
-            <div class="text-[10px] text-slate-400 font-normal">${escapeHTML(user.position)}</div>
-            ${unscheduledTasks.length > 0 ? `<div class="text-[10px] text-amber-700 font-medium mt-1">รอลงวัน: ${unscheduledTasks.length} งาน</div>` : ''}
-          </td>`;
+      const bodyRows = memberMetrics.map(m => {
+        const userLeaves = state.leaves.filter(l => l.userId === m.user.id);
+        const datedTasks = m.tasks.filter(t => t.startDate && t.endDate && t.startDate <= t.endDate);
+        const unscheduledTasks = m.tasks.filter(t => !t.startDate || !t.endDate);
+
+        let cells = `<td class="py-3 px-3 bg-white sticky left-0 z-10 border-b border-r border-slate-200 align-top">
+          <div class="font-bold text-xs text-slate-900">${escapeHTML(m.user.name)}</div>
+          <div class="text-[10px] text-slate-400">${escapeHTML(m.user.position)}</div>
+          ${unscheduledTasks.length > 0 ? `<div class="text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded mt-1 font-medium">รอจัดวัน ${unscheduledTasks.length} งาน</div>` : ''}
+        </td>`;
 
         displayDates.forEach(d => {
-          const leave = state.leaves.find(l => l.userId === user.id && l.date === d);
-          const dayTasks = uTasks.filter(t => t.startDate && t.endDate && d >= t.startDate && d <= t.endDate);
-          const totalHrs = dayTasks.reduce((s, t) => s + getTaskDailyHours(t), 0);
-          const isOver = totalHrs > (parseFloat(user.dailyCapacity) || 8) || (dayTasks.length > 1 && state.rules.overlapMode === 'ANY_DATE_OVERLAP');
-          const hasLeaveConflict = leave && dayTasks.length > 0;
+          const isToday = d === todayStr;
+          const leave = userLeaves.find(l => l.date === d);
+          const dayTasks = datedTasks.filter(t => d >= t.startDate && d <= t.endDate);
 
-          let cellBg = 'bg-white';
-          if (leave) cellBg = 'bg-amber-50/80';
-          if (isOver || hasLeaveConflict) cellBg = 'bg-rose-50';
-
-          html += `<td class="p-1.5 border border-slate-200 align-top ${cellBg}">`;
+          let cellContent = '';
           if (leave) {
-            html += `<div class="px-1.5 py-0.5 mb-1 rounded bg-amber-200/80 text-amber-900 text-[10px] font-semibold truncate" title="${escapeHTML(leave.reason)}">
-              <i class="fa-solid fa-umbrella-beach mr-0.5"></i> ลาหยุด
-            </div>`;
+            cellContent += `<div class="mb-1 px-1.5 py-1 rounded bg-amber-100 border border-amber-300 text-amber-900 text-[10px] font-semibold truncate" title="วันลา: ${escapeHTML(leave.reason || 'ลาหยุด')}"><i class="fa-solid fa-umbrella-beach mr-1"></i>${escapeHTML(leave.reason || 'ลาหยุด')}</div>`;
           }
+
           dayTasks.forEach(t => {
-            const barCls = t.source === 'Internal' ? 'bg-indigo-500 text-white' : 'bg-teal-500 text-white';
-            html += `<div onclick="openDetailModal('${t.id}')" class="cursor-pointer px-1.5 py-1 mb-1 rounded ${barCls} text-[10px] font-medium truncate shadow-2xs hover:opacity-90" title="${escapeHTML(t.code)}: ${escapeHTML(t.title)} (${getTaskDailyHours(t)} ชม./วัน)">
-              ${escapeHTML(t.code.replace(/^TASK-\d{4}-/, '#'))} (${getTaskDailyHours(t)}h)
-            </div>`;
+            const c = analyzeTaskConflicts(t, t.id);
+            const isConflict = c.hasConflict || t.overrideWarning;
+            const isInt = t.source === 'Internal';
+            const bgCls = isConflict
+              ? 'bg-rose-600 text-white border-rose-700'
+              : (isInt ? 'bg-indigo-600 text-white border-indigo-700' : 'bg-teal-600 text-white border-teal-700');
+
+            cellContent += `
+              <button type="button" onclick="openDetailModal('${t.id}')"
+                      title="${escapeHTML(t.code)}: ${escapeHTML(t.title)} (คิว #${t.queueOrder || '-'})${isConflict ? ' [ทับซ้อน!]' : ''}"
+                      class="w-full text-left mb-1 px-1.5 py-1 rounded border text-[10px] font-medium truncate block shadow-2xs hover:opacity-90 transition ${bgCls}">
+                ${isConflict ? '<i class="fa-solid fa-triangle-exclamation mr-0.5"></i>' : ''}#${t.queueOrder || '-'} ${escapeHTML(t.code.replace('TASK-2026-', 'T-'))}
+              </button>
+            `;
           });
-          if (isOver || hasLeaveConflict) {
-            html += `<div class="text-[10px] font-bold text-rose-600 flex items-center gap-0.5 mt-0.5">
-              <i class="fa-solid fa-triangle-exclamation"></i> ${totalHrs.toFixed(1)}h!
-            </div>`;
-          }
-          html += `</td>`;
+
+          cells += `<td class="p-1.5 border-b border-r border-slate-100 align-top ${colMinW} ${isToday ? 'bg-brand-50/30' : ''}">${cellContent}</td>`;
         });
-        html += `</tr>`;
+
+        return `<tr>${cells}</tr>`;
+      }).join('');
+
+      container.innerHTML = `
+        <table class="w-full border-collapse">
+          <thead><tr>${headerCells}</tr></thead>
+          <tbody>${bodyRows}</tbody>
+        </table>
+      `;
+    }
+
+    function openAvailableMembersModal() {
+      const threshold = parseFloat(state.rules?.availableThresholdPercent) || 75;
+      const tasks = getFilteredDashboardTasks();
+      const fStart = document.getElementById('dash-start')?.value || getRelativeDate(-14);
+      const fEnd = document.getElementById('dash-end')?.value || getRelativeDate(14);
+      const rangeDays = Math.max(1, enumerateDates(fStart <= fEnd ? fStart : fEnd, fStart <= fEnd ? fEnd : fStart).length);
+      const todayStr = getRelativeDate(0);
+
+      const avail = state.users.filter(u => {
+        const est = tasks.filter(t => t.assigneeId === u.id && t.status !== 'Completed').reduce((s, t) => s + (parseFloat(t.estimatedHours) || 0), 0);
+        const leaves = state.leaves.filter(l => l.userId === u.id && l.date >= fStart && l.date <= fEnd).length;
+        const capNum = parseFloat(u.dailyCapacity);
+        const safeCap = (!isNaN(capNum) && capNum > 0) ? capNum : 8;
+        const cap = Math.max(1, (rangeDays - leaves) * safeCap);
+        return Math.round((est / cap) * 100) < threshold;
       });
 
-      html += `</tbody></table>`;
-      container.innerHTML = html;
+      const body = document.getElementById('avail-modal-body');
+      if (avail.length === 0) {
+        body.innerHTML = `<div class="text-center py-6 text-slate-400">ไม่มีสมาชิกที่มีภาระงานต่ำกว่า ${threshold}% ในช่วงเวลานี้</div>`;
+      } else {
+        body.innerHTML = avail.map(u => {
+          const est = tasks.filter(t => t.assigneeId === u.id && t.status !== 'Completed').reduce((s, t) => s + (parseFloat(t.estimatedHours) || 0), 0);
+          const leaves = state.leaves.filter(l => l.userId === u.id && l.date >= fStart && l.date <= fEnd).length;
+          const capNum = parseFloat(u.dailyCapacity);
+          const safeCap = (!isNaN(capNum) && capNum > 0) ? capNum : 8;
+          const cap = Math.max(1, (rangeDays - leaves) * safeCap);
+          const pct = Math.round((est / cap) * 100);
+          return `
+            <div class="p-3.5 rounded-xl border border-emerald-200 bg-emerald-50/40 flex items-center justify-between gap-3">
+              <div>
+                <div class="font-bold text-slate-900">${escapeHTML(u.name)}</div>
+                <div class="text-xs text-slate-500">${escapeHTML(u.position)} • ภาระงาน ${pct}% (${est}/${cap} ชม.)</div>
+              </div>
+              ${isBA() ? `
+                <button type="button" onclick="document.getElementById('avail-list-modal').classList.add('hidden'); switchTab('coordinator'); document.getElementById('coord-member-select').value='${u.id}'; renderCoordinatorQueue();"
+                        class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold">
+                  จัดคิวให้คนนี้
+                </button>
+              ` : ''}
+            </div>
+          `;
+        }).join('');
+      }
+      document.getElementById('avail-list-modal').classList.remove('hidden');
     }
 
     function openOverlapListModal() {
       const list = getAllOverlappingTasks();
       const body = document.getElementById('overlap-modal-body');
-      const ba = isBA();
-      if (!body) return;
       if (list.length === 0) {
-        body.innerHTML = `<div class="text-center py-8 text-slate-500">ไม่มีรายการงานที่ทับซ้อนในขณะนี้</div>`;
+        body.innerHTML = `<div class="text-center py-6 text-slate-400">ไม่พบรายการงานที่ทับซ้อนหรือเกินความจุต่อวัน</div>`;
       } else {
         body.innerHTML = list.map(t => {
           const user = state.users.find(u => u.id === t.assigneeId);
-          const analysis = analyzeTaskConflicts(t, t.id);
+          const c = analyzeTaskConflicts(t, t.id);
           return `
-            <div class="p-3.5 rounded-xl border border-rose-200 bg-rose-50/40 space-y-1.5">
-              <div class="flex items-center justify-between gap-2">
-                <span class="font-bold text-rose-800">${escapeHTML(t.code)} - ${escapeHTML(t.title)}</span>
-                ${ba ? `<button type="button" onclick="document.getElementById('overlap-list-modal').classList.add('hidden'); openCreateTaskModal('${t.id}')" class="text-xs px-2.5 py-1 rounded-lg bg-white border border-rose-300 text-rose-700 hover:bg-rose-100 font-semibold shrink-0">
-                  แก้ไขวัน/คิว
-                </button>` : ''}
+            <div class="p-3.5 rounded-xl border border-rose-200 bg-rose-50/50 space-y-1.5">
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-rose-900">${escapeHTML(t.code)} - ${escapeHTML(t.title)}</span>
+                <span class="text-xs font-semibold text-rose-700">${user ? escapeHTML(user.name) : ''}</span>
               </div>
-              <div class="text-xs text-slate-600">ผู้รับผิดชอบ: <b>${user ? escapeHTML(user.name) : '-'}</b> | ช่วงวันที่: ${escapeHTML(formatDateRangeLabel(t.startDate, t.endDate))}</div>
-              <div class="text-xs text-rose-700 space-y-0.5">
-                ${analysis.messages.length > 0 ? analysis.messages.map(m => `<div>• ${m}</div>`).join('') : '<div>• บันทึกแบบ Override Warning</div>'}
-              </div>
+              <div class="text-xs text-rose-800">${c.messages[0] || 'มีการบันทึกแบบ Override งานทับซ้อน'}</div>
+              <div class="text-[11px] text-slate-500">ช่วงวันที่: ${escapeHTML(formatDateRangeLabel(t.startDate, t.endDate))}</div>
             </div>
           `;
         }).join('');
@@ -4234,29 +4771,7 @@
       document.getElementById('overlap-list-modal').classList.remove('hidden');
     }
 
-    function openAvailableMembersModal() {
-      const list = window._latestAvailableMembers || [];
-      const body = document.getElementById('avail-modal-body');
-      const ba = isBA();
-      if (list.length === 0) {
-        body.innerHTML = `<div class="text-center py-8 text-slate-500">ขณะนี้ไม่มีสมาชิกที่ต่ำกว่าเกณฑ์คิวว่าง (${state.rules.availableThresholdPercent}%)</div>`;
-      } else {
-        body.innerHTML = list.map(st => `
-          <div class="p-3.5 rounded-xl border border-emerald-200 bg-emerald-50/30 flex items-center justify-between gap-3">
-            <div>
-              <div class="font-bold text-slate-900">${escapeHTML(st.user.name)}</div>
-              <div class="text-xs text-slate-500">${escapeHTML(st.user.position)} • ภาระงานปัจจุบัน <b>${st.utilPct}%</b> (ว่างพร้อมรับงานตั้งแต่ ${escapeHTML(formatThaiDate(st.nextAvail, 'ว่างทันที'))})</div>
-            </div>
-            ${ba ? `<button type="button" onclick="document.getElementById('avail-list-modal').classList.add('hidden'); openCreateTaskModal(); document.getElementById('task-assignee').value='${st.user.id}'; checkModalOverlapLive();" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shrink-0">
-              + จ่ายงานให้คนนี้
-            </button>` : ''}
-          </div>
-        `).join('');
-      }
-      document.getElementById('avail-list-modal').classList.remove('hidden');
-    }
-
-    // BACK-OFFICE ADMIN (BA ONLY)
+    // ADMIN & AUDIT LOG (BA ONLY)
     function switchAdminSubTab(sub) {
       if (!isBA()) return;
       currentAdminSubTab = sub;
@@ -4265,70 +4780,87 @@
 
       document.querySelectorAll('.admin-sub-btn').forEach(btn => {
         if (btn.dataset.admintab === sub) {
-          btn.className = 'admin-sub-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition bg-brand-600 text-white shadow-2xs';
+          btn.className = 'admin-sub-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition bg-brand-600 text-white';
         } else {
           btn.className = 'admin-sub-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition bg-slate-100 text-slate-600 hover:bg-slate-200';
         }
       });
-      renderAdminView();
+
+      if (sub === 'rules' && typeof window.syncFirebaseFormInputs === 'function') {
+        window.syncFirebaseFormInputs();
+      }
     }
 
     function renderAdminView() {
       if (!isBA()) return;
+      switchAdminSubTab(currentAdminSubTab);
+
       document.getElementById('admin-users-tbody').innerHTML = state.users.map(u => {
-        const leaveCount = state.leaves.filter(l => l.userId === u.id).length;
+        const leaveCnt = state.leaves.filter(l => l.userId === u.id).length;
         return `
-          <tr>
+          <tr class="hover:bg-slate-50">
             <td class="py-3 px-4">
               <div class="font-bold text-slate-900">${escapeHTML(u.name)}</div>
               <div class="text-xs text-slate-500">${escapeHTML(u.position)}</div>
             </td>
-            <td class="py-3 px-4"><span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-xs font-semibold">${escapeHTML(u.role)}</span></td>
-            <td class="py-3 px-4 text-center font-bold text-brand-700">${u.dailyCapacity} ชม./วัน</td>
-            <td class="py-3 px-4 text-center text-xs">${leaveCount} วัน</td>
-            <td class="py-3 px-4 text-right">
-              <button type="button" onclick="editUser('${u.id}')" class="px-2.5 py-1 rounded-lg border border-slate-200 hover:bg-slate-100 text-xs font-medium">แก้ไข</button>
+            <td class="py-3 px-4"><span class="px-2 py-0.5 rounded-md text-xs font-semibold bg-slate-100 text-slate-700">${escapeHTML(u.role)}</span></td>
+            <td class="py-3 px-4 text-center font-semibold">${u.dailyCapacity} ชม.</td>
+            <td class="py-3 px-4 text-center"><span class="px-2 py-0.5 rounded-full text-xs bg-amber-50 text-amber-800 font-semibold">${leaveCnt} วัน</span></td>
+            <td class="py-3 px-4 text-right space-x-1">
+              <button type="button" onclick="editUser('${u.id}')" class="px-2.5 py-1 rounded-lg border border-slate-200 hover:bg-slate-100 text-xs text-slate-700">แก้ไข</button>
+              <button type="button" onclick="deleteUser('${u.id}')" class="px-2.5 py-1 rounded-lg border border-rose-200 hover:bg-rose-50 text-xs text-rose-600">ลบ</button>
             </td>
           </tr>
         `;
       }).join('');
 
-      document.getElementById('admin-leaves-list').innerHTML = state.leaves.map(l => {
-        const u = state.users.find(x => x.id === l.userId);
-        return `
-          <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs">
-            <b>${u ? escapeHTML(u.name) : escapeHTML(l.userId)}</b>: ${escapeHTML(formatThaiDate(l.date))} (${escapeHTML(l.reason)})
-            <button type="button" onclick="removeLeave('${l.id}')" class="text-amber-700 hover:text-rose-600"><i class="fa-solid fa-xmark"></i></button>
-          </span>
-        `;
-      }).join('');
+      document.getElementById('admin-leaves-list').innerHTML = state.leaves.length === 0
+        ? `<span class="text-xs text-slate-400">ยังไม่มีรายการบันทึกวันลา</span>`
+        : state.leaves.map(l => {
+            const u = state.users.find(x => x.id === l.userId);
+            return `
+              <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-950">
+                <b>${u ? escapeHTML(u.name) : '-'}</b> • ${escapeHTML(formatThaiDate(l.date))} (${escapeHTML(l.reason || 'ลาหยุด')})
+                <button type="button" onclick="removeUserLeave('${l.id}')" class="text-rose-600 hover:text-rose-800 font-bold"><i class="fa-solid fa-xmark"></i></button>
+              </span>
+            `;
+          }).join('');
 
       document.getElementById('admin-orgs-tbody').innerHTML = state.organizations.map(o => `
-        <tr class="${o.active ? '' : 'opacity-50'}">
+        <tr class="hover:bg-slate-50">
           <td class="py-3 px-4">
-            <span class="inline-flex items-center gap-1.5 font-bold text-xs px-2.5 py-1 rounded-md text-white" style="background-color: ${escapeHTML(o.color)}">${escapeHTML(o.code)}</span>
+            <span class="inline-flex items-center gap-2 font-bold text-slate-800">
+              <span class="w-3.5 h-3.5 rounded-full inline-block" style="background-color: ${escapeHTML(o.color)}"></span>
+              ${escapeHTML(o.code)}
+            </span>
           </td>
-          <td class="py-3 px-4 font-semibold text-slate-800">${escapeHTML(o.name)}</td>
-          <td class="py-3 px-4 text-xs">${o.type === 'Internal' ? '<span class="text-indigo-700 font-semibold">Internal</span>' : '<span class="text-teal-700 font-semibold">External</span>'}</td>
-          <td class="py-3 px-4 text-center text-xs">${o.active ? '<span class="text-emerald-600 font-bold">ใช้งานอยู่</span>' : '<span class="text-slate-400">ปิดใช้งาน</span>'}</td>
+          <td class="py-3 px-4 font-medium text-slate-900">${escapeHTML(o.name)}</td>
+          <td class="py-3 px-4">
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold ${o.type === 'Internal' ? 'bg-indigo-50 text-indigo-700' : 'bg-teal-50 text-teal-700'}">${escapeHTML(o.type)}</span>
+          </td>
+          <td class="py-3 px-4 text-center">
+            <span class="px-2 py-0.5 rounded-full text-xs font-semibold ${o.active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-400'}">${o.active ? 'ใช้งานอยู่' : 'ปิดใช้งาน'}</span>
+          </td>
           <td class="py-3 px-4 text-right">
-            <button type="button" onclick="toggleOrgActive('${o.id}')" class="px-3 py-1 rounded-lg border border-slate-200 hover:bg-slate-100 text-xs font-medium">${o.active ? 'ปิดใช้งาน' : 'เปิดใช้งาน'}</button>
+            <button type="button" onclick="toggleOrgActive('${o.id}')" class="px-3 py-1 rounded-lg border border-slate-200 hover:bg-slate-100 text-xs font-medium text-slate-700">
+              ${o.active ? 'ปิดใช้งาน' : 'เปิดใช้งาน'}
+            </button>
           </td>
         </tr>
       `).join('');
 
-      document.getElementById('rule-overlap-mode').value = state.rules.overlapMode;
-      document.getElementById('rule-avail-percent').value = state.rules.availableThresholdPercent;
-      if (typeof window.connectFirebaseFromMeta === 'function') {
-        window.connectFirebaseFromMeta(true);
+      document.getElementById('rule-overlap-mode').value = state.rules.overlapMode || 'CAPACITY_EXCEEDED';
+      document.getElementById('rule-avail-percent').value = state.rules.availableThresholdPercent || 75;
+      if (typeof window.syncFirebaseFormInputs === 'function') {
+        window.syncFirebaseFormInputs();
       }
     }
 
-    function editUser(id) {
+    function editUser(userId) {
       if (!isBA()) return;
-      const u = state.users.find(x => x.id === id);
+      const u = state.users.find(x => x.id === userId);
       if (!u) return;
-      document.getElementById('user-form-title').textContent = `แก้ไขสมาชิก: ${u.name}`;
+      document.getElementById('user-form-title').textContent = `แก้ไขข้อมูล: ${u.name}`;
       document.getElementById('edit-user-id').value = u.id;
       document.getElementById('user-name').value = u.name;
       document.getElementById('user-position').value = u.position;
@@ -4346,42 +4878,70 @@
     }
 
     function saveUser() {
-      if (!isBA()) {
-        showToast('เฉพาะ Role BA เท่านั้นที่จัดการสมาชิกได้', 'error');
-        return;
-      }
-      const id = document.getElementById('edit-user-id').value;
+      if (!isBA()) return;
+      const editId = document.getElementById('edit-user-id').value;
       const name = document.getElementById('user-name').value.trim();
       const position = document.getElementById('user-position').value.trim();
       const role = document.getElementById('user-role').value;
-      const dailyCapacity = parseFloat(document.getElementById('user-capacity').value) || 8;
+      const capNum = parseFloat(document.getElementById('user-capacity').value);
+      const dailyCapacity = (!isNaN(capNum) && capNum > 0 && capNum <= 24) ? capNum : 8;
 
       if (!name || !position) {
-        showToast('กรุณากรอกชื่อและตำแหน่งให้ครบถ้วน', 'error');
+        showToast('กรุณากรอกชื่อ-นามสกุล และตำแหน่ง', 'error');
         return;
       }
 
-      if (id) {
-        const idx = state.users.findIndex(x => x.id === id);
-        if (idx !== -1) state.users[idx] = { ...state.users[idx], name, position, role, dailyCapacity };
-        showToast('อัปเดตข้อมูลสมาชิกแล้ว', 'success');
+      if (editId) {
+        const idx = state.users.findIndex(x => x.id === editId);
+        if (idx !== -1) {
+          state.users[idx] = { ...state.users[idx], name, position, role, dailyCapacity };
+          addAuditLog('UPDATE_USER', '-', `แก้ไขข้อมูลสมาชิก ${name} (${dailyCapacity} ชม./วัน)`);
+          showToast('อัปเดตข้อมูลสมาชิกเรียบร้อย', 'success');
+        }
       } else {
         state.users.push({ id: 'u_' + Date.now(), name, position, role, dailyCapacity });
+        addAuditLog('ADD_USER', '-', `เพิ่มสมาชิกใหม่ ${name} (${position})`);
         showToast('เพิ่มสมาชิกใหม่เรียบร้อย', 'success');
       }
-      addAuditLog('SAVE_USER', '-', `บันทึกข้อมูลสมาชิก ${name} (${dailyCapacity} ชม./วัน)`);
+
       saveState();
       populateAllSelects();
-      applyRolePermissions();
       resetUserForm();
       renderAdminView();
     }
 
-    function addUserLeave() {
-      if (!isBA()) {
-        showToast('เฉพาะ Role BA เท่านั้นที่บันทึกวันลาได้', 'error');
+    function deleteUser(userId) {
+      if (!isBA()) return;
+      if (state.users.length <= 1) {
+        showToast('ต้องมีสมาชิกในทีมอย่างน้อย 1 คน', 'error');
         return;
       }
+      const target = state.users.find(u => u.id === userId);
+      showConfirmModal({
+        title: 'ยืนยันการลบสมาชิก',
+        message: `ยืนยันลบสมาชิก "${target?.name || ''}"? งานที่ค้างอยู่จะถูกย้ายกลับไปเป็นยังไม่ระบุผู้รับผิดชอบ`,
+        okText: 'ลบสมาชิก',
+        danger: true,
+        onConfirm: () => {
+          state.tasks.forEach(t => {
+            if (t.assigneeId === userId) {
+              t.assigneeId = '';
+              t.queueOrder = 0;
+            }
+          });
+          state.leaves = state.leaves.filter(l => l.userId !== userId);
+          state.users = state.users.filter(u => u.id !== userId);
+          addAuditLog('DELETE_USER', '-', `ลบสมาชิก ${target?.name || userId}`);
+          saveState();
+          populateAllSelects();
+          renderAdminView();
+          showToast('ลบสมาชิกเรียบร้อยแล้ว', 'info');
+        }
+      });
+    }
+
+    function addUserLeave() {
+      if (!isBA()) return;
       const userId = document.getElementById('leave-user-id').value;
       const date = document.getElementById('leave-date').value;
       const reason = document.getElementById('leave-reason').value.trim() || 'ลาหยุด';
@@ -4392,12 +4952,13 @@
       state.leaves.push({ id: 'lv_' + Date.now(), userId, date, reason });
       const u = state.users.find(x => x.id === userId);
       addAuditLog('ADD_LEAVE', '-', `บันทึกวันลาของ ${u ? u.name : userId} วันที่ ${formatThaiDate(date)} (${reason})`);
+      document.getElementById('leave-reason').value = '';
       saveState();
       renderAdminView();
-      showToast('บันทึกวันลาเรียบร้อย', 'success');
+      showToast('บันทึกวันลาเรียบร้อยแล้ว', 'success');
     }
 
-    function removeLeave(leaveId) {
+    function removeUserLeave(leaveId) {
       if (!isBA()) return;
       state.leaves = state.leaves.filter(l => l.id !== leaveId);
       saveState();
@@ -4406,24 +4967,21 @@
     }
 
     function addOrganization() {
-      if (!isBA()) {
-        showToast('เฉพาะ Role BA เท่านั้นที่เพิ่มหน่วยงานได้', 'error');
-        return;
-      }
+      if (!isBA()) return;
       const type = document.getElementById('org-type').value;
       const name = document.getElementById('org-name').value.trim();
       const code = document.getElementById('org-code').value.trim().toUpperCase();
       const color = document.getElementById('org-color').value;
       if (!name || !code) {
-        showToast('กรุณากรอกชื่อและรหัสย่อหน่วยงาน', 'error');
+        showToast('กรุณากรอกชื่อหน่วยงานและรหัสย่อ', 'error');
         return;
       }
       state.organizations.push({ id: 'org_' + Date.now(), type, name, code, color, active: true });
-      addAuditLog('ADD_ORG', '-', `เพิ่มหน่วยงาน [${type}] ${code} - ${name}`);
+      addAuditLog('ADD_ORG', '-', `เพิ่มหน่วยงาน ${type}: ${code} - ${name}`);
       document.getElementById('org-name').value = '';
       document.getElementById('org-code').value = '';
       saveState();
-      populateAllSelects();
+      updateMultiLabelsAndChips();
       renderAdminView();
       showToast('เพิ่มหน่วยงานใหม่เรียบร้อย', 'success');
     }
@@ -4433,64 +4991,54 @@
       const org = state.organizations.find(o => o.id === orgId);
       if (!org) return;
       org.active = !org.active;
+      addAuditLog('TOGGLE_ORG', '-', `${org.active ? 'เปิดใช้งาน' : 'ปิดใช้งาน'}หน่วยงาน ${org.code}`);
       saveState();
       renderAdminView();
-      showToast(`${org.active ? 'เปิด' : 'ปิด'}ใช้งาน ${org.name} แล้ว`, 'info');
     }
 
     function saveSystemRules() {
-      if (!isBA()) {
-        showToast('เฉพาะ Role BA เท่านั้นที่แก้ไขกฎระบบได้', 'error');
-        return;
-      }
+      if (!isBA()) return;
       const overlapMode = document.getElementById('rule-overlap-mode').value;
       const pct = parseInt(document.getElementById('rule-avail-percent').value, 10);
       if (isNaN(pct) || pct < 1 || pct > 100) {
-        showToast('เกณฑ์คิวว่างต้องอยู่ระหว่าง 1 - 100%', 'error');
+        showToast('เกณฑ์ % คิวว่างต้องอยู่ระหว่าง 1 - 100', 'error');
         return;
       }
-      state.rules.overlapMode = overlapMode;
-      state.rules.availableThresholdPercent = pct;
-      addAuditLog('UPDATE_RULES', '-', `อัปเดตกฎระบบ: Overlap=${overlapMode}, AvailableThreshold=${pct}%`);
+      state.rules = { overlapMode, availableThresholdPercent: pct };
+      addAuditLog('UPDATE_RULES', '-', `อัปเดตกฎระบบ: Overlap=${overlapMode}, เกณฑ์คิวว่าง=${pct}%`);
       saveState();
-      renderDashboard();
-      showToast('บันทึกกฎระบบและอัปเดต Dashboard เรียบร้อย', 'success');
+      showToast('บันทึกการตั้งค่ากฎระบบเรียบร้อยแล้ว', 'success');
     }
 
     function renderAuditLog() {
       if (!isBA()) return;
       const tbody = document.getElementById('audit-tbody');
       if (state.auditLogs.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" class="py-10 text-center text-slate-400">ยังไม่มีประวัติการแก้ไข</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" class="py-10 text-center text-slate-400">ยังไม่มีประวัติการเปลี่ยนแปลง</td></tr>`;
         return;
       }
       tbody.innerHTML = state.auditLogs.map(log => `
-        <tr class="hover:bg-slate-50/70">
+        <tr class="hover:bg-slate-50">
           <td class="py-3 px-4 text-xs text-slate-500 whitespace-nowrap">${escapeHTML(log.timestamp)}</td>
-          <td class="py-3 px-4"><span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-800 text-xs font-bold">${escapeHTML(log.action)}</span></td>
+          <td class="py-3 px-4"><span class="px-2 py-0.5 rounded-md text-[11px] font-bold bg-slate-100 text-slate-700">${escapeHTML(log.action)}</span></td>
           <td class="py-3 px-4 text-xs font-bold text-brand-700 whitespace-nowrap">${escapeHTML(log.taskCode || '-')}</td>
           <td class="py-3 px-4 text-xs text-slate-700">${escapeHTML(log.detail)}</td>
         </tr>
       `).join('');
     }
 
-    window.addEventListener('DOMContentLoaded', () => {
+    (function init() {
       window.state = state;
-      window.defaultState = defaultState;
-      window.SYSTEM_NAME = SYSTEM_NAME;
-      window.STORAGE_KEY = STORAGE_KEY;
-      window.isBA = isBA;
-      window.setMainStateReference = setMainStateReference;
-      window.populateAllSelects = populateAllSelects;
-      window.applyRolePermissions = applyRolePermissions;
-      window.refreshCurrentView = refreshCurrentView;
-
-      setDashPreset('this_month');
+      document.getElementById('dash-start').value = getRelativeDate(-14);
+      document.getElementById('dash-end').value = getRelativeDate(14);
+      document.getElementById('leave-date').value = getRelativeDate(1);
+      if (typeof window.syncFirebaseFormInputs === 'function') {
+        window.syncFirebaseFormInputs();
+      }
       populateAllSelects();
       applyRolePermissions();
-      switchAdminSubTab('users');
       switchTab('dashboard');
-    });
+    })();
   </script>
 </body>
 </html>
