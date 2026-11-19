@@ -906,7 +906,7 @@
                   <h3 class="font-bold text-lg text-slate-900 flex items-center gap-2">
                     <i class="fa-solid fa-fire text-amber-500"></i> การเชื่อมต่อฐานข้อมูล Firebase (Firestore)
                   </h3>
-                  <p class="text-xs text-slate-500">ตั้งค่าเริ่มต้นเชื่อมกับโปรเจกต์ <code class="text-brand-700">dev-queue-operation-standard</code> • Collection: <code class="text-brand-700">dev_queue_workspaces</code></p>
+                  <p class="text-xs text-slate-500">ตั้งค่าเริ่มต้นเชื่อมกับโปรเจกต์ <code class="text-brand-700">deadmoney-31470</code> • Collection: <code class="text-brand-700">dev_queue_workspaces</code></p>
                 </div>
 
                 <div>
@@ -1296,16 +1296,16 @@
     import { initializeApp, getApps, deleteApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
     import { getFirestore, doc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
-    const FB_META_KEY = 'dev_queue_firebase_meta_v2';
+    const FB_META_KEY = 'dev_queue_firebase_meta_v3';
     const DEFAULT_FIREBASE_CONFIG = {
-      apiKey: "AIzaSyCaydPcxJstyR6-8lBpNgS6l9EQ0eWBxWE",
-      authDomain: "dev-queue-operation-standard.firebaseapp.com",
-      databaseURL: "https://dev-queue-operation-standard-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "dev-queue-operation-standard",
-      storageBucket: "dev-queue-operation-standard.firebasestorage.app",
-      messagingSenderId: "799688850751",
-      appId: "1:799688850751:web:a979b415bd64e7ba91a78a",
-      measurementId: "G-F8VRKMYF07"
+      apiKey: "AIzaSyB42OMFrvfKZTQKMNM_N4HFkKP-WVU6lMU",
+      authDomain: "deadmoney-31470.firebaseapp.com",
+      databaseURL: "https://deadmoney-31470-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "deadmoney-31470",
+      storageBucket: "deadmoney-31470.firebasestorage.app",
+      messagingSenderId: "674448296278",
+      appId: "1:674448296278:web:6684ae0c714b79722a2ef7",
+      measurementId: "G-WDHQE86KV1"
     };
     const DEFAULT_FIREBASE_CONFIG_JSON = JSON.stringify(DEFAULT_FIREBASE_CONFIG, null, 2);
 
@@ -1356,7 +1356,6 @@
       if (syncBtn) syncBtn.classList.toggle('hidden', !meta.enabled);
     }
 
-    // Populates Firebase Admin form fields without disrupting an active listener
     window.syncFirebaseFormInputs = function() {
       const meta = loadFirebaseMeta();
       const cfgInput = document.getElementById('fb-config-json');
@@ -1560,8 +1559,6 @@
     const ALL_STATUSES = ['Queued', 'In Progress', 'In Review', 'Blocked', 'Completed'];
     const ALL_SOURCES = ['Internal', 'External'];
 
-    // Multi-Select Checkbox Filter State for Executive Dashboard
-    // Empty array [] means "All selected / No restriction"
     const dashMultiFilters = {
       status: [],
       sprint: [],
@@ -1629,7 +1626,6 @@
       return `${formatThaiDate(startDate)} - ${formatThaiDate(endDate)}`;
     }
 
-    // Custom Confirm Modal helper (avoids native confirm() inside sandboxed iframes)
     function showConfirmModal({ title = 'ยืนยันการดำเนินการ', message = '', okText = 'ยืนยัน', danger = false, onConfirm = null }) {
       const modal = document.getElementById('custom-confirm-modal');
       const titleEl = document.getElementById('confirm-modal-title');
@@ -1941,7 +1937,6 @@
       }
     }
 
-    // MULTI-SELECT CHECKBOX FILTER LOGIC (EXECUTIVE DASHBOARD)
     function toggleMultiDropdown(key, event) {
       if (event) event.stopPropagation();
       const panel = document.getElementById(`ms-panel-${key}`);
@@ -2147,7 +2142,6 @@
       renderDashboard();
     }
 
-    // EXCEL TEMPLATE DOWNLOAD & IMPORT (BA ONLY)
     function normalizeExcelDate(val) {
       if (val === null || val === undefined || val === '') return '';
       if (val instanceof Date && !isNaN(val.getTime())) {
@@ -2905,7 +2899,6 @@
         }
       });
 
-      // Prune deleted sprints from multi-select filter
       dashMultiFilters.sprint = (dashMultiFilters.sprint || []).filter(s => sprints.includes(s));
     }
 
@@ -2954,7 +2947,6 @@
       document.getElementById('field-group-external').classList.toggle('hidden', source !== 'External');
     }
 
-    // Bug fix: properly clean start/end dates when switching to CURRENT and recompute overlap live
     function handleTaskHorizonChange() {
       const checked = document.querySelector('input[name="task-horizon"]:checked');
       const horizon = checked ? checked.value : 'CURRENT';
@@ -3408,7 +3400,6 @@
       showToast('ดาวน์โหลดไฟล์ CSV ตารางงานเรียบร้อยแล้ว', 'success');
     }
 
-    // TASK BOARD (BA ONLY)
     let draggedKanbanId = null;
 
     function renderKanbanBoard() {
@@ -3539,7 +3530,6 @@
       showToast(`เปลี่ยนสถานะ ${task.code} เป็น ${newStatus} แล้ว`, 'success');
     }
 
-    // BA QUEUE COORDINATOR (BA ONLY)
     let draggedTaskId = null;
 
     function renderCoordinatorQueue() {
@@ -3778,7 +3768,6 @@
       showToast(`จัดลำดับคิว ${moved.code} เป็นคิวที่ #${toIdx + 1} แล้ว`, 'success');
     }
 
-    // ALL TASKS TABLE (BA ONLY)
     function resetAllTasksFilter() {
       document.getElementById('filter-task-start').value = '';
       document.getElementById('filter-task-end').value = '';
@@ -3906,7 +3895,6 @@
       }).join('');
     }
 
-    // MY QUEUE & TIME LOG (BA ONLY)
     function renderMyQueue() {
       if (!isBA()) return;
       const userId = document.getElementById('myqueue-user-select').value;
@@ -4159,7 +4147,6 @@
       `).join('');
     }
 
-    // DASHBOARD
     function setDashPreset(preset) {
       const startEl = document.getElementById('dash-start');
       const endEl = document.getElementById('dash-end');
@@ -4198,572 +4185,40 @@
       renderDashboard();
     }
 
-    function getFilteredDashboardTasks() {
-      const fStart = document.getElementById('dash-start')?.value || '';
-      const fEnd = document.getElementById('dash-end')?.value || '';
-      const todayStr = getRelativeDate(0);
-
-      const selStatus = dashMultiFilters.status || [];
-      const selSprint = dashMultiFilters.sprint || [];
-      const selSource = dashMultiFilters.source || [];
-      const selOrg = dashMultiFilters.org || [];
-      const selMember = dashMultiFilters.member || [];
-
-      return state.tasks.filter(t => {
-        if (!matchesHorizonFilter(t, dashHorizonMode, todayStr)) return false;
-
-        // Date overlap check when both start/end are given, or single-bound check when only one is given
-        if (fStart && fEnd) {
-          if (t.startDate && t.endDate) {
-            if (t.endDate < fStart || t.startDate > fEnd) return false;
-          } else if (t.startDate && t.startDate > fEnd) {
-            return false;
-          } else if (t.endDate && t.endDate < fStart) {
-            return false;
-          }
-        } else {
-          if (fStart && t.endDate && t.endDate < fStart) return false;
-          if (fEnd && t.startDate && t.startDate > fEnd) return false;
-        }
-
-        if (selStatus.length > 0 && !selStatus.includes(t.status)) return false;
-        if (selSprint.length > 0 && !selSprint.includes((t.sprint || '').trim())) return false;
-        if (selSource.length > 0 && !selSource.includes(t.source)) return false;
-        if (selOrg.length > 0 && !selOrg.includes(t.orgId)) return false;
-
-        if (selMember.length > 0) {
-          const matchesAssigned = t.assigneeId && selMember.includes(t.assigneeId);
-          const matchesUnassigned = !t.assigneeId && selMember.includes('__UNASSIGNED__');
-          if (!matchesAssigned && !matchesUnassigned) return false;
-        }
-
-        if (dashFocusMode === 'Blocked') return t.status === 'Blocked';
-        if (dashFocusMode === 'Overdue') return t.status !== 'Completed' && t.endDate && t.endDate < todayStr;
-        if (dashFocusMode === 'Overlap') {
-          const c = analyzeTaskConflicts(t, t.id);
-          return t.status !== 'Completed' && (c.hasConflict || t.overrideWarning);
-        }
-        return true;
-      });
-    }
-
-    function renderDashboard() {
-      updateMultiLabelsAndChips();
-      const tasks = getFilteredDashboardTasks();
-      const todayStr = getRelativeDate(0);
-      const fStart = document.getElementById('dash-start')?.value || getRelativeDate(-14);
-      const fEnd = document.getElementById('dash-end')?.value || getRelativeDate(14);
-      const rangeDays = Math.max(1, enumerateDates(fStart <= fEnd ? fStart : fEnd, fStart <= fEnd ? fEnd : fStart).length);
-      const availThreshold = parseFloat(state.rules?.availableThresholdPercent) || 75;
-
-      const totalTasks = tasks.length;
-      const internalTasks = tasks.filter(t => t.source === 'Internal').length;
-      const externalTasks = tasks.filter(t => t.source === 'External').length;
-      const currentTasksCount = tasks.filter(t => getTaskHorizon(t, todayStr) === 'CURRENT').length;
-      const futureTasksCount = tasks.filter(t => getTaskHorizon(t, todayStr) === 'FUTURE').length;
-      const completedTasks = tasks.filter(t => t.status === 'Completed').length;
-      const blockedTasks = tasks.filter(t => t.status === 'Blocked').length;
-
-      const memberMetrics = state.users.map(u => {
-        const uTasks = tasks.filter(t => t.assigneeId === u.id && t.status !== 'Completed');
-        const allUserActiveTasks = state.tasks.filter(t => t.assigneeId === u.id && t.status !== 'Completed');
-        const allUserCompletedTasks = state.tasks.filter(t => t.assigneeId === u.id && t.status === 'Completed');
-        const allUserTasks = [...allUserActiveTasks, ...allUserCompletedTasks];
-
-        const estHours = uTasks.reduce((s, t) => s + (parseFloat(t.estimatedHours) || 0), 0);
-        const spSum = uTasks.reduce((s, t) => s + (t.storyPoints || 0), 0);
-        const intCount = uTasks.filter(t => t.source === 'Internal').length;
-        const extCount = uTasks.filter(t => t.source === 'External').length;
-        const inProgressTitles = uTasks.filter(t => t.status === 'In Progress').map(t => t.title);
-
-        const leavesInRange = state.leaves.filter(l => l.userId === u.id && l.date >= fStart && l.date <= fEnd).length;
-        const capNum = parseFloat(u.dailyCapacity);
-        const safeCap = (!isNaN(capNum) && capNum > 0) ? capNum : 8;
-        const netCapacityHours = Math.max(1, (rangeDays - leavesInRange) * safeCap);
-        const utilPercent = Math.round((estHours / netCapacityHours) * 100);
-
-        let hasConflict = false;
-        let conflictDetail = '';
-        allUserActiveTasks.forEach(t => {
-          const c = analyzeTaskConflicts(t, t.id);
-          if (c.hasConflict || t.overrideWarning) {
-            hasConflict = true;
-            if (!conflictDetail) {
-              conflictDetail = c.messages[0] || `${t.code}: มีการบันทึกแบบทับซ้อน`;
-            }
-          }
-        });
-
-        let latestEndDate = '';
-        allUserTasks.forEach(t => {
-          if (t.endDate && t.endDate > latestEndDate) latestEndDate = t.endDate;
-        });
-        let nextAvailableDate = todayStr;
-        if (latestEndDate && latestEndDate >= todayStr) {
-          const d = parseLocalDate(latestEndDate);
-          if (d) {
-            d.setDate(d.getDate() + 1);
-            nextAvailableDate = toLocalDateStr(d);
-          }
-        }
-
-        return {
-          user: u,
-          tasks: uTasks,
-          estHours,
-          spSum,
-          intCount,
-          extCount,
-          inProgressTitles,
-          utilPercent,
-          isAvailable: utilPercent < availThreshold,
-          hasConflict,
-          conflictDetail,
-          nextAvailableDate
-        };
-      });
-
-      const availableMembers = memberMetrics.filter(m => m.isAvailable);
-      const overlappingTasksList = tasks.filter(t => {
-        if (t.status === 'Completed' || !t.assigneeId) return false;
-        const c = analyzeTaskConflicts(t, t.id);
-        return c.hasConflict || t.overrideWarning;
-      });
-
-      const kpiCards = [
-        {
-          title: 'งานทั้งหมด (Total Tasks)',
-          value: totalTasks,
-          sub: `ปัจจุบัน ${currentTasksCount} • แพลนอนาคต ${futureTasksCount}`,
-          icon: 'fa-layer-group',
-          bgIcon: 'bg-brand-50 text-brand-600',
-          clickable: false
-        },
-        {
-          title: 'งานภายใน (Internal)',
-          value: internalTasks,
-          sub: `${totalTasks ? Math.round((internalTasks / totalTasks) * 100) : 0}% ของงานที่กรอง`,
-          icon: 'fa-building-user',
-          bgIcon: 'bg-indigo-50 text-indigo-600',
-          clickable: false
-        },
-        {
-          title: 'งานภายนอก / บ.ลูก',
-          value: externalTasks,
-          sub: `${totalTasks ? Math.round((externalTasks / totalTasks) * 100) : 0}% ของงานที่กรอง`,
-          icon: 'fa-city',
-          bgIcon: 'bg-teal-50 text-teal-600',
-          clickable: false
-        },
-        {
-          title: 'เสร็จสิ้น / ติดขัด',
-          value: `${completedTasks} / ${blockedTasks}`,
-          sub: `${blockedTasks > 0 ? 'มีงาน Blocked ต้องติดตาม!' : 'ไม่มีงานติดขัด'}`,
-          icon: 'fa-circle-check',
-          bgIcon: blockedTasks > 0 ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600',
-          clickable: false
-        },
-        {
-          title: `สมาชิกมีคิวว่าง (<${availThreshold}%)`,
-          value: `${availableMembers.length} / ${state.users.length}`,
-          sub: 'คลิกเพื่อดูรายชื่อคนพร้อมรับงาน',
-          icon: 'fa-user-check',
-          bgIcon: 'bg-emerald-50 text-emerald-600',
-          clickable: true,
-          onClick: 'openAvailableMembersModal()'
-        },
-        {
-          title: 'งานทับซ้อน / เกินความจุ',
-          value: overlappingTasksList.length,
-          sub: overlappingTasksList.length > 0 ? 'คลิกเพื่อตรวจสอบรายการชน' : 'ไม่พบวันทำงานชนกัน',
-          icon: 'fa-triangle-exclamation',
-          bgIcon: overlappingTasksList.length > 0 ? 'bg-rose-50 text-rose-600' : 'bg-slate-100 text-slate-500',
-          clickable: true,
-          onClick: 'openOverlapListModal()'
-        }
-      ];
-
-      document.getElementById('kpi-grid').innerHTML = kpiCards.map(k => `
-        <div ${k.clickable ? `onclick="${k.onClick}"` : ''}
-             class="bg-white p-4 rounded-2xl border ${k.title.includes('ทับซ้อน') && overlappingTasksList.length > 0 ? 'border-rose-300' : 'border-slate-200'} shadow-2xs flex flex-col justify-between gap-3 ${k.clickable ? 'cursor-pointer hover:border-brand-400 hover:shadow-md transition' : ''}">
-          <div class="flex items-start justify-between gap-2">
-            <span class="text-xs font-semibold text-slate-500 leading-snug">${k.title}</span>
-            <div class="w-9 h-9 rounded-xl ${k.bgIcon} flex items-center justify-center shrink-0">
-              <i class="fa-solid ${k.icon}"></i>
-            </div>
-          </div>
-          <div>
-            <div class="text-2xl font-bold text-slate-900">${k.value}</div>
-            <div class="text-[11px] ${k.clickable ? 'text-brand-600 font-semibold' : 'text-slate-400'} mt-0.5">${k.sub}</div>
-          </div>
-        </div>
-      `).join('');
-
-      const riskBanner = document.getElementById('dash-risk-banner');
-      const overdueTasks = tasks.filter(t => t.status !== 'Completed' && t.endDate && t.endDate < todayStr);
-      const blockedList = tasks.filter(t => t.status === 'Blocked');
-      if (blockedList.length > 0 || overdueTasks.length > 0 || overlappingTasksList.length > 0) {
-        riskBanner.classList.remove('hidden');
-        riskBanner.innerHTML = `
-          <div class="bg-amber-50/90 border border-amber-200 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-amber-950">
-            <div class="flex items-start gap-3">
-              <i class="fa-solid fa-bell text-amber-600 text-base mt-0.5"></i>
-              <div class="space-y-0.5">
-                <div class="font-bold text-sm">สรุปจุดเสี่ยงที่ต้องติดตาม (Actionable Risks)</div>
-                <div>
-                  ติดปัญหา (Blocked): <b>${blockedList.length}</b> งาน •
-                  เลยกำหนดส่ง (Overdue): <b>${overdueTasks.length}</b> งาน •
-                  ทับซ้อน/เกินความจุ: <b>${overlappingTasksList.length}</b> งาน
-                </div>
-              </div>
-            </div>
-            <div class="flex flex-wrap gap-2 shrink-0">
-              ${blockedList.length > 0 ? `<button type="button" onclick="setDashFocus('Blocked')" class="px-3 py-1.5 rounded-lg bg-rose-600 text-white font-semibold">ดูงาน Blocked</button>` : ''}
-              ${overdueTasks.length > 0 ? `<button type="button" onclick="setDashFocus('Overdue')" class="px-3 py-1.5 rounded-lg bg-amber-600 text-white font-semibold">ดูงาน Overdue</button>` : ''}
-            </div>
-          </div>
-        `;
-      } else {
-        riskBanner.classList.add('hidden');
-      }
-
-      renderDashboardTasksList(tasks, todayStr);
-      renderDashboardCharts(tasks, memberMetrics, availThreshold);
-      renderWorkloadTable(memberMetrics, availThreshold);
-      renderTimeline(memberMetrics, fStart <= fEnd ? fStart : fEnd, fStart <= fEnd ? fEnd : fStart, todayStr);
-    }
-
-    function renderDashboardTasksList(tasks, todayStr) {
-      const tbody = document.getElementById('dash-tasks-tbody');
-      const countPill = document.getElementById('dash-task-count-pill');
-      if (countPill) {
-        const totalSP = tasks.reduce((s, t) => s + (t.storyPoints || 0), 0);
-        countPill.textContent = `${tasks.length} รายการ (${totalSP} SP)`;
-      }
-      if (!tbody) return;
-
-      if (tasks.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="py-10 text-center text-slate-400">ไม่พบรายการงานตามฟิลเตอร์ Checkbox ที่เลือก</td></tr>`;
-        return;
-      }
-
-      const sorted = [...tasks].sort((a, b) => {
-        if (a.status === 'Completed' && b.status !== 'Completed') return 1;
-        if (a.status !== 'Completed' && b.status === 'Completed') return -1;
-        return (a.queueOrder || 999) - (b.queueOrder || 999);
-      });
-
-      tbody.innerHTML = sorted.map(t => {
-        const user = state.users.find(u => u.id === t.assigneeId);
-        const isOverdue = t.status !== 'Completed' && t.endDate && t.endDate < todayStr;
-        return `
-          <tr onclick="openDetailModal('${t.id}')" class="hover:bg-brand-50/40 cursor-pointer transition">
-            <td class="py-3 px-4 whitespace-nowrap">
-              <div class="font-bold text-brand-700 text-xs">${escapeHTML(t.code)}</div>
-              <div class="text-[11px] text-slate-400">${escapeHTML(t.sprint || '-')}</div>
-            </td>
-            <td class="py-3 px-4">
-              <div class="font-semibold text-slate-900">${escapeHTML(t.title)}</div>
-              <div class="flex flex-wrap items-center gap-1.5 mt-1">
-                ${getHorizonBadgeHTML(t, todayStr)}
-                ${getTaskTypeBadgeHTML(t.taskType)}
-                ${getOrgBadgeHTML(t.orgId, t.source)}
-                ${isOverdue ? `<span class="text-[10px] font-bold bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded">เลยกำหนด</span>` : ''}
-              </div>
-            </td>
-            <td class="py-3 px-4 whitespace-nowrap text-xs text-slate-600">${escapeHTML(formatDateRangeLabel(t.startDate, t.endDate))}</td>
-            <td class="py-3 px-4 whitespace-nowrap text-xs">
-              ${user
-                ? `<span class="font-semibold text-slate-800">${escapeHTML(user.name)}</span> <span class="text-slate-400">#${t.queueOrder || '-'}</span>`
-                : `<span class="text-amber-700 bg-amber-50 px-2 py-0.5 rounded font-medium">Unassigned</span>`
-              }
-            </td>
-            <td class="py-3 px-4 whitespace-nowrap">${getStatusBadgeHTML(t.status)}</td>
-            <td class="py-3 px-4 whitespace-nowrap text-right font-bold text-slate-800">${t.estimatedHours || 0} <span class="text-xs font-normal text-slate-400">ชม.</span></td>
-          </tr>
-        `;
-      }).join('');
-    }
-
-    function renderDashboardCharts(tasks, memberMetrics, availThreshold) {
-      const total = tasks.length || 1;
-      const intCount = tasks.filter(t => t.source === 'Internal').length;
-      const extCount = tasks.filter(t => t.source === 'External').length;
-      const intPct = Math.round((intCount / total) * 100);
-      const extPct = tasks.length ? (100 - intPct) : 0;
-
-      document.getElementById('chart-source-ratio').innerHTML = `
-        <div class="space-y-1.5">
-          <div class="flex justify-between text-xs font-semibold">
-            <span class="text-indigo-700"><i class="fa-solid fa-building-user mr-1"></i>Internal: ${intCount} งาน (${intPct}%)</span>
-            <span class="text-teal-700">External: ${extCount} งาน (${extPct}%) <i class="fa-solid fa-city ml-1"></i></span>
-          </div>
-          <div class="w-full h-3.5 rounded-full bg-slate-100 overflow-hidden flex">
-            <div class="bg-indigo-600 h-full transition-all" style="width: ${intPct}%"></div>
-            <div class="bg-teal-500 h-full transition-all" style="width: ${extPct}%"></div>
-          </div>
-        </div>
-      `;
-
-      const typeColors = {
-        'Feature': 'bg-indigo-500',
-        'Bug Fix': 'bg-rose-500',
-        'Enhancement': 'bg-sky-500',
-        'UAT / QA': 'bg-amber-500',
-        'DevOps': 'bg-slate-600'
-      };
-      const types = Object.keys(typeColors);
-      document.getElementById('chart-type-breakdown').innerHTML = `
-        <div class="text-[11px] font-semibold text-slate-500">สัดส่วนตามประเภทงาน (Task Type)</div>
-        <div class="flex flex-wrap gap-2 text-[11px]">
-          ${types.map(tp => {
-            const cnt = tasks.filter(t => (t.taskType || 'Feature') === tp).length;
-            if (cnt === 0) return '';
-            return `
-              <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-slate-50 border border-slate-200 text-slate-700 font-medium">
-                <span class="w-2 h-2 rounded-full ${typeColors[tp]}"></span>${escapeHTML(tp)}: <b>${cnt}</b>
-              </span>
-            `;
-          }).join('') || `<span class="text-slate-400">ไม่มีข้อมูล</span>`}
-        </div>
-      `;
-
-      const selectedStatuses = dashMultiFilters.status || [];
-      document.getElementById('chart-status-pills').innerHTML = ALL_STATUSES.map(st => {
-        const cnt = tasks.filter(t => t.status === st).length;
-        const isActive = selectedStatuses.includes(st);
-        return `
-          <button type="button" onclick="syncStatusFilterFromPill('${st}')"
-                  class="p-2 rounded-xl border ${isActive ? 'border-brand-600 bg-brand-50 ring-2 ring-brand-500/30' : 'border-slate-200 bg-slate-50/70'} hover:border-brand-300 transition text-center"
-                  title="คลิกเพื่อเพิ่ม/เอาออกสถานะ ${st} ในตัวกรอง Checkbox">
-            <div class="text-base font-bold text-slate-900">${cnt}</div>
-            <div class="text-[10px] font-medium text-slate-600 truncate">${st}</div>
-          </button>
-        `;
-      }).join('');
-
-      document.getElementById('chart-lbl-threshold').textContent = availThreshold;
-      const totalSP = tasks.reduce((s, t) => s + (t.storyPoints || 0), 0);
-      document.getElementById('chart-total-sp').textContent = `${totalSP} Story Points`;
-
-      const selectedMembers = dashMultiFilters.member || [];
-      document.getElementById('chart-member-bars').innerHTML = memberMetrics.map(m => {
-        const barWidth = Math.min(100, m.utilPercent);
-        const barColor = m.utilPercent > 100 ? 'bg-rose-500' : (m.isAvailable ? 'bg-emerald-500' : 'bg-blue-500');
-        const isSelected = selectedMembers.includes(m.user.id);
-        return `
-          <div onclick="toggleMemberFilterFromChart('${m.user.id}')"
-               class="space-y-1 p-2 rounded-xl ${isSelected ? 'bg-brand-50/80 ring-1 ring-brand-300' : 'hover:bg-slate-50'} cursor-pointer transition"
-               title="คลิกเพื่อสลับกรองสมาชิก ${escapeHTML(m.user.name)}">
-            <div class="flex items-center justify-between text-xs">
-              <span class="font-semibold text-slate-800 truncate">${escapeHTML(m.user.name)} <span class="text-slate-400 font-normal">(${m.spSum} SP / ${m.estHours} ชม.)</span></span>
-              <span class="font-bold ${m.utilPercent > 100 ? 'text-rose-600' : (m.isAvailable ? 'text-emerald-700' : 'text-blue-700')}">${m.utilPercent}%</span>
-            </div>
-            <div class="relative w-full h-3 rounded-full bg-slate-100 overflow-visible">
-              <div class="${barColor} h-3 rounded-full transition-all" style="width: ${barWidth}%"></div>
-              <div class="absolute top-[-2px] bottom-[-2px] border-r-2 border-dashed border-emerald-700/70" style="left: ${Math.min(100, availThreshold)}%" title="เกณฑ์คิวว่าง ${availThreshold}%"></div>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    function renderWorkloadTable(memberMetrics, availThreshold) {
-      document.getElementById('lbl-avail-threshold').textContent = availThreshold;
-      const tbody = document.getElementById('workload-table-body');
-
-      tbody.innerHTML = memberMetrics.map(m => {
-        const barColor = m.utilPercent > 100 ? 'bg-rose-500' : (m.isAvailable ? 'bg-emerald-500' : 'bg-blue-500');
-        const badge = m.utilPercent > 100
-          ? `<span class="text-[10px] font-bold bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full">เกินกำลัง</span>`
-          : (m.isAvailable
-            ? `<span class="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">คิวว่าง</span>`
-            : `<span class="text-[10px] font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">ปกติ</span>`);
-
-        return `
-          <tr class="hover:bg-slate-50/80 transition">
-            <td class="py-3.5 px-4">
-              <div class="font-bold text-slate-900">${escapeHTML(m.user.name)}</div>
-              <div class="text-xs text-slate-500">${escapeHTML(m.user.position)} (${m.user.dailyCapacity} ชม./วัน)</div>
-            </td>
-            <td class="py-3.5 px-4 text-center">
-              <span class="font-bold text-slate-800">${m.tasks.length}</span>
-              <div class="text-[11px] text-slate-500"><span class="text-indigo-600 font-medium">${m.intCount} Int</span> / <span class="text-teal-600 font-medium">${m.extCount} Ext</span></div>
-            </td>
-            <td class="py-3.5 px-4 text-center font-bold text-brand-700">${m.spSum} SP</td>
-            <td class="py-3.5 px-4 max-w-[220px]">
-              ${m.inProgressTitles.length > 0
-                ? m.inProgressTitles.map(title => `<div class="text-xs font-medium text-blue-800 bg-blue-50 px-2 py-1 rounded-md mb-1 truncate" title="${escapeHTML(title)}"><i class="fa-solid fa-spinner fa-spin mr-1 text-[10px]"></i>${escapeHTML(title)}</div>`).join('')
-                : `<span class="text-xs text-slate-400">- ไม่มีงานกำลังทำ -</span>`
-              }
-            </td>
-            <td class="py-3.5 px-4">
-              <div class="flex items-center justify-between text-xs mb-1">
-                <span class="font-bold text-slate-800">${m.utilPercent}%</span>
-                ${badge}
-              </div>
-              <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                <div class="${barColor} h-2 rounded-full" style="width: ${Math.min(100, m.utilPercent)}%"></div>
-              </div>
-              <div class="text-[10px] text-slate-400 mt-0.5">รวม ${m.estHours} ชม.</div>
-            </td>
-            <td class="py-3.5 px-4 text-xs">
-              <span class="font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg inline-block">
-                <i class="fa-regular fa-calendar-check mr-1"></i>${escapeHTML(formatThaiDate(m.nextAvailableDate))}
-              </span>
-            </td>
-            <td class="py-3.5 px-4 text-xs">
-              ${m.hasConflict
-                ? `<span class="inline-flex items-center gap-1 font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2.5 py-1 rounded-lg" title="${escapeHTML(m.conflictDetail)}"><i class="fa-solid fa-triangle-exclamation"></i> ทับซ้อน</span>`
-                : `<span class="text-emerald-600 font-medium"><i class="fa-solid fa-check mr-1"></i>ปกติ</span>`
-              }
-            </td>
-          </tr>
-        `;
-      }).join('');
-    }
-
-    function renderTimeline(memberMetrics, startStr, endStr, todayStr) {
-      const container = document.getElementById('timeline-container');
-      const dates = enumerateDates(startStr, endStr);
-      if (dates.length === 0) {
-        container.innerHTML = `<div class="text-center py-8 text-sm text-slate-400">กรุณาเลือกช่วงวันที่เริ่มต้นและสิ้นสุดให้ถูกต้อง</div>`;
-        return;
-      }
-
-      const displayDates = dates.slice(0, 31);
-      const colMinW = displayDates.length > 16 ? 'min-w-[82px]' : 'min-w-[96px]';
-
-      let headerCells = `<th class="py-2.5 px-3 text-left text-xs font-semibold text-slate-500 bg-slate-50 sticky left-0 z-20 border-b border-r border-slate-200 min-w-[180px]">สมาชิกในทีม</th>`;
-      displayDates.forEach(d => {
-        const isToday = d === todayStr;
-        const dt = parseLocalDate(d);
-        const dayName = dt ? dt.toLocaleDateString('th-TH', { weekday: 'short' }) : '';
-        headerCells += `
-          <th class="py-2 px-1.5 text-center text-[11px] border-b border-r border-slate-200 ${colMinW} ${isToday ? 'bg-brand-50 text-brand-800 font-bold' : 'bg-slate-50 text-slate-600'}">
-            <div>${escapeHTML(dayName)}</div>
-            <div>${escapeHTML(formatThaiDate(d).split(' ').slice(0, 2).join(' '))}</div>
-            ${isToday ? `<span class="inline-block text-[9px] bg-brand-600 text-white px-1.5 rounded-full mt-0.5">วันนี้</span>` : ''}
-          </th>
-        `;
-      });
-
-      const bodyRows = memberMetrics.map(m => {
-        const userLeaves = state.leaves.filter(l => l.userId === m.user.id);
-        const datedTasks = m.tasks.filter(t => t.startDate && t.endDate && t.startDate <= t.endDate);
-        const unscheduledTasks = m.tasks.filter(t => !t.startDate || !t.endDate);
-
-        let cells = `<td class="py-3 px-3 bg-white sticky left-0 z-10 border-b border-r border-slate-200 align-top">
-          <div class="font-bold text-xs text-slate-900">${escapeHTML(m.user.name)}</div>
-          <div class="text-[10px] text-slate-400">${escapeHTML(m.user.position)}</div>
-          ${unscheduledTasks.length > 0 ? `<div class="text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded mt-1 font-medium">รอจัดวัน ${unscheduledTasks.length} งาน</div>` : ''}
-        </td>`;
-
-        displayDates.forEach(d => {
-          const isToday = d === todayStr;
-          const leave = userLeaves.find(l => l.date === d);
-          const dayTasks = datedTasks.filter(t => d >= t.startDate && d <= t.endDate);
-
-          let cellContent = '';
-          if (leave) {
-            cellContent += `<div class="mb-1 px-1.5 py-1 rounded bg-amber-100 border border-amber-300 text-amber-900 text-[10px] font-semibold truncate" title="วันลา: ${escapeHTML(leave.reason || 'ลาหยุด')}"><i class="fa-solid fa-umbrella-beach mr-1"></i>${escapeHTML(leave.reason || 'ลาหยุด')}</div>`;
-          }
-
-          dayTasks.forEach(t => {
-            const c = analyzeTaskConflicts(t, t.id);
-            const isConflict = c.hasConflict || t.overrideWarning;
-            const isInt = t.source === 'Internal';
-            const bgCls = isConflict
-              ? 'bg-rose-600 text-white border-rose-700'
-              : (isInt ? 'bg-indigo-600 text-white border-indigo-700' : 'bg-teal-600 text-white border-teal-700');
-
-            cellContent += `
-              <button type="button" onclick="openDetailModal('${t.id}')"
-                      title="${escapeHTML(t.code)}: ${escapeHTML(t.title)} (คิว #${t.queueOrder || '-'})${isConflict ? ' [ทับซ้อน!]' : ''}"
-                      class="w-full text-left mb-1 px-1.5 py-1 rounded border text-[10px] font-medium truncate block shadow-2xs hover:opacity-90 transition ${bgCls}">
-                ${isConflict ? '<i class="fa-solid fa-triangle-exclamation mr-0.5"></i>' : ''}#${t.queueOrder || '-'} ${escapeHTML(t.code.replace('TASK-2026-', 'T-'))}
-              </button>
-            `;
-          });
-
-          cells += `<td class="p-1.5 border-b border-r border-slate-100 align-top ${colMinW} ${isToday ? 'bg-brand-50/30' : ''}">${cellContent}</td>`;
-        });
-
-        return `<tr>${cells}</tr>`;
-      }).join('');
-
-      container.innerHTML = `
-        <table class="w-full border-collapse">
-          <thead><tr>${headerCells}</tr></thead>
-          <tbody>${bodyRows}</tbody>
-        </table>
-      `;
-    }
-
-    function openAvailableMembersModal() {
-      const threshold = parseFloat(state.rules?.availableThresholdPercent) || 75;
-      const tasks = getFilteredDashboardTasks();
-      const fStart = document.getElementById('dash-start')?.value || getRelativeDate(-14);
-      const fEnd = document.getElementById('dash-end')?.value || getRelativeDate(14);
-      const rangeDays = Math.max(1, enumerateDates(fStart <= fEnd ? fStart : fEnd, fStart <= fEnd ? fEnd : fStart).length);
-      const todayStr = getRelativeDate(0);
-
-      const avail = state.users.filter(u => {
-        const est = tasks.filter(t => t.assigneeId === u.id && t.status !== 'Completed').reduce((s, t) => s + (parseFloat(t.estimatedHours) || 0), 0);
-        const leaves = state.leaves.filter(l => l.userId === u.id && l.date >= fStart && l.date <= fEnd).length;
-        const capNum = parseFloat(u.dailyCapacity);
-        const safeCap = (!isNaN(capNum) && capNum > 0) ? capNum : 8;
-        const cap = Math.max(1, (rangeDays - leaves) * safeCap);
-        return Math.round((est / cap) * 100) < threshold;
-      });
-
+    function openAvailableMembersModal(availableMembers) {
       const body = document.getElementById('avail-modal-body');
-      if (avail.length === 0) {
-        body.innerHTML = `<div class="text-center py-6 text-slate-400">ไม่มีสมาชิกที่มีภาระงานต่ำกว่า ${threshold}% ในช่วงเวลานี้</div>`;
+      if (availableMembers.length === 0) {
+        body.innerHTML = `<div class="text-center py-8 text-slate-400">ไม่มีสมาชิกที่มีคิวว่างต่ำกว่าเกณฑ์ในช่วงเวลาที่เลือก</div>`;
       } else {
-        body.innerHTML = avail.map(u => {
-          const est = tasks.filter(t => t.assigneeId === u.id && t.status !== 'Completed').reduce((s, t) => s + (parseFloat(t.estimatedHours) || 0), 0);
-          const leaves = state.leaves.filter(l => l.userId === u.id && l.date >= fStart && l.date <= fEnd).length;
-          const capNum = parseFloat(u.dailyCapacity);
-          const safeCap = (!isNaN(capNum) && capNum > 0) ? capNum : 8;
-          const cap = Math.max(1, (rangeDays - leaves) * safeCap);
-          const pct = Math.round((est / cap) * 100);
-          return `
-            <div class="p-3.5 rounded-xl border border-emerald-200 bg-emerald-50/40 flex items-center justify-between gap-3">
-              <div>
-                <div class="font-bold text-slate-900">${escapeHTML(u.name)}</div>
-                <div class="text-xs text-slate-500">${escapeHTML(u.position)} • ภาระงาน ${pct}% (${est}/${cap} ชม.)</div>
-              </div>
-              ${isBA() ? `
-                <button type="button" onclick="document.getElementById('avail-list-modal').classList.add('hidden'); switchTab('coordinator'); document.getElementById('coord-member-select').value='${u.id}'; renderCoordinatorQueue();"
-                        class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold">
-                  จัดคิวให้คนนี้
-                </button>
-              ` : ''}
+        body.innerHTML = availableMembers.map(m => `
+          <div class="p-3.5 rounded-xl border border-emerald-200 bg-emerald-50/40 flex items-center justify-between gap-3">
+            <div>
+              <div class="font-bold text-slate-900">${escapeHTML(m.user.name)} <span class="text-xs font-normal text-slate-500">(${escapeHTML(m.user.position)})</span></div>
+              <div class="text-xs text-slate-600 mt-0.5">ภาระงาน: <b>${m.utilPercent}%</b> (${m.allocatedHours}/${m.netCapacityHours} ชม.) • คิวว่างถัดไป: <b>${escapeHTML(m.nextFreeDate)}</b></div>
             </div>
-          `;
-        }).join('');
+            <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">คิวว่าง</span>
+          </div>
+        `).join('');
       }
       document.getElementById('avail-list-modal').classList.remove('hidden');
     }
 
-    function openOverlapListModal() {
-      const list = getAllOverlappingTasks();
+    function openOverlappingTasksModal(overlappingTasks) {
       const body = document.getElementById('overlap-modal-body');
-      if (list.length === 0) {
-        body.innerHTML = `<div class="text-center py-6 text-slate-400">ไม่พบรายการงานที่ทับซ้อนหรือเกินความจุต่อวัน</div>`;
+      if (overlappingTasks.length === 0) {
+        body.innerHTML = `<div class="text-center py-8 text-slate-400">ไม่พบรายการงานที่ทับซ้อนหรือเกินความจุ</div>`;
       } else {
-        body.innerHTML = list.map(t => {
+        body.innerHTML = overlappingTasks.map(t => {
           const user = state.users.find(u => u.id === t.assigneeId);
-          const c = analyzeTaskConflicts(t, t.id);
+          const analysis = analyzeTaskConflicts(t, t.id);
           return `
-            <div class="p-3.5 rounded-xl border border-rose-200 bg-rose-50/50 space-y-1.5">
+            <div class="p-3.5 rounded-xl border border-rose-200 bg-rose-50/40 space-y-1.5">
               <div class="flex items-center justify-between">
-                <span class="font-bold text-rose-900">${escapeHTML(t.code)} - ${escapeHTML(t.title)}</span>
-                <span class="text-xs font-semibold text-rose-700">${user ? escapeHTML(user.name) : ''}</span>
+                <span class="font-bold text-rose-800">${escapeHTML(t.code)} - ${escapeHTML(t.title)}</span>
+                ${getStatusBadgeHTML(t.status)}
               </div>
-              <div class="text-xs text-rose-800">${c.messages[0] || 'มีการบันทึกแบบ Override งานทับซ้อน'}</div>
-              <div class="text-[11px] text-slate-500">ช่วงวันที่: ${escapeHTML(formatDateRangeLabel(t.startDate, t.endDate))}</div>
+              <div class="text-xs text-slate-700">ผู้รับผิดชอบ: <b>${user ? escapeHTML(user.name) : '-'}</b> | กำหนดการ: ${escapeHTML(formatDateRangeLabel(t.startDate, t.endDate))}</div>
+              <div class="text-xs text-rose-700">${analysis.messages[0] || 'บันทึกแบบ Override งานทับซ้อน'}</div>
             </div>
           `;
         }).join('');
@@ -4771,94 +4226,529 @@
       document.getElementById('overlap-list-modal').classList.remove('hidden');
     }
 
-    // ADMIN & AUDIT LOG (BA ONLY)
-    function switchAdminSubTab(sub) {
-      if (!isBA()) return;
-      currentAdminSubTab = sub;
-      document.querySelectorAll('.admin-sub-view').forEach(el => el.classList.add('hidden'));
-      document.getElementById(`admin-sub-${sub}`).classList.remove('hidden');
+    function renderDashboard() {
+      const startStr = document.getElementById('dash-start')?.value || '';
+      const endStr = document.getElementById('dash-end')?.value || '';
+      const todayStr = getRelativeDate(0);
+      const thresholdPct = parseFloat(state.rules.availableThresholdPercent) || 75;
 
-      document.querySelectorAll('.admin-sub-btn').forEach(btn => {
-        if (btn.dataset.admintab === sub) {
-          btn.className = 'admin-sub-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition bg-brand-600 text-white';
-        } else {
-          btn.className = 'admin-sub-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition bg-slate-100 text-slate-600 hover:bg-slate-200';
+      const lblThresh = document.getElementById('lbl-avail-threshold');
+      if (lblThresh) lblThresh.textContent = thresholdPct;
+      const chartLblThresh = document.getElementById('chart-lbl-threshold');
+      if (chartLblThresh) chartLblThresh.textContent = thresholdPct;
+
+      const baseTasks = state.tasks.filter(t => {
+        if (!matchesHorizonFilter(t, dashHorizonMode, todayStr)) return false;
+        if (dashMultiFilters.status.length > 0 && !dashMultiFilters.status.includes(t.status)) return false;
+        if (dashMultiFilters.sprint.length > 0 && !dashMultiFilters.sprint.includes((t.sprint || '').trim())) return false;
+        if (dashMultiFilters.source.length > 0 && !dashMultiFilters.source.includes(t.source)) return false;
+        if (dashMultiFilters.org.length > 0 && !dashMultiFilters.org.includes(t.orgId)) return false;
+        if (dashMultiFilters.member.length > 0) {
+          const matchesMember = dashMultiFilters.member.some(mVal =>
+            mVal === '__UNASSIGNED__' ? !t.assigneeId : t.assigneeId === mVal
+          );
+          if (!matchesMember) return false;
         }
+        return true;
       });
 
-      if (sub === 'rules' && typeof window.syncFirebaseFormInputs === 'function') {
-        window.syncFirebaseFormInputs();
+      const filteredTasks = baseTasks.filter(t => {
+        if (dashFocusMode === 'Blocked') return t.status === 'Blocked';
+        if (dashFocusMode === 'Overdue') return t.status !== 'Completed' && t.endDate && t.endDate < todayStr;
+        if (dashFocusMode === 'Overlap') {
+          if (t.status === 'Completed' || !t.assigneeId) return false;
+          const a = analyzeTaskConflicts(t, t.id);
+          return a.hasConflict || Boolean(t.overrideWarning);
+        }
+        return true;
+      });
+
+      const totalTasks = filteredTasks.length;
+      const internalCount = filteredTasks.filter(t => t.source === 'Internal').length;
+      const externalCount = filteredTasks.filter(t => t.source === 'External').length;
+      const inProgressCount = filteredTasks.filter(t => t.status === 'In Progress').length;
+      const completedCount = filteredTasks.filter(t => t.status === 'Completed').length;
+      const blockedCount = filteredTasks.filter(t => t.status === 'Blocked').length;
+      const overdueCount = filteredTasks.filter(t => t.status !== 'Completed' && t.endDate && t.endDate < todayStr).length;
+      const overlappingTasks = getAllOverlappingTasks();
+      const overlapCount = overlappingTasks.length;
+      const totalSP = filteredTasks.reduce((s, t) => s + (t.storyPoints || 0), 0);
+
+      let calcDays = 10;
+      if (startStr && endStr && startStr <= endStr) {
+        calcDays = Math.max(1, enumerateDates(startStr, endStr).length);
+      } else if (state.tasks.length > 0) {
+        const dated = state.tasks.filter(t => t.startDate && t.endDate && t.startDate <= t.endDate);
+        if (dated.length > 0) {
+          const minD = dated.reduce((m, t) => t.startDate < m ? t.startDate : m, dated[0].startDate);
+          const maxD = dated.reduce((m, t) => t.endDate > m ? t.endDate : m, dated[0].endDate);
+          calcDays = Math.max(1, enumerateDates(minD, maxD).length);
+        }
       }
-    }
 
-    function renderAdminView() {
-      if (!isBA()) return;
-      switchAdminSubTab(currentAdminSubTab);
+      const memberMetrics = state.users.map(u => {
+        const capNum = parseFloat(u.dailyCapacity);
+        const cap = (!isNaN(capNum) && capNum > 0) ? capNum : 8;
 
-      document.getElementById('admin-users-tbody').innerHTML = state.users.map(u => {
-        const leaveCnt = state.leaves.filter(l => l.userId === u.id).length;
+        const uTasks = state.tasks.filter(t => {
+          if (t.assigneeId !== u.id || t.status === 'Completed') return false;
+          if (!matchesHorizonFilter(t, dashHorizonMode, todayStr)) return false;
+          if (dashMultiFilters.status.length > 0 && !dashMultiFilters.status.includes(t.status)) return false;
+          if (dashMultiFilters.sprint.length > 0 && !dashMultiFilters.sprint.includes((t.sprint || '').trim())) return false;
+          if (dashMultiFilters.source.length > 0 && !dashMultiFilters.source.includes(t.source)) return false;
+          if (dashMultiFilters.org.length > 0 && !dashMultiFilters.org.includes(t.orgId)) return false;
+          if (startStr && endStr && startStr <= endStr && t.startDate && t.endDate) {
+            return !(t.endDate < startStr || t.startDate > endStr);
+          }
+          return true;
+        });
+
+        const uInt = uTasks.filter(t => t.source === 'Internal').length;
+        const uExt = uTasks.filter(t => t.source === 'External').length;
+        const uSP = uTasks.reduce((s, t) => s + (t.storyPoints || 0), 0);
+        const currentDoing = uTasks.filter(t => t.status === 'In Progress');
+
+        const allocatedHours = Number(uTasks.reduce((s, t) => s + (parseFloat(t.estimatedHours) || 0), 0).toFixed(1));
+
+        const leavesInRange = state.leaves.filter(l => {
+          if (l.userId !== u.id) return false;
+          if (startStr && endStr && startStr <= endStr) return l.date >= startStr && l.date <= endStr;
+          return true;
+        }).length;
+
+        const netCapacityHours = Math.max(cap, (calcDays - leavesInRange) * cap);
+        const utilPercent = Math.round((allocatedHours / netCapacityHours) * 100);
+
+        let latestEnd = todayStr;
+        uTasks.forEach(t => {
+          if (t.endDate && t.endDate >= latestEnd) {
+            const d = parseLocalDate(t.endDate);
+            if (d) {
+              d.setDate(d.getDate() + 1);
+              latestEnd = toLocalDateStr(d);
+            }
+          }
+        });
+        while (state.leaves.some(l => l.userId === u.id && l.date === latestEnd)) {
+          const d = parseLocalDate(latestEnd);
+          if (!d) break;
+          d.setDate(d.getDate() + 1);
+          latestEnd = toLocalDateStr(d);
+        }
+
+        const hasConflict = uTasks.some(t => analyzeTaskConflicts(t, t.id).hasConflict || t.overrideWarning);
+
+        return {
+          user: u,
+          tasks: uTasks,
+          uInt, uExt, uSP,
+          currentDoing,
+          allocatedHours,
+          netCapacityHours,
+          utilPercent,
+          nextFreeDate: formatThaiDate(latestEnd),
+          hasConflict
+        };
+      });
+
+      const visibleMemberMetrics = dashMultiFilters.member.length > 0
+        ? memberMetrics.filter(m => dashMultiFilters.member.includes(m.user.id))
+        : memberMetrics;
+
+      const availableMembers = visibleMemberMetrics.filter(m => m.utilPercent < thresholdPct);
+
+      document.getElementById('kpi-grid').innerHTML = `
+        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-2xs flex flex-col justify-between">
+          <div class="flex items-center justify-between text-slate-500 text-xs font-medium">
+            <span>งานทั้งหมด (Tasks)</span>
+            <span class="w-8 h-8 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center"><i class="fa-solid fa-layer-group"></i></span>
+          </div>
+          <div class="mt-3 flex items-baseline gap-2">
+            <span class="text-2xl sm:text-3xl font-bold text-slate-900">${totalTasks}</span>
+            <span class="text-xs text-slate-400">ใบงาน (${totalSP} SP)</span>
+          </div>
+          <div class="mt-2 text-[11px] text-slate-500">Int: <b>${internalCount}</b> • Ext: <b>${externalCount}</b></div>
+        </div>
+
+        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-2xs flex flex-col justify-between">
+          <div class="flex items-center justify-between text-slate-500 text-xs font-medium">
+            <span>กำลังทำ / เสร็จแล้ว</span>
+            <span class="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center"><i class="fa-solid fa-spinner"></i></span>
+          </div>
+          <div class="mt-3 flex items-baseline gap-2">
+            <span class="text-2xl sm:text-3xl font-bold text-blue-600">${inProgressCount}</span>
+            <span class="text-xs text-slate-400">กำลังทำ</span>
+          </div>
+          <div class="mt-2 text-[11px] text-emerald-700 font-medium">เสร็จสิ้นแล้ว: <b>${completedCount}</b> งาน</div>
+        </div>
+
+        <div onclick="setDashFocus(dashFocusMode === 'Blocked' ? 'ALL' : 'Blocked')" class="cursor-pointer bg-white p-4 sm:p-5 rounded-2xl border ${blockedCount > 0 ? 'border-rose-300 ring-2 ring-rose-100' : 'border-slate-200'} shadow-2xs flex flex-col justify-between hover:border-rose-400 transition">
+          <div class="flex items-center justify-between text-slate-500 text-xs font-medium">
+            <span>งานติดปัญหา (Blocked)</span>
+            <span class="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center"><i class="fa-solid fa-ban"></i></span>
+          </div>
+          <div class="mt-3 flex items-baseline gap-2">
+            <span class="text-2xl sm:text-3xl font-bold ${blockedCount > 0 ? 'text-rose-600' : 'text-slate-900'}">${blockedCount}</span>
+            <span class="text-xs text-slate-400">รายการ</span>
+          </div>
+          <div class="mt-2 text-[11px] ${blockedCount > 0 ? 'text-rose-600 font-semibold' : 'text-slate-400'}">คลิกเพื่อกรองเฉพาะงาน Blocked</div>
+        </div>
+
+        <div onclick="setDashFocus(dashFocusMode === 'Overdue' ? 'ALL' : 'Overdue')" class="cursor-pointer bg-white p-4 sm:p-5 rounded-2xl border ${overdueCount > 0 ? 'border-amber-300 ring-2 ring-amber-100' : 'border-slate-200'} shadow-2xs flex flex-col justify-between hover:border-amber-400 transition">
+          <div class="flex items-center justify-between text-slate-500 text-xs font-medium">
+            <span>งานเลยกำหนด (Overdue)</span>
+            <span class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center"><i class="fa-solid fa-clock-rotate-left"></i></span>
+          </div>
+          <div class="mt-3 flex items-baseline gap-2">
+            <span class="text-2xl sm:text-3xl font-bold ${overdueCount > 0 ? 'text-amber-600' : 'text-slate-900'}">${overdueCount}</span>
+            <span class="text-xs text-slate-400">รายการ</span>
+          </div>
+          <div class="mt-2 text-[11px] ${overdueCount > 0 ? 'text-amber-700 font-semibold' : 'text-slate-400'}">คลิกเพื่อกรองงานเลยกำหนด</div>
+        </div>
+
+        <div onclick="openAvailableMembersModal(${encodeURIComponent(JSON.stringify(availableMembers)).replace(/"/g, '&quot;')})" class="cursor-pointer bg-white p-4 sm:p-5 rounded-2xl border border-emerald-200 shadow-2xs flex flex-col justify-between hover:border-emerald-400 transition">
+          <div class="flex items-center justify-between text-slate-500 text-xs font-medium">
+            <span>สมาชิกคิวว่าง (&lt;${thresholdPct}%)</span>
+            <span class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center"><i class="fa-solid fa-user-check"></i></span>
+          </div>
+          <div class="mt-3 flex items-baseline gap-2">
+            <span class="text-2xl sm:text-3xl font-bold text-emerald-600">${availableMembers.length}</span>
+            <span class="text-xs text-slate-400">/ ${visibleMemberMetrics.length} คน</span>
+          </div>
+          <div class="mt-2 text-[11px] text-emerald-700 font-medium">คลิกเพื่อดูรายชื่อคนคิวว่าง</div>
+        </div>
+
+        <div onclick="openOverlappingTasksModal(${encodeURIComponent(JSON.stringify(overlappingTasks)).replace(/"/g, '&quot;')})" class="cursor-pointer bg-white p-4 sm:p-5 rounded-2xl border ${overlapCount > 0 ? 'border-rose-300 ring-2 ring-rose-100' : 'border-slate-200'} shadow-2xs flex flex-col justify-between hover:border-rose-400 transition">
+          <div class="flex items-center justify-between text-slate-500 text-xs font-medium">
+            <span>งานทับซ้อน / เกินความจุ</span>
+            <span class="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center"><i class="fa-solid fa-triangle-exclamation"></i></span>
+          </div>
+          <div class="mt-3 flex items-baseline gap-2">
+            <span class="text-2xl sm:text-3xl font-bold ${overlapCount > 0 ? 'text-rose-600' : 'text-emerald-600'}">${overlapCount}</span>
+            <span class="text-xs text-slate-400">รายการ</span>
+          </div>
+          <div class="mt-2 text-[11px] ${overlapCount > 0 ? 'text-rose-600 font-semibold' : 'text-slate-400'}">คลิกเพื่อดูรายละเอียดงานทับซ้อน</div>
+        </div>
+      `;
+
+      const riskBanner = document.getElementById('dash-risk-banner');
+      if (blockedCount > 0 || overdueCount > 0 || overlapCount > 0) {
+        riskBanner.classList.remove('hidden');
+        riskBanner.className = 'bg-rose-50/90 border border-rose-200 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3';
+        riskBanner.innerHTML = `
+          <div class="flex items-start gap-3 text-rose-900">
+            <i class="fa-solid fa-circle-exclamation text-xl text-rose-600 mt-0.5"></i>
+            <div class="text-xs sm:text-sm space-y-0.5">
+              <div class="font-bold">ตรวจพบรายการที่ต้องติดตามความเสี่ยงในระบบ:</div>
+              <div>
+                ${blockedCount > 0 ? `<span class="font-semibold underline">ติดปัญหา (Blocked) ${blockedCount} งาน</span> • ` : ''}
+                ${overdueCount > 0 ? `<span class="font-semibold underline">เลยกำหนด (Overdue) ${overdueCount} งาน</span> • ` : ''}
+                ${overlapCount > 0 ? `<span class="font-semibold underline">งานทับซ้อน / เกินความจุ ${overlapCount} งาน</span>` : ''}
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            ${blockedCount > 0 ? `<button type="button" onclick="setDashFocus('Blocked')" class="px-3 py-1.5 rounded-xl bg-rose-600 text-white text-xs font-semibold hover:bg-rose-700">ดูงาน Blocked</button>` : ''}
+            ${overlapCount > 0 ? `<button type="button" onclick="setDashFocus('Overlap')" class="px-3 py-1.5 rounded-xl bg-white border border-rose-300 text-rose-700 text-xs font-semibold hover:bg-rose-100">ดูงานทับซ้อน</button>` : ''}
+          </div>
+        `;
+      } else {
+        riskBanner.classList.add('hidden');
+      }
+
+      const dashCountPill = document.getElementById('dash-task-count-pill');
+      if (dashCountPill) dashCountPill.textContent = `${filteredTasks.length} รายการ`;
+
+      const dashTbody = document.getElementById('dash-tasks-tbody');
+      if (dashTbody) {
+        if (filteredTasks.length === 0) {
+          dashTbody.innerHTML = `<tr><td colspan="6" class="py-10 text-center text-slate-400">ไม่พบรายการงานตามเงื่อนไข Checkbox ที่เลือก</td></tr>`;
+        } else {
+          dashTbody.innerHTML = filteredTasks.map(t => {
+            const user = state.users.find(u => u.id === t.assigneeId);
+            const isOverdue = t.status !== 'Completed' && t.endDate && t.endDate < todayStr;
+            return `
+              <tr onclick="openDetailModal('${t.id}')" class="hover:bg-brand-50/40 transition cursor-pointer">
+                <td class="py-3 px-4 whitespace-nowrap font-bold text-brand-700">${escapeHTML(t.code)}</td>
+                <td class="py-3 px-4">
+                  <div class="font-semibold text-slate-900">${escapeHTML(t.title)}</div>
+                  <div class="flex flex-wrap items-center gap-1.5 mt-1">
+                    ${getHorizonBadgeHTML(t, todayStr)}
+                    ${getTaskTypeBadgeHTML(t.taskType)}
+                    ${getOrgBadgeHTML(t.orgId, t.source)}
+                    ${isOverdue ? `<span class="text-[10px] font-bold bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded">เลยกำหนด</span>` : ''}
+                  </div>
+                </td>
+                <td class="py-3 px-4 whitespace-nowrap text-xs text-slate-600">${escapeHTML(formatDateRangeLabel(t.startDate, t.endDate))}</td>
+                <td class="py-3 px-4 whitespace-nowrap text-xs font-medium text-slate-700">${user ? escapeHTML(user.name) : '<span class="text-amber-700">ยังไม่ระบุ</span>'}</td>
+                <td class="py-3 px-4 whitespace-nowrap">${getStatusBadgeHTML(t.status)}</td>
+                <td class="py-3 px-4 whitespace-nowrap text-right font-bold text-slate-800">${t.estimatedHours} <span class="text-xs font-normal text-slate-400">ชม.</span></td>
+              </tr>
+            `;
+          }).join('');
+        }
+      }
+
+      const intPct = totalTasks > 0 ? Math.round((internalCount / totalTasks) * 100) : 0;
+      const extPct = totalTasks > 0 ? 100 - intPct : 0;
+      document.getElementById('chart-source-ratio').innerHTML = `
+        <div class="flex justify-between text-xs font-semibold">
+          <span class="text-indigo-700">Internal: ${internalCount} งาน (${intPct}%)</span>
+          <span class="text-teal-700">External: ${externalCount} งาน (${extPct}%)</span>
+        </div>
+        <div class="w-full h-4 rounded-full bg-slate-100 overflow-hidden flex">
+          <div class="bg-indigo-500 h-full transition-all" style="width:${intPct}%"></div>
+          <div class="bg-teal-500 h-full transition-all" style="width:${extPct}%"></div>
+        </div>
+      `;
+
+      const typeCounts = ['Feature', 'Bug Fix', 'Enhancement', 'UAT / QA', 'DevOps'].map(tp => ({
+        type: tp,
+        count: filteredTasks.filter(t => (t.taskType || 'Feature') === tp).length
+      })).filter(x => x.count > 0);
+
+      document.getElementById('chart-type-breakdown').innerHTML = typeCounts.length === 0
+        ? `<div class="text-xs text-slate-400">ไม่มีข้อมูลประเภทงาน</div>`
+        : typeCounts.map(item => {
+            const pct = totalTasks > 0 ? Math.round((item.count / totalTasks) * 100) : 0;
+            return `
+              <div class="space-y-1">
+                <div class="flex justify-between text-[11px] font-medium text-slate-600">
+                  <span>${escapeHTML(item.type)}</span>
+                  <span>${item.count} งาน (${pct}%)</span>
+                </div>
+                <div class="w-full h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                  <div class="bg-brand-500 h-full rounded-full" style="width:${pct}%"></div>
+                </div>
+              </div>
+            `;
+          }).join('');
+
+      document.getElementById('chart-status-pills').innerHTML = ALL_STATUSES.map(st => {
+        const cnt = filteredTasks.filter(t => t.status === st).length;
+        const isSelected = dashMultiFilters.status.includes(st);
         return `
-          <tr class="hover:bg-slate-50">
-            <td class="py-3 px-4">
-              <div class="font-bold text-slate-900">${escapeHTML(u.name)}</div>
-              <div class="text-xs text-slate-500">${escapeHTML(u.position)}</div>
+          <button type="button" onclick="syncStatusFilterFromPill('${st}')" class="p-2 rounded-xl border ${isSelected ? 'border-brand-500 bg-brand-50 ring-1 ring-brand-400' : 'border-slate-100 bg-slate-50 hover:bg-slate-100'} transition">
+            <div class="text-base font-bold text-slate-800">${cnt}</div>
+            <div class="text-[10px] font-medium text-slate-500 truncate">${st}</div>
+          </button>
+        `;
+      }).join('');
+
+      const totalVisibleSP = visibleMemberMetrics.reduce((s, m) => s + m.uSP, 0);
+      document.getElementById('chart-total-sp').textContent = `${totalVisibleSP} Story Points`;
+
+      document.getElementById('chart-member-bars').innerHTML = visibleMemberMetrics.map(m => {
+        const widthPct = Math.min(100, m.utilPercent);
+        const barColor = m.utilPercent > 100 ? 'bg-rose-500' : (m.utilPercent < thresholdPct ? 'bg-emerald-500' : 'bg-blue-500');
+        const isMemberSelected = dashMultiFilters.member.includes(m.user.id);
+        return `
+          <div onclick="toggleMemberFilterFromChart('${m.user.id}')" class="space-y-1 cursor-pointer p-1.5 rounded-xl ${isMemberSelected ? 'bg-brand-50/70 ring-1 ring-brand-300' : 'hover:bg-slate-50'} transition" title="คลิกเพื่อสลับฟิลเตอร์สมาชิก">
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-semibold text-slate-800">${escapeHTML(m.user.name)} <span class="text-[10px] font-normal text-slate-400">(${m.uSP} SP)</span></span>
+              <span class="font-bold ${m.utilPercent > 100 ? 'text-rose-600' : (m.utilPercent < thresholdPct ? 'text-emerald-600' : 'text-blue-600')}">
+                ${m.utilPercent}% <span class="font-normal text-slate-400">(${m.allocatedHours}/${m.netCapacityHours}h)</span>
+              </span>
+            </div>
+            <div class="relative w-full h-3 rounded-full bg-slate-100 overflow-visible">
+              <div class="${barColor} h-3 rounded-full transition-all" style="width:${widthPct}%"></div>
+              <div class="absolute top-0 bottom-0 border-r-2 border-dashed border-emerald-600" style="left:${Math.min(100, thresholdPct)}%"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      document.getElementById('workload-table-body').innerHTML = visibleMemberMetrics.map(m => {
+        const barColor = m.utilPercent > 100 ? 'bg-rose-500' : (m.utilPercent < thresholdPct ? 'bg-emerald-500' : 'bg-blue-500');
+        const statusLabel = m.utilPercent > 100
+          ? `<span class="text-xs font-bold text-rose-600">เกินกำลัง (${m.utilPercent}%)</span>`
+          : (m.utilPercent < thresholdPct
+            ? `<span class="text-xs font-bold text-emerald-600">คิวว่าง (${m.utilPercent}%)</span>`
+            : `<span class="text-xs font-semibold text-blue-600">ปกติ (${m.utilPercent}%)</span>`);
+
+        return `
+          <tr class="hover:bg-slate-50/70">
+            <td class="py-3.5 px-4">
+              <div class="font-bold text-slate-900">${escapeHTML(m.user.name)}</div>
+              <div class="text-xs text-slate-500">${escapeHTML(m.user.position)} • ${m.user.dailyCapacity} ชม./วัน</div>
             </td>
-            <td class="py-3 px-4"><span class="px-2 py-0.5 rounded-md text-xs font-semibold bg-slate-100 text-slate-700">${escapeHTML(u.role)}</span></td>
-            <td class="py-3 px-4 text-center font-semibold">${u.dailyCapacity} ชม.</td>
-            <td class="py-3 px-4 text-center"><span class="px-2 py-0.5 rounded-full text-xs bg-amber-50 text-amber-800 font-semibold">${leaveCnt} วัน</span></td>
-            <td class="py-3 px-4 text-right space-x-1">
-              <button type="button" onclick="editUser('${u.id}')" class="px-2.5 py-1 rounded-lg border border-slate-200 hover:bg-slate-100 text-xs text-slate-700">แก้ไข</button>
-              <button type="button" onclick="deleteUser('${u.id}')" class="px-2.5 py-1 rounded-lg border border-rose-200 hover:bg-rose-50 text-xs text-rose-600">ลบ</button>
+            <td class="py-3.5 px-4 text-center">
+              <span class="font-bold text-slate-800">${m.tasks.length}</span>
+              <div class="text-[11px] text-slate-500"><span class="text-indigo-600 font-medium">${m.uInt} Int</span> / <span class="text-teal-600 font-medium">${m.uExt} Ext</span></div>
+            </td>
+            <td class="py-3.5 px-4 text-center font-bold text-brand-700">${m.uSP} SP</td>
+            <td class="py-3.5 px-4">
+              ${m.currentDoing.length > 0
+                ? m.currentDoing.map(d => `<div class="text-xs font-medium text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md mb-1 truncate max-w-[220px]">${escapeHTML(d.code)}: ${escapeHTML(d.title)}</div>`).join('')
+                : `<span class="text-xs text-slate-400">-</span>`}
+            </td>
+            <td class="py-3.5 px-4">
+              <div class="flex items-center justify-between text-xs mb-1">${statusLabel}</div>
+              <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                <div class="${barColor} h-2 rounded-full" style="width:${Math.min(100, m.utilPercent)}%"></div>
+              </div>
+            </td>
+            <td class="py-3.5 px-4 text-xs font-semibold text-slate-700">${escapeHTML(m.nextFreeDate)}</td>
+            <td class="py-3.5 px-4">
+              ${m.hasConflict
+                ? `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-700"><i class="fa-solid fa-triangle-exclamation"></i> มีงานทับซ้อน</span>`
+                : `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700"><i class="fa-solid fa-check"></i> ปกติ</span>`}
             </td>
           </tr>
         `;
       }).join('');
 
-      document.getElementById('admin-leaves-list').innerHTML = state.leaves.length === 0
-        ? `<span class="text-xs text-slate-400">ยังไม่มีรายการบันทึกวันลา</span>`
-        : state.leaves.map(l => {
-            const u = state.users.find(x => x.id === l.userId);
-            return `
-              <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-950">
-                <b>${u ? escapeHTML(u.name) : '-'}</b> • ${escapeHTML(formatThaiDate(l.date))} (${escapeHTML(l.reason || 'ลาหยุด')})
-                <button type="button" onclick="removeUserLeave('${l.id}')" class="text-rose-600 hover:text-rose-800 font-bold"><i class="fa-solid fa-xmark"></i></button>
-              </span>
+      renderResourceTimeline(startStr, endStr, visibleMemberMetrics);
+    }
+
+    function renderResourceTimeline(startStr, endStr, visibleMemberMetrics = null) {
+      const container = document.getElementById('timeline-container');
+      let rangeStart = startStr || getRelativeDate(-2);
+      let rangeEnd = endStr || getRelativeDate(9);
+      if (rangeStart > rangeEnd) {
+        const tmp = rangeStart;
+        rangeStart = rangeEnd;
+        rangeEnd = tmp;
+      }
+
+      const days = enumerateDates(rangeStart, rangeEnd).slice(0, 31);
+      const todayStr = getRelativeDate(0);
+      const membersToRender = visibleMemberMetrics
+        ? visibleMemberMetrics.map(m => m.user)
+        : state.users;
+
+      if (days.length === 0) {
+        container.innerHTML = `<div class="text-center py-8 text-slate-400 text-sm">กรุณาเลือกช่วงวันที่ที่ถูกต้อง</div>`;
+        return;
+      }
+
+      const headerCells = days.map(d => {
+        const isToday = d === todayStr;
+        const parts = d.split('-');
+        return `<th class="py-2 px-2 text-center text-[11px] font-semibold border-b border-slate-200 min-w-[78px] ${isToday ? 'bg-brand-50 text-brand-700' : 'text-slate-600 bg-slate-50'}">
+          <div>${parseInt(parts[2], 10)}/${parseInt(parts[1], 10)}</div>
+          ${isToday ? `<span class="text-[9px] bg-brand-600 text-white px-1.5 rounded-full">วันนี้</span>` : ''}
+        </th>`;
+      }).join('');
+
+      const rowsHTML = membersToRender.map(u => {
+        const uTasks = state.tasks.filter(t => t.assigneeId === u.id && t.status !== 'Completed');
+        const unscheduled = uTasks.filter(t => !t.startDate || !t.endDate);
+        const uLeaves = state.leaves.filter(l => l.userId === u.id);
+
+        const dayCells = days.map(d => {
+          const leave = uLeaves.find(l => l.date === d);
+          const dayTasks = uTasks.filter(t => t.startDate && t.endDate && d >= t.startDate && d <= t.endDate);
+          const conflictOnDay = dayTasks.some(t => analyzeTaskConflicts(t, t.id).conflictDates.includes(d) || t.overrideWarning);
+
+          let cellContent = '';
+          if (leave) {
+            cellContent += `<div class="text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300 rounded px-1.5 py-0.5 mb-1 truncate" title="${escapeHTML(leave.reason)}">ลา: ${escapeHTML(leave.reason || 'หยุด')}</div>`;
+          }
+
+          dayTasks.forEach(t => {
+            const isInt = t.source === 'Internal';
+            const baseStyle = conflictOnDay
+              ? 'bg-rose-100 text-rose-900 border border-rose-400 font-bold'
+              : (isInt ? 'bg-indigo-100 text-indigo-900 border border-indigo-200' : 'bg-teal-100 text-teal-900 border border-teal-200');
+            cellContent += `
+              <button type="button" onclick="openDetailModal('${t.id}')"
+                      class="w-full text-left text-[10px] rounded px-1.5 py-1 mb-1 truncate block transition hover:brightness-95 ${baseStyle}"
+                      title="${escapeHTML(t.code)}: ${escapeHTML(t.title)} (${t.status})">
+                ${conflictOnDay ? '<i class="fa-solid fa-triangle-exclamation text-rose-600 mr-0.5"></i>' : ''}#${t.queueOrder || '-'} ${escapeHTML(t.code)}
+              </button>
             `;
-          }).join('');
+          });
 
-      document.getElementById('admin-orgs-tbody').innerHTML = state.organizations.map(o => `
-        <tr class="hover:bg-slate-50">
-          <td class="py-3 px-4">
-            <span class="inline-flex items-center gap-2 font-bold text-slate-800">
-              <span class="w-3.5 h-3.5 rounded-full inline-block" style="background-color: ${escapeHTML(o.color)}"></span>
-              ${escapeHTML(o.code)}
-            </span>
-          </td>
-          <td class="py-3 px-4 font-medium text-slate-900">${escapeHTML(o.name)}</td>
-          <td class="py-3 px-4">
-            <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold ${o.type === 'Internal' ? 'bg-indigo-50 text-indigo-700' : 'bg-teal-50 text-teal-700'}">${escapeHTML(o.type)}</span>
-          </td>
-          <td class="py-3 px-4 text-center">
-            <span class="px-2 py-0.5 rounded-full text-xs font-semibold ${o.active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-400'}">${o.active ? 'ใช้งานอยู่' : 'ปิดใช้งาน'}</span>
-          </td>
-          <td class="py-3 px-4 text-right">
-            <button type="button" onclick="toggleOrgActive('${o.id}')" class="px-3 py-1 rounded-lg border border-slate-200 hover:bg-slate-100 text-xs font-medium text-slate-700">
-              ${o.active ? 'ปิดใช้งาน' : 'เปิดใช้งาน'}
-            </button>
-          </td>
-        </tr>
-      `).join('');
+          return `<td class="p-1.5 border-b border-r border-slate-100 align-top ${leave ? 'bg-amber-50/40' : (conflictOnDay ? 'bg-rose-50/40' : '')}">${cellContent}</td>`;
+        }).join('');
 
-      document.getElementById('rule-overlap-mode').value = state.rules.overlapMode || 'CAPACITY_EXCEEDED';
-      document.getElementById('rule-avail-percent').value = state.rules.availableThresholdPercent || 75;
-      if (typeof window.syncFirebaseFormInputs === 'function') {
-        window.syncFirebaseFormInputs();
+        return `
+          <tr>
+            <td class="p-3 border-b border-r border-slate-200 bg-white sticky left-0 z-10 min-w-[180px]">
+              <div class="font-bold text-xs text-slate-900">${escapeHTML(u.name)}</div>
+              <div class="text-[10px] text-slate-500">${escapeHTML(u.position)}</div>
+              ${unscheduled.length > 0
+                ? `<div class="mt-1.5 flex flex-wrap gap-1">${unscheduled.map(ut => `<button type="button" onclick="openDetailModal('${ut.id}')" class="text-[10px] bg-amber-50 text-amber-800 border border-amber-200 px-1.5 py-0.5 rounded font-medium" title="ยังไม่ระบุวันที่">รอวัน: ${escapeHTML(ut.code)}</button>`).join('')}</div>`
+                : ''}
+            </td>
+            ${dayCells}
+          </tr>
+        `;
+      }).join('');
+
+      container.innerHTML = `
+        <table class="w-full border-collapse min-w-[820px]">
+          <thead>
+            <tr>
+              <th class="py-2 px-3 text-left text-xs font-bold text-slate-700 bg-slate-100 border-b border-r border-slate-200 sticky left-0 z-20">สมาชิก / คิวรอวัน</th>
+              ${headerCells}
+            </tr>
+          </thead>
+          <tbody>${rowsHTML}</tbody>
+        </table>
+      `;
+    }
+
+    function switchAdminSubTab(sub) {
+      if (!isBA()) return;
+      currentAdminSubTab = sub;
+      document.querySelectorAll('.admin-sub-view').forEach(el => el.classList.add('hidden'));
+      document.getElementById(`admin-sub-${sub}`)?.classList.remove('hidden');
+
+      document.querySelectorAll('.admin-sub-btn').forEach(btn => {
+        if (btn.dataset.admintab === sub) {
+          btn.className = 'admin-sub-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition bg-brand-600 text-white shadow-2xs';
+        } else {
+          btn.className = 'admin-sub-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition bg-slate-100 text-slate-600 hover:bg-slate-200';
+        }
+      });
+
+      renderAdminView();
+    }
+
+    function renderAdminView() {
+      if (!isBA()) return;
+      if (currentAdminSubTab === 'users') {
+        renderAdminUsers();
+        renderAdminLeaves();
+      } else if (currentAdminSubTab === 'orgs') {
+        renderAdminOrgs();
+      } else if (currentAdminSubTab === 'rules') {
+        document.getElementById('rule-overlap-mode').value = state.rules.overlapMode;
+        document.getElementById('rule-avail-percent').value = state.rules.availableThresholdPercent;
+        if (typeof window.syncFirebaseFormInputs === 'function') {
+          window.syncFirebaseFormInputs();
+        }
       }
     }
 
-    function editUser(userId) {
+    function renderAdminUsers() {
+      const tbody = document.getElementById('admin-users-tbody');
+      tbody.innerHTML = state.users.map(u => {
+        const leaveCnt = state.leaves.filter(l => l.userId === u.id).length;
+        const taskCnt = state.tasks.filter(t => t.assigneeId === u.id && t.status !== 'Completed').length;
+        return `
+          <tr>
+            <td class="py-3 px-4">
+              <div class="font-bold text-slate-900">${escapeHTML(u.name)}</div>
+              <div class="text-xs text-slate-500">${escapeHTML(u.position)}</div>
+            </td>
+            <td class="py-3 px-4"><span class="px-2.5 py-0.5 rounded-md text-xs font-semibold bg-slate-100 text-slate-700">${escapeHTML(u.role)}</span></td>
+            <td class="py-3 px-4 text-center font-bold text-brand-700">${u.dailyCapacity} ชม.</td>
+            <td class="py-3 px-4 text-center text-xs text-amber-700 font-semibold">${leaveCnt} วัน</td>
+            <td class="py-3 px-4 text-right space-x-1">
+              <button type="button" onclick="editUser('${u.id}')" class="px-2.5 py-1 rounded-lg border border-slate-200 hover:bg-slate-100 text-xs">แก้ไข</button>
+              ${state.users.length > 1 && taskCnt === 0 ? `<button type="button" onclick="deleteUser('${u.id}')" class="px-2.5 py-1 rounded-lg border border-rose-200 text-rose-600 hover:bg-rose-50 text-xs">ลบ</button>` : ''}
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function editUser(id) {
       if (!isBA()) return;
-      const u = state.users.find(x => x.id === userId);
+      const u = state.users.find(x => x.id === id);
       if (!u) return;
       document.getElementById('user-form-title').textContent = `แก้ไขข้อมูล: ${u.name}`;
       document.getElementById('edit-user-id').value = u.id;
@@ -4878,70 +4768,67 @@
     }
 
     function saveUser() {
-      if (!isBA()) return;
+      if (!isBA()) {
+        showToast('เฉพาะ Role BA เท่านั้นที่จัดการสมาชิกได้', 'error');
+        return;
+      }
       const editId = document.getElementById('edit-user-id').value;
       const name = document.getElementById('user-name').value.trim();
       const position = document.getElementById('user-position').value.trim();
       const role = document.getElementById('user-role').value;
-      const capNum = parseFloat(document.getElementById('user-capacity').value);
-      const dailyCapacity = (!isNaN(capNum) && capNum > 0 && capNum <= 24) ? capNum : 8;
+      const cap = parseFloat(document.getElementById('user-capacity').value);
 
-      if (!name || !position) {
-        showToast('กรุณากรอกชื่อ-นามสกุล และตำแหน่ง', 'error');
+      if (!name || !position || isNaN(cap) || cap <= 0) {
+        showToast('กรุณากรอกชื่อ ตำแหน่ง และความจุต่อวันให้ถูกต้อง', 'error');
         return;
       }
 
       if (editId) {
-        const idx = state.users.findIndex(x => x.id === editId);
+        const idx = state.users.findIndex(u => u.id === editId);
         if (idx !== -1) {
-          state.users[idx] = { ...state.users[idx], name, position, role, dailyCapacity };
-          addAuditLog('UPDATE_USER', '-', `แก้ไขข้อมูลสมาชิก ${name} (${dailyCapacity} ชม./วัน)`);
+          state.users[idx] = { ...state.users[idx], name, position, role, dailyCapacity: cap };
+          addAuditLog('UPDATE_USER', '-', `แก้ไขข้อมูลสมาชิก ${name} (Capacity ${cap} ชม./วัน)`);
           showToast('อัปเดตข้อมูลสมาชิกเรียบร้อย', 'success');
         }
       } else {
-        state.users.push({ id: 'u_' + Date.now(), name, position, role, dailyCapacity });
+        state.users.push({ id: 'u_' + Date.now(), name, position, role, dailyCapacity: cap });
         addAuditLog('ADD_USER', '-', `เพิ่มสมาชิกใหม่ ${name} (${position})`);
-        showToast('เพิ่มสมาชิกใหม่เรียบร้อย', 'success');
+        showToast('เพิ่มสมาชิกทีมใหม่เรียบร้อย', 'success');
       }
 
       saveState();
       populateAllSelects();
       resetUserForm();
-      renderAdminView();
+      renderAdminUsers();
     }
 
-    function deleteUser(userId) {
+    function deleteUser(id) {
       if (!isBA()) return;
-      if (state.users.length <= 1) {
-        showToast('ต้องมีสมาชิกในทีมอย่างน้อย 1 คน', 'error');
-        return;
-      }
-      const target = state.users.find(u => u.id === userId);
+      const u = state.users.find(x => x.id === id);
+      if (!u) return;
       showConfirmModal({
         title: 'ยืนยันการลบสมาชิก',
-        message: `ยืนยันลบสมาชิก "${target?.name || ''}"? งานที่ค้างอยู่จะถูกย้ายกลับไปเป็นยังไม่ระบุผู้รับผิดชอบ`,
+        message: `ยืนยันลบสมาชิก ${u.name} ออกจากระบบ?`,
         okText: 'ลบสมาชิก',
         danger: true,
         onConfirm: () => {
-          state.tasks.forEach(t => {
-            if (t.assigneeId === userId) {
-              t.assigneeId = '';
-              t.queueOrder = 0;
-            }
-          });
-          state.leaves = state.leaves.filter(l => l.userId !== userId);
-          state.users = state.users.filter(u => u.id !== userId);
-          addAuditLog('DELETE_USER', '-', `ลบสมาชิก ${target?.name || userId}`);
+          state.users = state.users.filter(x => x.id !== id);
+          state.leaves = state.leaves.filter(l => l.userId !== id);
+          addAuditLog('DELETE_USER', '-', `ลบสมาชิก ${u.name}`);
           saveState();
           populateAllSelects();
-          renderAdminView();
+          renderAdminUsers();
+          renderAdminLeaves();
           showToast('ลบสมาชิกเรียบร้อยแล้ว', 'info');
         }
       });
     }
 
     function addUserLeave() {
-      if (!isBA()) return;
+      if (!isBA()) {
+        showToast('เฉพาะ Role BA เท่านั้นที่บันทึกวันลาได้', 'error');
+        return;
+      }
       const userId = document.getElementById('leave-user-id').value;
       const date = document.getElementById('leave-date').value;
       const reason = document.getElementById('leave-reason').value.trim() || 'ลาหยุด';
@@ -4954,20 +4841,63 @@
       addAuditLog('ADD_LEAVE', '-', `บันทึกวันลาของ ${u ? u.name : userId} วันที่ ${formatThaiDate(date)} (${reason})`);
       document.getElementById('leave-reason').value = '';
       saveState();
-      renderAdminView();
+      renderAdminUsers();
+      renderAdminLeaves();
       showToast('บันทึกวันลาเรียบร้อยแล้ว', 'success');
     }
 
-    function removeUserLeave(leaveId) {
+    function removeLeave(leaveId) {
       if (!isBA()) return;
       state.leaves = state.leaves.filter(l => l.id !== leaveId);
       saveState();
-      renderAdminView();
+      renderAdminUsers();
+      renderAdminLeaves();
       showToast('ลบรายการวันลาแล้ว', 'info');
     }
 
+    function renderAdminLeaves() {
+      const container = document.getElementById('admin-leaves-list');
+      if (state.leaves.length === 0) {
+        container.innerHTML = `<span class="text-xs text-slate-400">ยังไม่มีรายการบันทึกวันลา</span>`;
+        return;
+      }
+      container.innerHTML = state.leaves.map(l => {
+        const u = state.users.find(x => x.id === l.userId);
+        return `
+          <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-medium">
+            <b>${u ? escapeHTML(u.name) : '-'}</b> • ${escapeHTML(formatThaiDate(l.date))} (${escapeHTML(l.reason)})
+            <button type="button" onclick="removeLeave('${l.id}')" class="text-amber-700 hover:text-rose-600"><i class="fa-solid fa-xmark"></i></button>
+          </span>
+        `;
+      }).join('');
+    }
+
+    function renderAdminOrgs() {
+      const tbody = document.getElementById('admin-orgs-tbody');
+      tbody.innerHTML = state.organizations.map(o => `
+        <tr>
+          <td class="py-3 px-4">
+            <span class="inline-flex items-center gap-2 font-bold text-xs px-2.5 py-1 rounded-lg" style="background:${escapeHTML(o.color)}18;color:${escapeHTML(o.color)}">
+              <span class="w-2.5 h-2.5 rounded-full" style="background:${escapeHTML(o.color)}"></span>${escapeHTML(o.code)}
+            </span>
+          </td>
+          <td class="py-3 px-4 font-semibold text-slate-800">${escapeHTML(o.name)}</td>
+          <td class="py-3 px-4 text-xs">${o.type === 'Internal' ? '<span class="text-indigo-700 font-semibold">Internal</span>' : '<span class="text-teal-700 font-semibold">External</span>'}</td>
+          <td class="py-3 px-4 text-center">${o.active ? '<span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">ใช้งานอยู่</span>' : '<span class="text-xs font-medium text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">ปิดใช้งาน</span>'}</td>
+          <td class="py-3 px-4 text-right">
+            <button type="button" onclick="toggleOrgActive('${o.id}')" class="px-3 py-1 rounded-lg border border-slate-200 hover:bg-slate-100 text-xs font-medium">
+              ${o.active ? 'ปิดใช้งาน' : 'เปิดใช้งาน'}
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
     function addOrganization() {
-      if (!isBA()) return;
+      if (!isBA()) {
+        showToast('เฉพาะ Role BA เท่านั้นที่เพิ่มหน่วยงานได้', 'error');
+        return;
+      }
       const type = document.getElementById('org-type').value;
       const name = document.getElementById('org-name').value.trim();
       const code = document.getElementById('org-code').value.trim().toUpperCase();
@@ -4981,31 +4911,36 @@
       document.getElementById('org-name').value = '';
       document.getElementById('org-code').value = '';
       saveState();
-      updateMultiLabelsAndChips();
-      renderAdminView();
-      showToast('เพิ่มหน่วยงานใหม่เรียบร้อย', 'success');
+      populateAllSelects();
+      renderAdminOrgs();
+      showToast('เพิ่มหน่วยงานใหม่เรียบร้อยแล้ว', 'success');
     }
 
-    function toggleOrgActive(orgId) {
+    function toggleOrgActive(id) {
       if (!isBA()) return;
-      const org = state.organizations.find(o => o.id === orgId);
+      const org = state.organizations.find(o => o.id === id);
       if (!org) return;
       org.active = !org.active;
-      addAuditLog('TOGGLE_ORG', '-', `${org.active ? 'เปิดใช้งาน' : 'ปิดใช้งาน'}หน่วยงาน ${org.code}`);
+      addAuditLog('TOGGLE_ORG', '-', `${org.active ? 'เปิด' : 'ปิด'}ใช้งานหน่วยงาน ${org.code}`);
       saveState();
-      renderAdminView();
+      populateAllSelects();
+      renderAdminOrgs();
     }
 
     function saveSystemRules() {
-      if (!isBA()) return;
-      const overlapMode = document.getElementById('rule-overlap-mode').value;
-      const pct = parseInt(document.getElementById('rule-avail-percent').value, 10);
+      if (!isBA()) {
+        showToast('เฉพาะ Role BA เท่านั้นที่บันทึกกฎระบบได้', 'error');
+        return;
+      }
+      const mode = document.getElementById('rule-overlap-mode').value;
+      const pct = parseFloat(document.getElementById('rule-avail-percent').value);
       if (isNaN(pct) || pct < 1 || pct > 100) {
         showToast('เกณฑ์ % คิวว่างต้องอยู่ระหว่าง 1 - 100', 'error');
         return;
       }
-      state.rules = { overlapMode, availableThresholdPercent: pct };
-      addAuditLog('UPDATE_RULES', '-', `อัปเดตกฎระบบ: Overlap=${overlapMode}, เกณฑ์คิวว่าง=${pct}%`);
+      state.rules.overlapMode = mode;
+      state.rules.availableThresholdPercent = pct;
+      addAuditLog('UPDATE_RULES', '-', `อัปเดตกฎระบบ: Overlap=${mode}, คิวว่าง < ${pct}%`);
       saveState();
       showToast('บันทึกการตั้งค่ากฎระบบเรียบร้อยแล้ว', 'success');
     }
@@ -5018,7 +4953,7 @@
         return;
       }
       tbody.innerHTML = state.auditLogs.map(log => `
-        <tr class="hover:bg-slate-50">
+        <tr class="hover:bg-slate-50/70">
           <td class="py-3 px-4 text-xs text-slate-500 whitespace-nowrap">${escapeHTML(log.timestamp)}</td>
           <td class="py-3 px-4"><span class="px-2 py-0.5 rounded-md text-[11px] font-bold bg-slate-100 text-slate-700">${escapeHTML(log.action)}</span></td>
           <td class="py-3 px-4 text-xs font-bold text-brand-700 whitespace-nowrap">${escapeHTML(log.taskCode || '-')}</td>
@@ -5027,18 +4962,24 @@
       `).join('');
     }
 
-    (function init() {
+    window.addEventListener('DOMContentLoaded', () => {
       window.state = state;
-      document.getElementById('dash-start').value = getRelativeDate(-14);
-      document.getElementById('dash-end').value = getRelativeDate(14);
-      document.getElementById('leave-date').value = getRelativeDate(1);
-      if (typeof window.syncFirebaseFormInputs === 'function') {
-        window.syncFirebaseFormInputs();
-      }
+      window.defaultState = defaultState;
+      window.SYSTEM_NAME = SYSTEM_NAME;
+      window.STORAGE_KEY = STORAGE_KEY;
+      window.isBA = isBA;
+      window.setMainStateReference = setMainStateReference;
+      window.populateAllSelects = populateAllSelects;
+      window.applyRolePermissions = applyRolePermissions;
+      window.refreshCurrentView = refreshCurrentView;
+
+      setDashPreset('this_month');
+      setDashFocus('ALL');
+      setDashHorizon('ALL');
       populateAllSelects();
       applyRolePermissions();
       switchTab('dashboard');
-    })();
+    });
   </script>
 </body>
 </html>
