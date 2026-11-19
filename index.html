@@ -1,1551 +1,545 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Debt Freedom — ระบบช่วยปลดหนี้</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&family=Kanit:wght@600;700&display=swap" rel="stylesheet">
-<!-- Firebase (compat build – simple global API, no bundler needed) -->
-<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
-<!-- SheetJS for Excel export -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<!-- Chart.js for trend / breakdown charts -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
-<style>
-:root{
-  --ink:#10241F; --teal-900:#0B3B36; --teal-700:#0F6B5C; --teal-600:#137A68; --teal-100:#E4F3EF;
-  --amber:#E8A33D; --amber-ink:#5C3A0A; --paper:#F6F5F1; --card:#FFFFFF; --line:#E2E1DA;
-  --danger:#C1502E; --danger-bg:#FBE9E3; --warn:#B9791B; --warn-bg:#FDF0DA;
-  --good:#1E8E5A; --good-bg:#E4F4EA; --muted:#6B7A78; --radius:14px; --shadow:0 2px 10px rgba(15,42,46,.08);
-}
-*{box-sizing:border-box}
-html,body{margin:0;padding:0;height:100%}
-body{font-family:'Sarabun',sans-serif;background:var(--paper);color:var(--ink);-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
-h1,h2,h3,.disp{font-family:'Kanit',sans-serif}
-button,input,select,textarea{font-family:inherit;font-size:15px}
-button{cursor:pointer}
-::-webkit-scrollbar{width:0;height:0}
-
-#app{display:none;height:100dvh}
-#app.show{display:flex;flex-direction:column}
-.main-col{flex:1;display:flex;flex-direction:column;min-width:0}
-.topbar{background:#fff;color:var(--ink);padding:18px 18px 14px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;border-bottom:1px solid var(--line)}
-.topbar .brand{font-family:'Kanit',sans-serif;font-weight:600;font-size:17px;display:flex;align-items:center;gap:8px;color:var(--teal-900)}
-.topbar .user-chip{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
-.icon-btn{background:none;border:1px solid var(--line);color:var(--ink);width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:15px}
-.alert-strip{background:var(--warn-bg);color:var(--warn-ink,#8A5A0B);font-size:13px;padding:8px 16px;display:none;flex-shrink:0;font-weight:600}
-.alert-strip.show{display:block}
-#main{flex:1;overflow-y:auto;padding:14px 14px 88px 14px;width:100%;max-width:760px;margin:0 auto}
-.bottomnav{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);display:flex;overflow-x:auto;z-index:50;padding:0}
-.nav-btn{flex:1;min-width:0;background:none;border:none;border-top:2px solid transparent;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 6px 8px;font-size:10.5px;transition:.15s}
-.nav-btn .em{font-size:19px;opacity:.75}
-.nav-btn.active{color:var(--teal-700);border-top-color:var(--teal-700)}
-.nav-btn.active .em{opacity:1}
-
-@media(min-width:700px){
-  #main{padding:28px 24px 88px}
-  .nav-btn{font-size:11.5px}
-}
-
-.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:14px}
-.page-title{font-family:'Kanit',sans-serif;font-size:20px;font-weight:600;margin:2px 0 14px 0;color:var(--teal-900)}
-.row{display:flex;gap:10px}
-.row.wrap{flex-wrap:wrap}
-.grow{flex:1}
-.btn{border:none;border-radius:11px;padding:11px 16px;font-weight:600;font-size:14px;display:inline-flex;align-items:center;gap:6px;justify-content:center;transition:filter .15s}
-.btn:hover{filter:brightness(1.05)}
-.btn-primary{background:var(--teal-700);color:#fff}
-.btn-primary:disabled{background:#B9C9C6;color:#fff;cursor:not-allowed}
-.btn-amber{background:var(--amber);color:var(--amber-ink)}
-.btn-ghost{background:var(--teal-100);color:var(--teal-700)}
-.btn-danger{background:var(--danger-bg);color:var(--danger)}
-.btn-outline{background:#fff;border:1px solid var(--line);color:var(--ink)}
-.btn-sm{padding:7px 11px;font-size:13px;border-radius:9px}
-.btn-block{width:100%}
-label{font-size:13px;font-weight:600;color:var(--teal-900);display:block;margin:10px 0 5px}
-input[type=text],input[type=number],input[type=password],input[type=date],textarea,select{
-  width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);
-}
-input:focus,select:focus,textarea:focus{outline:2px solid var(--teal-600);outline-offset:1px}
-textarea{resize:vertical;min-height:60px}
-.req{color:var(--danger)}
-.field-err{color:var(--danger);font-size:12px;margin-top:4px}
-.hint{color:var(--muted);font-size:12px;margin-top:4px}
-.badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11.5px;font-weight:600}
-.badge.ok{background:var(--good-bg);color:var(--good)}
-.badge.off{background:#EFEEE7;color:var(--muted)}
-.badge.warn{background:var(--warn-bg);color:var(--warn)}
-.badge.danger{background:var(--danger-bg);color:var(--danger)}
-.empty{text-align:center;color:var(--muted);padding:34px 10px;font-size:14px}
-.divider{height:1px;background:var(--line);margin:12px 0}
-.searchbar{display:flex;gap:8px;margin-bottom:12px}
-.searchbar input{flex:1}
-.list-item{display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
-.list-item:last-child{border-bottom:none}
-.li-title{font-weight:600;font-size:14.5px}
-.li-sub{font-size:12.5px;color:var(--muted);margin-top:2px}
-.li-actions{display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end}
-.thumb.ph{width:44px;height:44px;border-radius:10px;background:var(--teal-100);display:flex;align-items:center;justify-content:center;font-size:19px;color:var(--teal-600);flex-shrink:0}
-
-.modal-bg{position:fixed;inset:0;background:rgba(15,42,46,.45);display:none;align-items:flex-end;justify-content:center;z-index:200}
-.modal-bg.show{display:flex}
-.modal{background:#fff;border-radius:18px 18px 0 0;max-width:560px;width:100%;max-height:92vh;overflow-y:auto;padding:18px;animation:slideup .18s ease-out}
-@media(min-width:640px){.modal-bg{align-items:center}.modal{border-radius:18px}}
-@keyframes slideup{from{transform:translateY(24px);opacity:.6}to{transform:translateY(0);opacity:1}}
-.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
-.modal-head h3{margin:0;font-size:18px}
-.close-x{background:none;border:none;font-size:22px;color:var(--muted);line-height:1}
-
-#login-screen{height:100dvh;display:flex;align-items:center;justify-content:center;background:var(--paper);padding:20px}
-.login-card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:30px 26px;width:100%;max-width:360px}
-.login-card h1{text-align:center;color:var(--teal-900);font-size:21px;margin:6px 0 2px}
-.login-card p.sub{text-align:center;color:var(--muted);font-size:13px;margin:0 0 18px}
-.login-logo{width:56px;height:56px;background:var(--teal-100);border-radius:16px;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:26px;color:var(--teal-700)}
-
-table{width:100%;border-collapse:collapse;font-size:13.5px}
-th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line)}
-th{color:var(--muted);font-weight:600;font-size:12.5px}
-.tbl-wrap{overflow-x:auto}
-
-.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
-@media(min-width:700px){.stat-grid{grid-template-columns:repeat(4,1fr)}}
-.stat{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px}
-.stat .v{font-family:'Kanit',sans-serif;font-size:19px;font-weight:700;color:var(--teal-900)}
-.stat .l{font-size:12px;color:var(--muted);margin-top:2px}
-.stat.accent .v{color:var(--amber-ink)}
-
-.progress-track{height:12px;background:var(--teal-100);border-radius:20px;overflow:hidden;margin:8px 0}
-.progress-fill{height:100%;background:linear-gradient(90deg,var(--teal-600),var(--teal-700));border-radius:20px;transition:width .3s}
-
-.tabs{display:flex;gap:6px;margin-bottom:12px;background:var(--teal-100);padding:4px;border-radius:11px}
-.tab{flex:1;text-align:center;padding:8px;border-radius:8px;font-size:13px;font-weight:600;color:var(--teal-700);background:none;border:none}
-.tab.active{background:#fff;border:1px solid var(--line)}
-
-.strategy-card{border:2px solid var(--line);border-radius:14px;padding:14px;cursor:pointer;transition:.15s}
-.strategy-card.active{border-color:var(--teal-600);background:var(--teal-100)}
-.strategy-card h4{margin:0 0 4px;font-family:'Kanit',sans-serif;font-size:15px;color:var(--teal-900)}
-.strategy-card p{margin:0;font-size:12.5px;color:var(--muted)}
-
-.timeline{position:relative;padding-left:22px}
-.timeline::before{content:'';position:absolute;left:6px;top:4px;bottom:4px;width:2px;background:var(--line)}
-.tl-item{position:relative;padding-bottom:16px}
-.tl-item::before{content:'';position:absolute;left:-22px;top:3px;width:12px;height:12px;border-radius:50%;background:var(--teal-600);border:2px solid #fff;box-shadow:0 0 0 1px var(--line)}
-.tl-item.done::before{background:var(--good)}
-
-.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:30px;font-size:13px;z-index:400;opacity:0;transition:.25s;pointer-events:none}
-.toast.show{opacity:1;bottom:100px}
-.check-alert{background:var(--danger-bg);border-radius:10px;padding:9px 12px;color:var(--danger);font-size:12.5px;margin-bottom:10px;display:none}
-.check-alert.show{display:block}
-.slider-wrap{padding:6px 4px}
-input[type=range]{width:100%;accent-color:var(--teal-700)}
-.switch{position:relative;width:46px;height:26px;flex-shrink:0;display:inline-block}
-.switch input{opacity:0;width:0;height:0}
-.slider-toggle{position:absolute;inset:0;background:#D8D6CC;border-radius:20px;transition:.2s}
-.slider-toggle:before{content:"";position:absolute;width:20px;height:20px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
-.switch input:checked + .slider-toggle{background:var(--teal-600)}
-.switch input:checked + .slider-toggle:before{transform:translateX(20px)}
-
-/* ---- history / filters / analysis / sync (added) ---- */
-.filter-bar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
-.filter-bar select,.filter-bar input[type=date]{width:auto;flex:1;min-width:110px}
-.seg{display:flex;background:var(--teal-100);border-radius:10px;padding:3px;gap:2px;flex-wrap:wrap}
-.seg button{flex:1;min-width:56px;border:none;background:none;padding:7px 8px;border-radius:8px;font-size:12.5px;font-weight:600;color:var(--teal-700)}
-.seg button.active{background:#fff;border:1px solid var(--line)}
-.tx-item{display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
-.tx-item:last-child{border-bottom:none}
-.tx-ico{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
-.tx-ico.income{background:var(--good-bg);color:var(--good)}
-.tx-ico.expense{background:var(--danger-bg);color:var(--danger)}
-.tx-amt{font-weight:700;font-size:14px;white-space:nowrap}
-.tx-amt.income{color:var(--good)}
-.tx-amt.expense{color:var(--danger)}
-.chart-wrap{position:relative;height:220px;margin-top:10px}
-.rec-card{border-left:4px solid var(--amber);background:#FFF8EC;border-radius:10px;padding:12px 14px;margin-bottom:10px}
-.rec-card b{font-size:13.5px;color:var(--amber-ink)}
-.rec-card p{margin:5px 0 0;font-size:12.5px;color:var(--ink)}
-.insight-card{border-left:4px solid var(--teal-600);background:var(--paper);border-radius:10px;padding:12px 14px;margin-bottom:10px}
-.insight-card.danger{border-left-color:var(--danger);background:var(--danger-bg)}
-.insight-card.opportunity{border-left-color:var(--amber);background:#FFF8EC}
-.insight-card.success{border-left-color:var(--good);background:var(--good-bg)}
-.insight-card .it{font-weight:700;font-size:13.5px}
-.insight-card .id{font-size:12.5px;color:var(--ink);margin-top:5px}
-.insight-card .ia{font-size:12px;color:var(--teal-700);margin-top:7px;font-weight:600}
-.sync-badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:5px 10px;border-radius:20px;font-weight:600}
-.sync-badge.on{background:var(--good-bg);color:var(--good)}
-.sync-badge.off{background:#EFEEE7;color:var(--muted)}
-.summary-table td.num{text-align:right;font-variant-numeric:tabular-nums}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Task & Executive System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
-<body>
+<body class="bg-slate-100 text-slate-800 min-h-screen">
+  <div class="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
 
-<div id="login-screen">
-  <div class="login-card">
-    <div class="login-logo">💸</div>
-    <h1>Debt Freedom</h1>
-    <p class="sub">ระบบช่วยวางแผนปลดหนี้ส่วนบุคคล</p>
-    <div id="setup-view">
-      <label>ชื่อของคุณ</label>
-      <input type="text" id="setup-name" placeholder="เช่น คุณสมชาย">
-      <label>ตั้งรหัส PIN 4 หลัก (ไม่บังคับ — เว้นว่างได้ถ้าไม่ต้องการล็อก)</label>
-      <input type="password" id="setup-pin" maxlength="4" inputmode="numeric" placeholder="เช่น 1234">
-      <div class="field-err" id="setup-err" style="display:none"></div>
-      <button class="btn btn-primary btn-block" style="margin-top:16px" onclick="doSetup()">เริ่มต้นใช้งาน</button>
-    </div>
-    <div id="unlock-view" style="display:none">
-      <p class="hint" style="text-align:center" id="unlock-name"></p>
-      <label>กรอกรหัส PIN</label>
-      <input type="password" id="unlock-pin" maxlength="4" inputmode="numeric" placeholder="••••">
-      <div class="field-err" id="unlock-err" style="display:none"></div>
-      <button class="btn btn-primary btn-block" style="margin-top:16px" onclick="doUnlock()">เข้าสู่ระบบ</button>
-      <p class="hint" style="text-align:center;margin-top:16px"><a href="javascript:void(0)" onclick="openResetModal()" style="color:var(--muted)">ลืม PIN? ล้างข้อมูล/เริ่มต้นใหม่</a></p>
-    </div>
-  </div>
-</div>
-
-<div id="app">
-  <div class="main-col">
-    <div class="topbar">
-      <div class="brand">💸 Debt Freedom</div>
-      <div class="row" style="align-items:center">
-        <div class="user-chip" id="tb-user"></div>
-        <button class="icon-btn" onclick="doLock()" title="ล็อกระบบ">🔒</button>
+    <!-- Header & Actions -->
+    <div class="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-xl shadow-sm">
+      <div>
+        <h1 class="text-xl font-bold text-slate-900">Work & Sprint Management</h1>
+        <p class="text-sm text-slate-500">Executive Dashboard, Task Board & All Tasks Table</p>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <button onclick="downloadTemplate()" class="px-3 py-2 text-sm rounded-lg border border-slate-300 hover:bg-slate-50">
+          ดาวน์โหลด Excel Template
+        </button>
+        <label class="px-3 py-2 text-sm rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer">
+          นำเข้า Excel
+          <input type="file" id="excelInput" accept=".xlsx,.xls,.csv" class="hidden" onchange="handleExcelImport(event)" />
+        </label>
+        <button onclick="openCreateModal()" class="px-3 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700">
+          + สร้างงานใหม่
+        </button>
       </div>
     </div>
-    <div class="alert-strip" id="alert-strip"></div>
-    <div id="main"></div>
+
+    <!-- Navigation Tabs -->
+    <div class="flex gap-2 border-b border-slate-200 pb-2">
+      <button id="tab-dashboard" onclick="switchTab('dashboard')" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium bg-blue-600 text-white">
+        Executive Dashboard
+      </button>
+      <button id="tab-board" onclick="switchTab('board')" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium bg-white text-slate-700 hover:bg-slate-50">
+        Task Board
+      </button>
+      <button id="tab-table" onclick="switchTab('table')" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium bg-white text-slate-700 hover:bg-slate-50">
+        ตารางข้อมูลงานทั้งหมด
+      </button>
+    </div>
+
+    <!-- Multi-Select Checkbox Filters -->
+    <div class="bg-white p-4 rounded-xl shadow-sm space-y-3">
+      <div class="flex items-center justify-between">
+        <span class="text-sm font-semibold text-slate-700">ตัวกรองข้อมูล (เลือกได้มากกว่า 1 รายการต่อหมวด)</span>
+        <button onclick="clearFilters()" class="text-xs text-rose-600 hover:underline font-medium">
+          ล้างตัวกรองทั้งหมด
+        </button>
+      </div>
+      <div id="filterPanel" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3"></div>
+    </div>
+
+    <!-- Import / Validation Feedback -->
+    <div id="alertBox" class="hidden p-4 rounded-xl text-sm"></div>
+
+    <!-- View 1: Executive Dashboard -->
+    <section id="view-dashboard" class="space-y-4">
+      <div id="kpiCards" class="grid grid-cols-2 lg:grid-cols-4 gap-4"></div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="bg-white p-4 rounded-xl shadow-sm">
+          <h3 class="font-semibold mb-3">สรุปตามสถานะงาน (Status)</h3>
+          <div id="chartByStatus" class="space-y-2 text-sm"></div>
+        </div>
+        <div class="bg-white p-4 rounded-xl shadow-sm">
+          <h3 class="font-semibold mb-3">สรุปตามแผนก / บริษัทลูก</h3>
+          <div id="chartByDept" class="space-y-2 text-sm"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- View 2: Task Board -->
+    <section id="view-board" class="hidden">
+      <div id="boardColumns" class="grid grid-cols-1 md:grid-cols-4 gap-4"></div>
+    </section>
+
+    <!-- View 3: All Tasks Table -->
+    <section id="view-table" class="hidden bg-white rounded-xl shadow-sm overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left">
+          <thead class="bg-slate-50 border-b text-slate-600">
+            <tr>
+              <th class="p-3">รหัส</th>
+              <th class="p-3">ชื่องาน</th>
+              <th class="p-3">สถานะ</th>
+              <th class="p-3">Sprint</th>
+              <th class="p-3">แหล่งที่มา</th>
+              <th class="p-3">แผนก / บริษัทลูก</th>
+              <th class="p-3">สมาชิกในทีม</th>
+            </tr>
+          </thead>
+          <tbody id="taskTableBody" class="divide-y"></tbody>
+        </table>
+      </div>
+      <div class="flex items-center justify-between p-3 bg-slate-50 border-t text-xs text-slate-600">
+        <span id="tableInfo"></span>
+        <div class="flex gap-2">
+          <button onclick="changePage(-1)" class="px-2.5 py-1 rounded border bg-white disabled:opacity-40" id="prevPageBtn">ก่อนหน้า</button>
+          <button onclick="changePage(1)" class="px-2.5 py-1 rounded border bg-white disabled:opacity-40" id="nextPageBtn">ถัดไป</button>
+        </div>
+      </div>
+    </section>
   </div>
-  <div class="bottomnav" id="bottomnav"></div>
-</div>
 
-<div class="modal-bg" id="modal-bg"><div class="modal" id="modal-body"></div></div>
-<div class="toast" id="toast"></div>
+  <!-- Create Task Modal -->
+  <div id="createModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-xl max-w-lg w-full p-5 space-y-4 shadow-lg">
+      <div class="flex justify-between items-center">
+        <h3 class="font-bold text-lg">สร้างงานใหม่</h3>
+        <button onclick="closeCreateModal()" class="text-slate-400 hover:text-slate-700">✕</button>
+      </div>
+      <form id="createTaskForm" onsubmit="handleCreateTask(event)" class="space-y-3 text-sm">
+        <div>
+          <label class="block font-medium mb-1">ชื่องาน *</label>
+          <input name="title" required class="w-full border rounded-lg px-3 py-2" placeholder="เช่น ปรับหน้า Dashboard" />
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-medium mb-1">สถานะงาน</label>
+            <select name="status" class="w-full border rounded-lg px-3 py-2">
+              <option>To Do</option>
+              <option>In Progress</option>
+              <option>Review</option>
+              <option>Done</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-medium mb-1">Sprint / รอบส่งมอบ *</label>
+            <input name="sprint" required class="w-full border rounded-lg px-3 py-2" placeholder="เช่น Sprint 1" />
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-medium mb-1">แหล่งที่มา (Source) *</label>
+            <input name="source" required class="w-full border rounded-lg px-3 py-2" placeholder="เช่น ลูกค้า / ภายใน / Audit" />
+          </div>
+          <div>
+            <label class="block font-medium mb-1">แผนก / บริษัทลูก *</label>
+            <input name="department" required class="w-full border rounded-lg px-3 py-2" placeholder="เช่น IT / บจก. A" />
+          </div>
+        </div>
+        <div>
+          <label class="block font-medium mb-1">สมาชิกในทีม (คั่นด้วยจุลภาค , ได้หลายคน)</label>
+          <input name="assignees" class="w-full border rounded-lg px-3 py-2" placeholder="เช่น สมชาย, สมหญิง" />
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="closeCreateModal()" class="px-4 py-2 rounded-lg border">ยกเลิก</button>
+          <button type="submit" class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700">บันทึกงาน</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
-<script>
-/* =========================================================================
-   Debt Freedom System — Phase 1 MVP, single-file, localStorage
-   ========================================================================= */
-const MENUS = [
-  {key:'dashboard', label:'ภาพรวม',      em:'📊'},
-  {key:'debts',     label:'หนี้ของฉัน',   em:'💳'},
-  {key:'finance',   label:'การเงิน',      em:'💰'},
-  {key:'plan',      label:'แผนปลดหนี้',   em:'🎯'},
-  {key:'settings',  label:'ตั้งค่า',       em:'⚙️'},
-];
-const DEBT_TYPES = ['บัตรเครดิต','สินเชื่อส่วนบุคคล','สินเชื่อรถยนต์','สินเชื่อบ้าน','กยศ.','อื่นๆ'];
-const EXPENSE_LEVELS = [{key:'essential',label:'จำเป็น',color:'ok'},{key:'reducible',label:'ลดได้',color:'warn'},{key:'cuttable',label:'ตัดได้',color:'danger'}];
-const TX_INCOME_CATS = ['เงินเดือน','รายได้เสริม','โบนัส','ของขวัญ/ได้รับ','อื่นๆ'];
-const TX_EXPENSE_CATS = ['ที่อยู่อาศัย','อาหาร','เดินทาง/น้ำมัน','สาธารณูปโภค','ผ่อนชำระ/หนี้','ช้อปปิ้ง','บันเทิง','สุขภาพ','การศึกษา','ออม/ลงทุน','อื่นๆ'];
+  <script>
+    const STATUS_LIST = ['To Do', 'In Progress', 'Review', 'Done'];
+    const PAGE_SIZE = 5;
 
-let DB = null;
-let SESSION_UNLOCKED = false;
-let CURRENT_PAGE = 'dashboard';
-let currentEditImg = {};
+    let state = {
+      activeTab: 'dashboard',
+      currentPage: 1,
+      filters: {
+        status: [],
+        sprint: [],
+        source: [],
+        department: [],
+        assignees: []
+      },
+      tasks: [
+        { id: 'TSK-101', title: 'ออกแบบระบบ Filter หลายเงื่อนไข', status: 'In Progress', sprint: 'Sprint 1', source: 'Product', department: 'IT', assignees: ['สมชาย', 'สมหญิง'] },
+        { id: 'TSK-102', title: 'ตรวจสอบงบไตรมาส 4', status: 'Review', sprint: 'Sprint 1', source: 'Audit', department: 'บจก. A', assignees: ['วิชัย'] },
+        { id: 'TSK-103', title: 'เชื่อมต่อ API รายงานผู้บริหาร', status: 'To Do', sprint: 'Sprint 2', source: 'Executive', department: 'IT', assignees: ['สมชาย'] },
+        { id: 'TSK-104', title: 'อัปเดตคู่มือพนักงานใหม่', status: 'Done', sprint: 'Sprint 1', source: 'HR', department: 'บจก. B', assignees: [] }
+      ]
+    };
 
-/* ---------------- persistence ---------------- */
-function defaultDB(){
-  return {
-    profile: {name:'', pin:''},
-    incomes: [],
-    expenses: [],
-    debts: [],
-    payments: [],
-    transactions: [], /* dated income/expense entries: {id,type,name,category,level,amount,date,note} */
-    savingsCurrent: 0,
-    monthlySavingsGoal: 0,
-    strategy: 'avalanche',
-    customOrder: [],
-    extraPayment: 0,
-  };
-}
-function loadDB(){
-  try{
-    const raw = localStorage.getItem('debtFreedomData');
-    DB = raw ? JSON.parse(raw) : null;
-  }catch(e){ DB = null; }
-  if(DB){
-    /* migration: fill in fields added after initial release so old saves keep working */
-    if(!Array.isArray(DB.transactions)) DB.transactions = [];
-    delete DB.firebase; /* Firebase config now lives in code, not in saved data */
-  }
-}
-function saveDB(skipSync){ try{ localStorage.setItem('debtFreedomData', JSON.stringify(DB)); }catch(e){} if(!skipSync) queueFirebaseSync(); }
-function uid(){ return 'id_'+Math.random().toString(36).slice(2,10)+Date.now().toString(36); }
+    const norm = (v) => String(v ?? '').trim();
 
-/* =========================================================================
-   FIREBASE SYNC — config lives here in the code, not in the UI.
-   ---------------------------------------------------------------------
-   1) Create a free project at https://console.firebase.google.com
-   2) Build → Firestore Database → Create database → start in test mode
-   3) Project settings → Your apps → "</>" (web) → register an app → copy
-      the firebaseConfig values into FIREBASE_CONFIG below.
-   4) Change FIREBASE_SYNC_CODE to something long and hard to guess — it
-      acts as the "password" for this data since no Firebase Auth is used.
-      Use the SAME sync code on every device you want to share data with.
-   5) Firestore → Rules → for this simple no-auth setup you need:
-        rules_version = '2';
-        service cloud.firestore {
-          match /databases/{database}/documents {
-            match /debtFreedomUsers/{docId} { allow read, write: if true; }
-          }
+    function getFilterOptions() {
+      const unique = (extractor) => {
+        const set = new Set();
+        state.tasks.forEach((t) => {
+          const vals = extractor(t);
+          vals.forEach((v) => { if (norm(v)) set.add(norm(v)); });
+        });
+        return Array.from(set);
+      };
+      return {
+        status: STATUS_LIST,
+        sprint: unique((t) => [t.sprint]),
+        source: unique((t) => [t.source]),
+        department: unique((t) => [t.department]),
+        assignees: unique((t) => Array.isArray(t.assignees) && t.assignees.length ? t.assignees : ['Unassigned'])
+      };
+    }
+
+    function renderFilterPanel() {
+      const options = getFilterOptions();
+      const labels = {
+        status: 'สถานะงาน',
+        sprint: 'Sprint / รอบส่งมอบ',
+        source: 'แหล่งที่มา',
+        department: 'แผนก / บริษัทลูก',
+        assignees: 'สมาชิกในทีม'
+      };
+
+      const container = document.getElementById('filterPanel');
+      container.innerHTML = Object.keys(labels).map((key) => {
+        const items = options[key] || [];
+        return `
+          <div class="border rounded-lg p-2.5 bg-slate-50/70">
+            <div class="text-xs font-semibold text-slate-700 mb-1.5">${labels[key]}</div>
+            <div class="max-h-28 overflow-y-auto space-y-1 pr-1">
+              ${items.length ? items.map((opt) => {
+                const checked = state.filters[key].includes(opt) ? 'checked' : '';
+                return `
+                  <label class="flex items-center gap-2 text-xs cursor-pointer hover:bg-white px-1 py-0.5 rounded">
+                    <input type="checkbox" ${checked} onchange="toggleFilter('${key}', '${opt.replace(/'/g, "\\'")}')" class="rounded text-blue-600" />
+                    <span class="truncate">${opt}</span>
+                  </label>
+                `;
+              }).join('') : '<div class="text-xs text-slate-400">ไม่มีตัวเลือก</div>'}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function toggleFilter(key, value) {
+      const arr = state.filters[key];
+      const idx = arr.indexOf(value);
+      if (idx >= 0) arr.splice(idx, 1);
+      else arr.push(value);
+      // Bug fix: รีเซ็ตหน้าตารางกลับไปหน้า 1 ทุกครั้งที่เปลี่ยนตัวกรอง
+      state.currentPage = 1;
+      renderAll();
+    }
+
+    function clearFilters() {
+      state.filters = { status: [], sprint: [], source: [], department: [], assignees: [] };
+      state.currentPage = 1;
+      renderAll();
+    }
+
+    function getFilteredTasks() {
+      return state.tasks.filter((task) => {
+        const { status, sprint, source, department, assignees } = state.filters;
+        // OR ภายในหมวดเดียวกัน, AND ข้ามหมวด
+        if (status.length && !status.includes(norm(task.status))) return false;
+        if (sprint.length && !sprint.includes(norm(task.sprint))) return false;
+        if (source.length && !source.includes(norm(task.source))) return false;
+        if (department.length && !department.includes(norm(task.department))) return false;
+
+        if (assignees.length) {
+          const taskMembers = Array.isArray(task.assignees) && task.assignees.length
+            ? task.assignees.map(norm)
+            : ['Unassigned'];
+          const matched = assignees.some((sel) => taskMembers.includes(sel));
+          if (!matched) return false;
         }
-      (Anyone who has your FIREBASE_CONFIG *and* FIREBASE_SYNC_CODE could
-      read/write this document — keep the sync code private, like a password.)
-   Leave FIREBASE_CONFIG.apiKey as "YOUR_API_KEY" to keep the app fully
-   offline/local-only (localStorage), no code changes needed elsewhere.
-   ========================================================================= */
-const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyB42OMFrvfKZTQKMNM_N4HFkKP-WVU6lMU",
-  authDomain: "deadmoney-31470.firebaseapp.com",
-  projectId: "deadmoney-31470",
-  storageBucket: "deadmoney-31470.firebasestorage.app",
-  messagingSenderId: "674448296278",
-  appId: "1:674448296278:web:6684ae0c714b79722a2ef7"
-};
-const FIREBASE_SYNC_CODE = "CHANGE_ME_TO_SOMETHING_LONG_AND_PRIVATE";
-
-const FB = {app:null, db:null, ready:false};
-let FB_UNSUB = null; // unsubscribe function for the active realtime listener
-function fbConfigured(){
-  return !!(FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.apiKey!=='AIzaSyB42OMFrvfKZTQKMNM_N4HFkKP-WVU6lMU'
-    && FIREBASE_SYNC_CODE && FIREBASE_SYNC_CODE!=='CHANGE_ME_TO_SOMETHING_LONG_AND_PRIVATE');
-}
-function initFirebase(){
-  if(!fbConfigured()) { FB.ready=false; return false; }
-  try{
-    if(!FB.app){
-      FB.app = firebase.initializeApp(FIREBASE_CONFIG);
-      FB.db = firebase.firestore();
+        return true;
+      });
     }
-    FB.ready = true;
-    return true;
-  }catch(e){ console.error('Firebase init failed', e); FB.ready=false; return false; }
-}
-function fbDocRef(){ return FB.db.collection('debtFreedomUsers').doc(FIREBASE_SYNC_CODE.trim()); }
-function queueFirebaseSync(){
-  if(!fbConfigured()) return;
-  clearTimeout(window._fbSyncT);
-  window._fbSyncT = setTimeout(pushToFirebase, 900);
-}
-function pushToFirebase(){
-  if(!initFirebase()) return;
-  setSyncStatus('syncing');
-  fbDocRef().set({data: JSON.stringify(DB), updatedAt: Date.now()})
-    .then(()=> setSyncStatus('on'))
-    .catch(e=>{ console.error(e); setSyncStatus('error'); });
-}
-/* Keeps every device using the same FIREBASE_SYNC_CODE in sync automatically
-   — no need to press a manual refresh button. Falls back gracefully (stays
-   local-only) if Firebase isn't configured in the code or the connection fails. */
-function startRealtimeSync(){
-  if(!initFirebase()) return;
-  if(FB_UNSUB) { FB_UNSUB(); FB_UNSUB = null; }
-  setSyncStatus('syncing');
-  FB_UNSUB = fbDocRef().onSnapshot(doc=>{
-    if(doc.exists && doc.data().data){
-      const remote = JSON.parse(doc.data().data);
-      DB = remote;
-      if(!Array.isArray(DB.transactions)) DB.transactions = [];
-      saveDB(true);
-      setSyncStatus('on');
-      if(SESSION_UNLOCKED && CURRENT_PAGE) ({dashboard:renderDashboard, debts:renderDebts, finance:renderFinance, plan:renderPlan, settings:renderSettings})[CURRENT_PAGE]();
-    } else {
-      setSyncStatus('on');
+
+    function switchTab(tab) {
+      state.activeTab = tab;
+      ['dashboard', 'board', 'table'].forEach((t) => {
+        document.getElementById(`view-${t}`).classList.toggle('hidden', t !== tab);
+        const btn = document.getElementById(`tab-${t}`);
+        btn.className = t === tab
+          ? 'tab-btn px-4 py-2 rounded-lg text-sm font-medium bg-blue-600 text-white'
+          : 'tab-btn px-4 py-2 rounded-lg text-sm font-medium bg-white text-slate-700 hover:bg-slate-50';
+      });
+      renderAll();
     }
-  }, err=>{ console.error('Firestore realtime sync error', err); setSyncStatus('error'); });
-}
-function pullFromFirebase(showToast){
-  if(!initFirebase()){ if(showToast) toast('ยังไม่ได้ตั้งค่า Firebase ในโค้ด (ดูคอมเมนต์ FIREBASE_CONFIG ในไฟล์)'); return; }
-  setSyncStatus('syncing');
-  fbDocRef().get().then(doc=>{
-    if(doc.exists && doc.data().data){
-      const remote = JSON.parse(doc.data().data);
-      DB = remote;
-      if(!Array.isArray(DB.transactions)) DB.transactions = [];
-      saveDB(true);
-      setSyncStatus('on');
-      if(showToast) toast('ดึงข้อมูลล่าสุดจาก Firebase แล้ว');
-      if(CURRENT_PAGE) ({dashboard:renderDashboard, debts:renderDebts, finance:renderFinance, plan:renderPlan, settings:renderSettings})[CURRENT_PAGE]();
-    } else {
-      setSyncStatus('on');
-      if(showToast) toast('ยังไม่มีข้อมูลบน Firebase สำหรับรหัสนี้ — จะสร้างให้เมื่อบันทึกครั้งถัดไป');
+
+    function renderDashboard(tasks) {
+      const total = tasks.length;
+      const done = tasks.filter((t) => t.status === 'Done').length;
+      const inProg = tasks.filter((t) => t.status === 'In Progress').length;
+      const rate = total ? Math.round((done / total) * 100) : 0;
+
+      document.getElementById('kpiCards').innerHTML = `
+        <div class="bg-white p-4 rounded-xl shadow-sm"><div class="text-xs text-slate-500">งานทั้งหมดตามฟิลเตอร์</div><div class="text-2xl font-bold mt-1">${total}</div></div>
+        <div class="bg-white p-4 rounded-xl shadow-sm"><div class="text-xs text-slate-500">กำลังทำ (In Progress)</div><div class="text-2xl font-bold text-blue-600 mt-1">${inProg}</div></div>
+        <div class="bg-white p-4 rounded-xl shadow-sm"><div class="text-xs text-slate-500">เสร็จสิ้น (Done)</div><div class="text-2xl font-bold text-emerald-600 mt-1">${done}</div></div>
+        <div class="bg-white p-4 rounded-xl shadow-sm"><div class="text-xs text-slate-500">อัตราความสำเร็จ</div><div class="text-2xl font-bold mt-1">${rate}%</div></div>
+      `;
+
+      const renderBars = (targetId, groupFn) => {
+        const counts = {};
+        tasks.forEach((t) => {
+          const k = norm(groupFn(t)) || 'ไม่ระบุ';
+          counts[k] = (counts[k] || 0) + 1;
+        });
+        const entries = Object.entries(counts);
+        document.getElementById(targetId).innerHTML = entries.length ? entries.map(([k, v]) => {
+          const pct = total ? Math.round((v / total) * 100) : 0;
+          return `
+            <div>
+              <div class="flex justify-between mb-1"><span>${k}</span><span>${v} (${pct}%)</span></div>
+              <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                <div class="bg-blue-600 h-full" style="width:${pct}%"></div>
+              </div>
+            </div>
+          `;
+        }).join('') : '<div class="text-slate-400">ไม่มีข้อมูลตามเงื่อนไขที่เลือก</div>';
+      };
+
+      renderBars('chartByStatus', (t) => t.status);
+      renderBars('chartByDept', (t) => t.department);
     }
-  }).catch(e=>{ console.error(e); setSyncStatus('error'); if(showToast) toast('เชื่อมต่อ Firebase ไม่สำเร็จ ตรวจสอบค่า config'); });
-}
-function setSyncStatus(s){
-  window._syncStatus = s;
-  const el = document.getElementById('sync-badge');
-  if(!el) return;
-  const map = {on:['✅ ซิงค์แล้ว','on'], syncing:['🔄 กำลังซิงค์...','off'], off:['⚪ ไม่ได้เชื่อมต่อ Firebase','off'], error:['⚠️ ซิงค์ล้มเหลว','off']};
-  const [label,cls] = map[s]||map.off;
-  el.textContent = label; el.className = 'sync-badge '+cls;
-}
 
-/* ---------------- helpers ---------------- */
-function money(n){ return Number(n||0).toLocaleString('th-TH',{minimumFractionDigits:0,maximumFractionDigits:0}); }
-function esc(s){ return (s===undefined||s===null)?'':String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-function fmtDate(iso){ if(!iso) return '-'; const d=new Date(iso); return d.toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit',year:'numeric'}); }
-function toast(msg){
-  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
-  clearTimeout(window._toastT); window._toastT=setTimeout(()=>t.classList.remove('show'),2200);
-}
-function openModal(html){ document.getElementById('modal-body').innerHTML = html; document.getElementById('modal-bg').classList.add('show'); }
-function closeModal(){ document.getElementById('modal-bg').classList.remove('show'); }
-document.getElementById('modal-bg').addEventListener('click', e=>{ if(e.target.id==='modal-bg') closeModal(); });
-function monthLabel(n){
-  const y = Math.floor(n/12), m = n%12;
-  const parts = [];
-  if(y>0) parts.push(y+' ปี');
-  if(m>0 || y===0) parts.push(m+' เดือน');
-  return parts.join(' ');
-}
-
-/* ---------------- setup / login ---------------- */
-function doSetup(){
-  const name = document.getElementById('setup-name').value.trim();
-  const pin = document.getElementById('setup-pin').value.trim();
-  const err = document.getElementById('setup-err');
-  if(!name){ err.style.display='block'; err.textContent='กรุณากรอกชื่อของคุณ'; return; }
-  if(pin && !/^\d{4}$/.test(pin)){ err.style.display='block'; err.textContent='PIN ต้องเป็นตัวเลข 4 หลัก หรือเว้นว่างไว้'; return; }
-  err.style.display='none';
-  DB = defaultDB();
-  DB.profile.name = name; DB.profile.pin = pin;
-  saveDB();
-  SESSION_UNLOCKED = true;
-  enterApp();
-}
-function doUnlock(){
-  const pin = document.getElementById('unlock-pin').value.trim();
-  const err = document.getElementById('unlock-err');
-  if(pin !== DB.profile.pin){ err.style.display='block'; err.textContent='PIN ไม่ถูกต้อง'; return; }
-  err.style.display='none';
-  SESSION_UNLOCKED = true;
-  enterApp();
-}
-function doLock(){
-  SESSION_UNLOCKED = false;
-  document.getElementById('app').classList.remove('show');
-  showLoginScreen();
-}
-function showLoginScreen(){
-  document.getElementById('login-screen').style.display='flex';
-  if(DB && DB.profile && DB.profile.name){
-    document.getElementById('setup-view').style.display='none';
-    document.getElementById('unlock-view').style.display='block';
-    document.getElementById('unlock-name').textContent = `สวัสดี ${DB.profile.name} 👋`;
-    document.getElementById('unlock-pin').value='';
-    if(!DB.profile.pin){ SESSION_UNLOCKED = true; enterApp(); }
-  } else {
-    document.getElementById('setup-view').style.display='block';
-    document.getElementById('unlock-view').style.display='none';
-  }
-}
-function enterApp(){
-  document.getElementById('login-screen').style.display='none';
-  document.getElementById('app').classList.add('show');
-  document.getElementById('tb-user').textContent = DB.profile.name;
-  renderNav();
-  go('dashboard');
-  if(fbConfigured()) startRealtimeSync();
-}
-function openResetModal(){
-  openModal(`
-    <div class="modal-head"><h3>ล้างข้อมูลทั้งหมด</h3><button class="close-x" onclick="closeModal()">✕</button></div>
-    <div class="check-alert show">คำเตือน: จะลบข้อมูลรายรับ-รายจ่าย หนี้ทุกก้อน และประวัติการชำระทั้งหมดอย่างถาวร ไม่สามารถกู้คืนได้</div>
-    <label>พิมพ์ "ล้างข้อมูล" เพื่อยืนยัน</label>
-    <input type="text" id="reset-confirm">
-    <div class="field-err" id="reset-err" style="display:none">ข้อความไม่ตรงกัน</div>
-    <button class="btn btn-danger btn-block" style="margin-top:16px" onclick="doReset()">ยืนยันล้างข้อมูล</button>
-  `);
-}
-function doReset(){
-  if(document.getElementById('reset-confirm').value.trim() !== 'ล้างข้อมูล'){ document.getElementById('reset-err').style.display='block'; return; }
-  localStorage.removeItem('debtFreedomData');
-  location.reload();
-}
-
-/* ---------------- nav / routing ---------------- */
-function renderNav(){
-  const html = MENUS.map(m=>`<button class="nav-btn" id="nav-${m.key}" onclick="go('${m.key}')"><span class="em">${m.em}</span>${m.label}</button>`).join('');
-  document.getElementById('bottomnav').innerHTML = html;
-}
-function go(page){
-  CURRENT_PAGE = page;
-  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-  const nb = document.getElementById('nav-'+page); if(nb) nb.classList.add('active');
-  renderAlertStrip();
-  ({dashboard:renderDashboard, debts:renderDebts, finance:renderFinance, plan:renderPlan, settings:renderSettings})[page]();
-  document.getElementById('main').scrollTop = 0;
-}
-function renderAlertStrip(){
-  const strip = document.getElementById('alert-strip');
-  const f = computeFinance();
-  const msgs = [];
-  if(f.availableForDebt < f.totalMinPayment) msgs.push('⚠️ เงินคงเหลือหลังหักค่าใช้จ่ายไม่พอชำระค่างวดขั้นต่ำรวมของหนี้ทั้งหมด');
-  if(msgs.length){ strip.textContent = msgs.join(' · '); strip.classList.add('show'); } else strip.classList.remove('show');
-}
-
-/* =========================================================================
-   FINANCE CALCULATIONS
-   ========================================================================= */
-function totalIncome(){ return DB.incomes.reduce((s,i)=>s + monthlyAmount(i),0); }
-function monthlyAmount(item){
-  const f = item.frequency||'monthly';
-  const mult = f==='weekly'?4.33 : f==='yearly'?(1/12) : f==='daily'?30: 1;
-  // conservative average for irregular income: apply 80% factor
-  const base = Number(item.amount||0)*mult;
-  return item.type==='irregular' ? base*0.8 : base;
-}
-function totalExpenseByLevel(level){ return DB.expenses.filter(e=>e.level===level).reduce((s,e)=>s+monthlyAmount(e),0); }
-function activeDebts(){ return DB.debts.filter(d=>d.status!=='closed'); }
-function totalMinPayment(){ return activeDebts().reduce((s,d)=>s+Number(d.minPayment||0),0); }
-function computeFinance(){
-  const income = totalIncome();
-  const essential = totalExpenseByLevel('essential');
-  const reducible = totalExpenseByLevel('reducible');
-  const cuttable = totalExpenseByLevel('cuttable');
-  const savings = Number(DB.monthlySavingsGoal||0);
-  const availableForDebt = income - essential - reducible - cuttable - savings;
-  const totalMin = totalMinPayment();
-  const extraCapacity = Math.max(0, availableForDebt - totalMin);
-  return {income, essential, reducible, cuttable, savings, availableForDebt, totalMinPayment: totalMin, extraCapacity};
-}
-
-/* ---------------- Debt Engine ---------------- */
-function monthlyRate(debt){
-  const r = Number(debt.interestRate||0);
-  return debt.rateUnit==='month' ? r : r/12;
-}
-/* Simulates payoff month-by-month for a given strategy. Returns months to
-   freedom, total interest paid, and the month each debt gets closed. */
-function simulateDebtPayoff(debts, extraMonthly, strategy, customOrderIds){
-  const sim = debts.map(d=>({
-    id:d.id, name:d.name, outstanding:Number(d.principal), original:Number(d.principal),
-    rate: monthlyRate(d), minPayment:Number(d.minPayment||0), calcMethod:d.calcMethod||'reducing',
-    closed:false, closedMonth:null
-  })).filter(d=>d.outstanding>0);
-  if(!sim.length) return {months:0, totalInterest:0, perDebt:[], feasible:true};
-  let month=0, totalInterest=0;
-  const MAX_MONTHS = 600;
-  while(sim.some(d=>!d.closed) && month<MAX_MONTHS){
-    month++;
-    sim.forEach(d=>{
-      if(d.closed) return;
-      const interest = d.calcMethod==='flat' ? d.original*(d.rate/100) : d.outstanding*(d.rate/100);
-      d.outstanding += interest; totalInterest += interest;
-    });
-    let order;
-    const activeSim = sim.filter(d=>!d.closed);
-    if(strategy==='avalanche') order = [...activeSim].sort((a,b)=>b.rate-a.rate);
-    else if(strategy==='snowball') order = [...activeSim].sort((a,b)=>a.outstanding-b.outstanding);
-    else if(strategy==='custom' && customOrderIds && customOrderIds.length) order = customOrderIds.map(id=>activeSim.find(d=>d.id===id)).filter(Boolean);
-    else order = activeSim;
-    let budget = activeSim.reduce((s,d)=>s+Math.min(d.minPayment,d.outstanding),0) + Number(extraMonthly||0);
-    activeSim.forEach(d=>{ const pay=Math.min(d.minPayment,d.outstanding); d.outstanding-=pay; budget-=pay; });
-    for(const d of order){
-      if(d.closed || d.outstanding<=0 || budget<=0) continue;
-      const pay = Math.min(budget, d.outstanding);
-      d.outstanding -= pay; budget -= pay;
+    function renderBoard(tasks) {
+      const container = document.getElementById('boardColumns');
+      container.innerHTML = STATUS_LIST.map((colStatus) => {
+        const colTasks = tasks.filter((t) => t.status === colStatus);
+        return `
+          <div class="bg-white rounded-xl p-3 shadow-sm min-h-[260px]"
+               ondragover="event.preventDefault()"
+               ondrop="handleDropTask(event, '${colStatus}')">
+            <div class="flex items-center justify-between mb-3 pb-2 border-b">
+              <span class="font-semibold text-sm">${colStatus}</span>
+              <span class="text-xs bg-slate-100 px-2 py-0.5 rounded-full">${colTasks.length}</span>
+            </div>
+            <div class="space-y-2.5">
+              ${colTasks.length ? colTasks.map((t) => `
+                <div draggable="true" ondragstart="handleDragStart(event, '${t.id}')"
+                     class="border rounded-lg p-3 bg-slate-50 hover:bg-white cursor-grab active:cursor-grabbing space-y-1.5">
+                  <div class="text-[11px] text-slate-400">${t.id} • ${t.sprint}</div>
+                  <div class="font-medium text-sm">${t.title}</div>
+                  <div class="flex flex-wrap gap-1 text-[11px]">
+                    <span class="px-2 py-0.5 rounded bg-blue-50 text-blue-700">${t.department}</span>
+                    <span class="px-2 py-0.5 rounded bg-slate-200 text-slate-700">${t.source}</span>
+                  </div>
+                  <div class="text-xs text-slate-500 pt-1">
+                    ผู้รับผิดชอบ: ${(t.assignees && t.assignees.length) ? t.assignees.join(', ') : 'Unassigned'}
+                  </div>
+                </div>
+              `).join('') : '<div class="text-xs text-slate-400 text-center py-6">ไม่มีงานในคอลัมน์นี้</div>'}
+            </div>
+          </div>
+        `;
+      }).join('');
     }
-    sim.forEach(d=>{ if(!d.closed && d.outstanding<=0.5){ d.closed=true; d.closedMonth=month; d.outstanding=0; } });
-  }
-  return {
-    months: month, totalInterest,
-    feasible: !sim.some(d=>!d.closed),
-    perDebt: sim.map(d=>({id:d.id, name:d.name, closedMonth:d.closedMonth}))
-  };
-}
-function currentPlanResult(){
-  const debts = activeDebts();
-  if(!debts.length) return null;
-  return simulateDebtPayoff(debts, DB.extraPayment, DB.strategy, DB.customOrder);
-}
 
-/* =========================================================================
-   SMART DEBT-FREEDOM INSIGHTS
-   ---------------------------------------------------------------------
-   Rules-based, calculated from the person's own numbers (not generic tips):
-   interest-trap detection, negotiate/consolidate opportunities, strategy
-   comparison, extra-payment sensitivity, cash-flow shortfall handling
-   (which debt is the least-bad one to ask for a payment pause on), and
-   quick-win detection. This is general educational information computed
-   from user-entered figures — not individualized financial or legal advice.
-   ========================================================================= */
-const UNSECURED_TYPES = ['บัตรเครดิต','สินเชื่อส่วนบุคคล','กยศ.','อื่นๆ'];
-const SECURED_TYPES = ['สินเชื่อรถยนต์','สินเชื่อบ้าน'];
-function annualRateOf(d){ return d.rateUnit==='month' ? Number(d.interestRate||0)*12 : Number(d.interestRate||0); }
-
-function computeDebtInsights(){
-  const insights = [];
-  const debts = activeDebts();
-  if(!debts.length) return insights;
-  const f = computeFinance();
-
-  /* 1) Interest-trap: minimum payment barely covers (or doesn't cover) the
-        interest that accrues each month, so the principal never really drops. */
-  debts.forEach(d=>{
-    const rate = monthlyRate(d);
-    const interest = d.calcMethod==='flat' ? Number(d.originalPrincipal||d.principal)*(rate/100) : Number(d.principal)*(rate/100);
-    if(d.minPayment>0 && d.minPayment <= interest*1.05){
-      const healthyPayment = Math.ceil((interest*1.15)/100)*100;
-      insights.push({type:'danger', icon:'🚨',
-        title:`"${d.name}" ติดกับดักดอกเบี้ย — จ่ายขั้นต่ำไปตลอดชีวิตก็ไม่มีวันหมด`,
-        detail:`ค่างวดขั้นต่ำ ฿${money(d.minPayment)}/เดือน แทบไม่ครอบคลุมดอกเบี้ยที่เกิดขึ้นจริงประมาณ ฿${money(Math.round(interest))}/เดือน เงินต้นจึงแทบไม่ลดลงเลย`,
-        action:`ควรจ่ายอย่างน้อย ฿${money(healthyPayment)}/เดือนสำหรับก้อนนี้ (มากกว่าดอกเบี้ยที่เกิดขึ้นจริง) มิฉะนั้นควรติดต่อเจ้าหนี้เพื่อเจรจาปรับโครงสร้างหนี้โดยเร็วที่สุด`});
+    function handleDragStart(e, taskId) {
+      e.dataTransfer.setData('text/plain', taskId);
     }
-  });
 
-  /* 2) High-interest unsecured debt → realistic consolidation/negotiation estimate */
-  debts.filter(d=>UNSECURED_TYPES.includes(d.type)).forEach(d=>{
-    const annual = annualRateOf(d);
-    if(annual >= 20){
-      const estNow = d.principal*(annual/100);
-      const estLow = d.principal*0.05;
-      const estSavings = Math.max(0, estNow-estLow);
-      insights.push({type:'opportunity', icon:'💡',
-        title:`"${d.name}" ดอกเบี้ย ${annual.toFixed(1)}%/ปี — มีทางลดได้จริง`,
-        detail:`ยอดคงเหลือ ฿${money(d.principal)} ที่ดอกเบี้ยระดับนี้คิดเป็นประมาณ ฿${money(Math.round(estNow))}/ปี หากเจรจาปรับโครงสร้างหนี้ให้เหลือประมาณ 5%/ปี (เช่น โครงการรวมหนี้ของธนาคารเจ้าหนี้ หรือ "คลินิกแก้หนี้ by SAM" สำหรับผู้ค้างชำระบัตรเครดิต/สินเชื่อส่วนบุคคลเกิน 120 วัน ยอดหนี้รวมไม่เกิน 2 ล้านบาท) อาจประหยัดดอกเบี้ยได้ประมาณ ฿${money(Math.round(estSavings))}/ปี`,
-        action:`ติดต่อธนาคารเจ้าหนี้เพื่อสอบถามโครงการรวมหนี้/ปรับโครงสร้างหนี้ หรือดูเงื่อนไขคลินิกแก้หนี้ที่ www.คลินิกแก้หนี้.com หรือโทร 1443`});
-    }
-  });
-
-  /* 3) Strategy comparison: is the currently-selected strategy leaving money on the table? */
-  const avalanche = simulateDebtPayoff(debts, DB.extraPayment, 'avalanche');
-  const snowball = simulateDebtPayoff(debts, DB.extraPayment, 'snowball');
-  const better = avalanche.totalInterest <= snowball.totalInterest ? 'avalanche' : 'snowball';
-  const betterResult = better==='avalanche' ? avalanche : snowball;
-  const currentResult = DB.strategy==='avalanche' ? avalanche : (DB.strategy==='snowball' ? snowball : null);
-  if(currentResult && better!==DB.strategy){
-    const otherResult = DB.strategy==='avalanche' ? snowball : avalanche;
-    const diff = Math.max(0, otherResult.totalInterest - betterResult.totalInterest);
-    if(diff > 300){
-      insights.push({type:'opportunity', icon:'🔁',
-        title:`เปลี่ยนกลยุทธ์เป็น ${better==='avalanche'?'Avalanche':'Snowball'} จะประหยัดดอกเบี้ยเพิ่ม`,
-        detail:`ด้วยเงินโปะปัจจุบัน (฿${money(DB.extraPayment)}/เดือน) แผน ${better==='avalanche'?'Avalanche':'Snowball'} ประหยัดดอกเบี้ยรวมประมาณ ฿${money(Math.round(diff))} เมื่อเทียบกับแผน ${DB.strategy==='avalanche'?'Avalanche':'Snowball'} ที่ใช้อยู่ตอนนี้ โดยค่างวดต่อเดือนเท่าเดิม`,
-        action:`ไปที่เมนู "แผนปลดหนี้" แล้วกดเปลี่ยนกลยุทธ์`});
-    }
-  }
-
-  /* 4) Extra-payment sensitivity: what +1,000 baht/month buys you */
-  if(currentResult && currentResult.feasible){
-    const boosted = simulateDebtPayoff(debts, Number(DB.extraPayment||0)+1000, DB.strategy, DB.customOrder);
-    const monthsSaved = currentResult.months - boosted.months;
-    const interestSaved = currentResult.totalInterest - boosted.totalInterest;
-    if(monthsSaved>0){
-      insights.push({type:'opportunity', icon:'📈',
-        title:`เพิ่มเงินโปะอีก ฿1,000/เดือน ช่วยได้มากกว่าที่คิด`,
-        detail:`หากเพิ่มเงินโปะจาก ฿${money(DB.extraPayment)} เป็น ฿${money(Number(DB.extraPayment||0)+1000)}/เดือน จะปลดหนี้เร็วขึ้น ${monthLabel(monthsSaved)} และประหยัดดอกเบี้ยประมาณ ฿${money(Math.round(interestSaved))}`,
-        action:`ลองปรับ Slider เงินโปะที่เมนู "แผนปลดหนี้" ดู`});
-    }
-  }
-
-  /* 5) Cash-flow shortfall → concrete triage plan, including which debt is the
-        least-costly one to consider a payment pause on (secured debt like a
-        house/car risks repossession, so keep those current; among unsecured
-        debts, pausing the LOWEST-rate one grows the slowest while you catch up). */
-  const deficit = f.totalMinPayment - f.availableForDebt;
-  if(deficit > 0){
-    let detail;
-    if(f.cuttable >= deficit){
-      detail = `หากตัดค่าใช้จ่ายประเภท "ตัดได้" ทั้งหมด (฿${money(Math.round(f.cuttable))}) จะปิดช่องว่างนี้ได้ทันทีโดยไม่ต้องแตะหนี้ก้อนไหนเลย`;
-    } else {
-      const stillShort = deficit - f.cuttable;
-      const unsecured = debts.filter(d=>UNSECURED_TYPES.includes(d.type)).sort((a,b)=>annualRateOf(a)-annualRateOf(b));
-      const candidate = unsecured[0];
-      detail = `แม้ตัดค่าใช้จ่าย "ตัดได้" ทั้งหมด (฿${money(Math.round(f.cuttable))}) แล้ว ยังขาดอีกประมาณ ฿${money(Math.round(stillShort))}/เดือน `
-        + (candidate
-            ? `พิจารณาติดต่อเจ้าหนี้ของ "${candidate.name}" (ดอกเบี้ย ${annualRateOf(candidate).toFixed(1)}%/ปี ค่างวด ฿${money(candidate.minPayment)}/เดือน) เพื่อขอพักชำระหนี้ชั่วคราวหรือปรับโครงสร้างหนี้อย่างเป็นทางการก่อน เพราะเป็นหนี้ไม่มีหลักประกันที่ดอกเบี้ยต่ำสุดในกลุ่มนี้ — พักไว้ก่อนจะเพิ่มภาระดอกเบี้ยน้อยที่สุดเมื่อเทียบกับก้อนอื่น`
-            : `ควรติดต่อเจ้าหนี้เพื่อเจรจาปรับโครงสร้างหนี้`)
-        + ` ส่วนหนี้ที่มีหลักประกัน เช่น บ้านหรือรถยนต์ ควรพยายามชำระต่อเนื่องให้ได้มากที่สุดก่อน เพราะเสี่ยงถูกยึดทรัพย์หากผิดนัด`;
-    }
-    insights.push({type:'danger', icon:'⚠️',
-      title:`กระแสเงินสดไม่พอชำระค่างวดขั้นต่ำรวม (ขาดประมาณ ฿${money(Math.round(deficit))}/เดือน)`,
-      detail,
-      action:`สำคัญ: อย่าเงียบหายหรือหยุดจ่ายเฉยๆ เพราะจะเสียประวัติเครดิตและโดนค่าปรับ ควรแจ้งเจ้าหนี้ล่วงหน้าเสมอ — ผู้ที่ค้างชำระบัตรเครดิต/สินเชื่อส่วนบุคคลเกิน 120 วันและมีหนี้รวมไม่เกิน 2 ล้านบาท อาจเข้าเงื่อนไข "คลินิกแก้หนี้ by SAM" (ดอกเบี้ยลดเหลือ 3-5%/ปี ผ่อนได้นานสุด 10 ปี) — www.คลินิกแก้หนี้.com หรือโทร 1443`});
-  }
-
-  /* 6) Quick win: smallest debt about to close soon under the current plan */
-  if(currentResult){
-    const smallest = [...debts].sort((a,b)=>a.principal-b.principal)[0];
-    const info = currentResult.perDebt.find(p=>p.id===smallest.id);
-    if(info && info.closedMonth && info.closedMonth<=6){
-      insights.push({type:'success', icon:'🎉',
-        title:`ใกล้ปิดหนี้ก้อนแรกแล้ว!`,
-        detail:`"${smallest.name}" (คงเหลือ ฿${money(smallest.principal)}) คาดว่าจะปิดได้ภายใน ${monthLabel(info.closedMonth)} ตามแผนปัจจุบัน เมื่อปิดแล้วเงินขั้นต่ำ ฿${money(smallest.minPayment)}/เดือนจะว่างไปช่วยหนี้ก้อนถัดไปทันที`,
-        action:''});
-    }
-  }
-
-  return insights;
-}
-function debtInsightCardHTML(ins){
-  return `<div class="insight-card ${ins.type}">
-    <div class="it">${ins.icon} ${esc(ins.title)}</div>
-    <div class="id">${esc(ins.detail)}</div>
-    ${ins.action?`<div class="ia">👉 ${esc(ins.action)}</div>`:''}
-  </div>`;
-}
-
-/* =========================================================================
-   DASHBOARD
-   ========================================================================= */
-function renderDashboard(){
-  const main = document.getElementById('main');
-  const debts = activeDebts();
-  const totalOriginal = DB.debts.reduce((s,d)=>s+Number(d.originalPrincipal||d.principal||0),0);
-  const totalOutstanding = debts.reduce((s,d)=>s+Number(d.principal||0),0);
-  const paidSoFar = Math.max(0, totalOriginal - totalOutstanding);
-  const pct = totalOriginal>0 ? Math.min(100, Math.round(paidSoFar/totalOriginal*100)) : 0;
-  const f = computeFinance();
-  const plan = currentPlanResult();
-
-  const now = new Date();
-  const thisMonthKey = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
-  const paidThisMonth = DB.payments.filter(p=>p.date && p.date.startsWith(thisMonthKey)).reduce((s,p)=>s+Number(p.actualAmount||0),0);
-  const plannedThisMonth = f.totalMinPayment + Number(DB.extraPayment||0);
-  const remainThisMonth = Math.max(0, plannedThisMonth - paidThisMonth);
-
-  main.innerHTML = `
-    <div class="page-title">📊 ภาพรวมสถานะการเงิน</div>
-    ${!debts.length ? `<div class="card empty">ยังไม่มีข้อมูลหนี้ — ไปที่เมนู "หนี้ของฉัน" เพื่อเริ่มเพิ่มหนี้ก้อนแรก</div>` : `
-    <div class="stat-grid">
-      <div class="stat"><div class="v">฿${money(totalOriginal)}</div><div class="l">หนี้ทั้งหมด</div></div>
-      <div class="stat"><div class="v">฿${money(totalOutstanding)}</div><div class="l">หนี้คงเหลือ</div></div>
-      <div class="stat"><div class="v">฿${money(paidSoFar)}</div><div class="l">ชำระไปแล้ว</div></div>
-      <div class="stat"><div class="v">฿${money(f.totalMinPayment)}</div><div class="l">ค่างวดขั้นต่ำรวม/เดือน</div></div>
-      <div class="stat accent"><div class="v">฿${money(f.extraCapacity)}</div><div class="l">เงินที่สามารถโปะได้/เดือน</div></div>
-      <div class="stat"><div class="v">${plan && plan.feasible ? monthLabel(plan.months) : (plan? 'เกิน 50 ปี':'-')}</div><div class="l">คาดว่าจะปลดหนี้ (แผนปัจจุบัน)</div></div>
-    </div>
-    <div class="card">
-      <div class="row" style="justify-content:space-between"><b>ความคืบหน้าการปลดหนี้</b><b>${pct}%</b></div>
-      <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
-      <div class="hint">ชำระไปแล้ว ฿${money(paidSoFar)} จากทั้งหมด ฿${money(totalOriginal)}</div>
-    </div>
-    <div class="card">
-      <b>เดือนนี้ (${now.toLocaleDateString('th-TH',{month:'long',year:'numeric'})})</b>
-      <div class="row wrap" style="margin-top:10px;gap:16px">
-        <div>🎯 ต้องชำระทั้งหมด <b>฿${money(plannedThisMonth)}</b></div>
-        <div>✅ ชำระแล้ว <b style="color:var(--good)">฿${money(paidThisMonth)}</b></div>
-        <div>⚠️ เหลือ <b style="color:${remainThisMonth>0?'var(--danger)':'var(--good)'}">฿${money(remainThisMonth)}</b></div>
-      </div>
-    </div>`}
-    <div class="card">
-      <b>สรุปกระแสเงินสดต่อเดือน</b>
-      <table style="margin-top:8px">
-        <tr><td>รายได้สุทธิโดยประมาณ</td><td style="text-align:right">฿${money(f.income)}</td></tr>
-        <tr><td>ค่าใช้จ่ายจำเป็น</td><td style="text-align:right">-฿${money(f.essential)}</td></tr>
-        <tr><td>ค่าใช้จ่ายลดได้ + ตัดได้</td><td style="text-align:right">-฿${money(f.reducible+f.cuttable)}</td></tr>
-        <tr><td>เงินสำรอง/ออม</td><td style="text-align:right">-฿${money(f.savings)}</td></tr>
-        <tr style="font-weight:700"><td>เงินคงเหลือสำหรับหนี้</td><td style="text-align:right">฿${money(f.availableForDebt)}</td></tr>
-      </table>
-      ${f.availableForDebt < f.totalMinPayment ? `<div class="check-alert show" style="margin-top:10px">เงินคงเหลือไม่พอชำระค่างวดขั้นต่ำรวม (฿${money(f.totalMinPayment)}) กรุณาทบทวนค่าใช้จ่ายที่เมนู "การเงิน"</div>` : ''}
-    </div>
-    ${debts.length ? `<div class="card">
-      <b>💡 คำแนะนำปลดหนี้อัจฉริยะ</b>
-      <div style="margin-top:10px">
-        ${(()=>{ const ins = computeDebtInsights(); return ins.length ? ins.map(debtInsightCardHTML).join('') : '<div class="hint">ยังไม่มีคำแนะนำเพิ่มเติมตอนนี้ — สถานะการเงินของคุณดูโอเคดี</div>'; })()}
-      </div>
-      <div class="hint" style="margin-top:6px">คำแนะนำเหล่านี้คำนวณจากตัวเลขที่คุณกรอกไว้ เพื่อเป็นแนวทางเบื้องต้นเท่านั้น ไม่ใช่คำแนะนำทางการเงินหรือกฎหมายจากผู้เชี่ยวชาญเฉพาะทาง ก่อนตัดสินใจสำคัญ (เช่น พักชำระหนี้ ปรับโครงสร้างหนี้) ควรปรึกษาธนาคารเจ้าหนี้โดยตรงหรือนักวางแผนการเงิน</div>
-    </div>` : ''}`;
-}
-
-/* =========================================================================
-   DEBTS
-   ========================================================================= */
-function renderDebts(){
-  const main = document.getElementById('main');
-  main.innerHTML = `
-    <div class="page-title">💳 หนี้ของฉัน</div>
-    <div class="row" style="margin-bottom:12px"><button class="btn btn-primary grow" onclick="openDebtForm()">+ เพิ่มหนี้</button></div>
-    <div class="card" id="debt-list"></div>`;
-  renderDebtList();
-}
-function renderDebtList(){
-  const list = DB.debts;
-  document.getElementById('debt-list').innerHTML = list.length ? list.map(d=>{
-    const closed = d.status==='closed';
-    const rateLabel = `${d.interestRate}% ต่อ${d.rateUnit==='month'?'เดือน':'ปี'}`;
-    return `<div class="list-item">
-      <div class="thumb ph">${closed?'✅':'💳'}</div>
-      <div class="grow">
-        <div class="li-title">${esc(d.name)} ${closed?'<span class="badge ok">ปิดแล้ว</span>':''}</div>
-        <div class="li-sub">${esc(d.creditor)} · ${esc(d.type)} · ดอกเบี้ย ${rateLabel} · ขั้นต่ำ ฿${money(d.minPayment)}/เดือน</div>
-        <div class="li-sub">คงเหลือ ฿${money(d.principal)} จาก ฿${money(d.originalPrincipal||d.principal)}</div>
-      </div>
-      <div class="li-actions">
-        ${closed?'':`<button class="btn btn-ghost btn-sm" onclick="openLogPayment('${d.id}')">บันทึกชำระ</button>`}
-        <button class="btn btn-outline btn-sm" onclick="openDebtForm('${d.id}')">แก้ไข</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteDebt('${d.id}')">ลบ</button>
-      </div>
-    </div>`;
-  }).join('') : `<div class="empty">ยังไม่มีข้อมูลหนี้ — กด "+ เพิ่มหนี้" เพื่อเริ่มต้น</div>`;
-}
-function openDebtForm(id){
-  const d = id ? DB.debts.find(x=>x.id===id) : null;
-  openModal(`
-    <div class="modal-head"><h3>${d?'แก้ไขหนี้':'เพิ่มหนี้'}</h3><button class="close-x" onclick="closeModal()">✕</button></div>
-    <b style="font-size:13px">ข้อมูลพื้นฐาน</b>
-    <label>ชื่อหนี้ <span class="req">*</span></label>
-    <input type="text" id="df-name" value="${d?esc(d.name):''}" placeholder="เช่น บัตรเครดิต KTC">
-    <div class="row">
-      <div class="grow"><label>เจ้าหนี้</label><input type="text" id="df-creditor" value="${d?esc(d.creditor):''}"></div>
-      <div class="grow"><label>ประเภทหนี้</label><select id="df-type">${DEBT_TYPES.map(t=>`<option ${d&&d.type===t?'selected':''}>${t}</option>`).join('')}</select></div>
-    </div>
-    <label>ยอดเงินต้นคงเหลือ (บาท) <span class="req">*</span></label>
-    <input type="number" min="0" id="df-principal" value="${d?d.principal:''}">
-    <div class="divider"></div>
-    <b style="font-size:13px">ดอกเบี้ย</b>
-    <div class="row">
-      <div class="grow"><label>อัตราดอกเบี้ย (%) <span class="req">*</span></label><input type="number" min="0" step="0.01" id="df-rate" value="${d?d.interestRate:''}"></div>
-      <div class="grow"><label>หน่วย</label><select id="df-rateunit"><option value="year" ${d&&d.rateUnit==='year'?'selected':''}>% ต่อปี</option><option value="month" ${d&&d.rateUnit==='month'?'selected':''}>% ต่อเดือน</option></select></div>
-    </div>
-    <div class="row">
-      <div class="grow"><label>ประเภทดอกเบี้ย</label><select id="df-itype"><option value="fixed" ${d&&d.interestType==='fixed'?'selected':''}>Fixed</option><option value="variable" ${d&&d.interestType==='variable'?'selected':''}>Variable</option></select></div>
-      <div class="grow"><label>วิธีคิดดอกเบี้ย</label><select id="df-calc"><option value="reducing" ${!d||d.calcMethod==='reducing'?'selected':''}>ลดต้นลดดอก</option><option value="flat" ${d&&d.calcMethod==='flat'?'selected':''}>Flat rate</option></select></div>
-    </div>
-    <div class="divider"></div>
-    <b style="font-size:13px">การชำระ</b>
-    <div class="row">
-      <div class="grow"><label>ค่างวดขั้นต่ำ (บาท) <span class="req">*</span></label><input type="number" min="0" id="df-minpay" value="${d?d.minPayment:''}"></div>
-      <div class="grow"><label>จำนวนงวดที่เหลือ</label><input type="number" min="0" id="df-terms" value="${d&&d.remainingTerms?d.remainingTerms:''}"></div>
-    </div>
-    <div class="row">
-      <div class="grow"><label>วันครบกำหนดชำระ (วันที่ของเดือน)</label><input type="number" min="1" max="31" id="df-dueday" value="${d&&d.dueDay?d.dueDay:''}"></div>
-      <div class="grow"><label>วันเริ่มชำระ</label><input type="date" id="df-startdate" value="${d&&d.startDate?d.startDate:''}"></div>
-    </div>
-    <div class="row">
-      <div class="grow"><label>ค่าปรับล่าช้า (บาท)</label><input type="number" min="0" id="df-latefee" value="${d&&d.lateFee?d.lateFee:0}"></div>
-      <div class="grow"><label>ค่าธรรมเนียม (บาท)</label><input type="number" min="0" id="df-fee" value="${d&&d.fee?d.fee:0}"></div>
-    </div>
-    <div class="divider"></div>
-    <b style="font-size:13px">เงื่อนไขพิเศษ</b>
-    <label style="display:flex;align-items:center;gap:10px;margin-top:10px"><label class="switch"><input type="checkbox" id="df-prepay" ${!d||d.prepaymentAllowed?'checked':''}><span class="slider-toggle"></span></label>โปะได้</label>
-    <label style="display:flex;align-items:center;gap:10px;margin-top:8px"><label class="switch"><input type="checkbox" id="df-early" ${!d||d.earlyPayoffAllowed?'checked':''}><span class="slider-toggle"></span></label>ปิดก่อนกำหนดได้</label>
-    <label style="display:flex;align-items:center;gap:10px;margin-top:8px"><label class="switch"><input type="checkbox" id="df-closingfee" ${d&&d.hasClosingFee?'checked':''}><span class="slider-toggle"></span></label>มีค่าปิดบัญชี</label>
-    <button class="btn btn-primary btn-block" style="margin-top:16px" onclick="saveDebt(${d?`'${d.id}'`:'null'})">บันทึก</button>
-  `);
-}
-function saveDebt(id){
-  const name = document.getElementById('df-name').value.trim();
-  const principal = Number(document.getElementById('df-principal').value);
-  const rate = Number(document.getElementById('df-rate').value);
-  const minPayment = Number(document.getElementById('df-minpay').value);
-  if(!name){ toast('กรุณากรอกชื่อหนี้'); return; }
-  if(!(principal>0)){ toast('กรุณากรอกยอดเงินต้นให้ถูกต้อง'); return; }
-  if(!(rate>=0)){ toast('กรุณากรอกอัตราดอกเบี้ยให้ถูกต้อง'); return; }
-  if(!(minPayment>0)){ toast('กรุณากรอกค่างวดขั้นต่ำให้ถูกต้อง'); return; }
-  const data = {
-    name, creditor:document.getElementById('df-creditor').value.trim(), type:document.getElementById('df-type').value,
-    principal, interestRate:rate, rateUnit:document.getElementById('df-rateunit').value,
-    interestType:document.getElementById('df-itype').value, calcMethod:document.getElementById('df-calc').value,
-    minPayment, remainingTerms:Number(document.getElementById('df-terms').value)||null,
-    dueDay:Number(document.getElementById('df-dueday').value)||null, startDate:document.getElementById('df-startdate').value||null,
-    lateFee:Number(document.getElementById('df-latefee').value)||0, fee:Number(document.getElementById('df-fee').value)||0,
-    prepaymentAllowed:document.getElementById('df-prepay').checked, earlyPayoffAllowed:document.getElementById('df-early').checked,
-    hasClosingFee:document.getElementById('df-closingfee').checked
-  };
-  if(id){
-    const d = DB.debts.find(x=>x.id===id);
-    Object.assign(d, data);
-  } else {
-    DB.debts.push({id:uid(), ...data, originalPrincipal:principal, status:'active', createdAt:Date.now()});
-  }
-  saveDB(); closeModal(); renderDebtList();
-}
-function deleteDebt(id){
-  if(!confirm('ยืนยันการลบหนี้นี้? ประวัติการชำระที่เกี่ยวข้องจะถูกลบด้วย')) return;
-  DB.debts = DB.debts.filter(x=>x.id!==id);
-  DB.payments = DB.payments.filter(p=>p.debtId!==id);
-  DB.customOrder = DB.customOrder.filter(x=>x!==id);
-  saveDB(); renderDebtList();
-}
-function openLogPayment(debtId){
-  const d = DB.debts.find(x=>x.id===debtId);
-  const today = new Date().toISOString().slice(0,10);
-  openModal(`
-    <div class="modal-head"><h3>บันทึกการชำระ: ${esc(d.name)}</h3><button class="close-x" onclick="closeModal()">✕</button></div>
-    <div class="hint">คงเหลือปัจจุบัน ฿${money(d.principal)}</div>
-    <label>วันที่ชำระ</label>
-    <input type="date" id="lp-date" value="${today}">
-    <label>จำนวนที่ชำระจริง (บาท) <span class="req">*</span></label>
-    <input type="number" min="0" id="lp-amount" value="${d.minPayment}">
-    <div class="hint">ระบบจะคำนวณดอกเบี้ยของงวดนี้ให้อัตโนมัติจากยอดคงเหลือ แล้วหักเงินต้นจากส่วนที่เหลือ</div>
-    <button class="btn btn-primary btn-block" style="margin-top:16px" onclick="saveLogPayment('${debtId}')">บันทึกการชำระ</button>
-  `);
-}
-function saveLogPayment(debtId){
-  const d = DB.debts.find(x=>x.id===debtId);
-  const amount = Number(document.getElementById('lp-amount').value);
-  const date = document.getElementById('lp-date').value;
-  if(!(amount>0)){ toast('กรุณากรอกจำนวนเงินให้ถูกต้อง'); return; }
-  const rate = monthlyRate(d);
-  const interest = d.calcMethod==='flat' ? Number(d.originalPrincipal||d.principal)*(rate/100) : Number(d.principal)*(rate/100);
-  const outstandingWithInterest = Number(d.principal) + interest;
-  const interestPaid = Math.min(amount, interest);
-  const principalPaid = Math.max(0, amount - interestPaid);
-  d.principal = Math.max(0, outstandingWithInterest - amount);
-  if(d.principal <= 0.5){ d.principal = 0; d.status = 'closed'; d.closedAt = Date.now(); }
-  DB.payments.unshift({id:uid(), debtId, date, plannedAmount:d.minPayment, actualAmount:amount, principalPaid, interestPaid, feePaid:0, status:'paid'});
-  saveDB(); closeModal(); renderDebtList();
-  toast(d.status==='closed' ? `🎉 ปิดหนี้ "${d.name}" สำเร็จแล้ว!` : 'บันทึกการชำระเรียบร้อยแล้ว');
-}
-
-/* =========================================================================
-   FINANCE (income + expenses)
-   ========================================================================= */
-function renderFinance(){
-  window._financeTab = window._financeTab || 'income';
-  const main = document.getElementById('main');
-  main.innerHTML = `
-    <div class="page-title">💰 การเงิน</div>
-    <div class="tabs">
-      <button class="tab" id="ftab-income" onclick="switchFinanceTab('income')">รายรับ</button>
-      <button class="tab" id="ftab-expense" onclick="switchFinanceTab('expense')">รายจ่าย</button>
-      <button class="tab" id="ftab-history" onclick="switchFinanceTab('history')">ประวัติ/วิเคราะห์</button>
-      <button class="tab" id="ftab-savings" onclick="switchFinanceTab('savings')">เงินสำรอง</button>
-    </div>
-    <div id="finance-body"></div>`;
-  switchFinanceTab(window._financeTab);
-}
-function switchFinanceTab(tab){
-  window._financeTab = tab;
-  ['income','expense','history','savings'].forEach(t=>document.getElementById('ftab-'+t).classList.toggle('active', t===tab));
-  const body = document.getElementById('finance-body');
-  if(tab==='history'){
-    body.innerHTML = '';
-    renderHistoryBody();
-  } else if(tab==='income'){
-    body.innerHTML = `
-      <div class="row" style="margin-bottom:12px"><button class="btn btn-primary grow" onclick="openIncomeForm()">+ เพิ่มรายรับ</button></div>
-      <div class="card" id="income-list"></div>
-      <div class="card"><b>รายได้รวมโดยประมาณ (ต่อเดือน)</b><div class="stat" style="border:none;padding:8px 0"><div class="v">฿${money(totalIncome())}</div></div>
-      <div class="hint">รายได้ไม่แน่นอนจะถูกคำนวณแบบระมัดระวัง (คิดที่ 80% ของค่าเฉลี่ยที่กรอก) เพื่อไม่ให้วางแผนเกินตัว</div></div>`;
-    renderIncomeList();
-  } else if(tab==='expense'){
-    body.innerHTML = `
-      <div class="row" style="margin-bottom:12px"><button class="btn btn-primary grow" onclick="openExpenseForm()">+ เพิ่มรายจ่าย</button></div>
-      <div class="card" id="expense-list"></div>`;
-    renderExpenseList();
-  } else {
-    const f = computeFinance();
-    body.innerHTML = `
-      <div class="card">
-        <label>เป้าหมายเงินสำรอง/ออมต่อเดือน (บาท)</label>
-        <input type="number" min="0" id="sv-goal" value="${DB.monthlySavingsGoal||0}">
-        <label>เงินสำรองฉุกเฉินที่มีอยู่ปัจจุบัน (บาท)</label>
-        <input type="number" min="0" id="sv-current" value="${DB.savingsCurrent||0}">
-        <button class="btn btn-primary btn-block" style="margin-top:14px" onclick="saveSavings()">บันทึก</button>
-      </div>
-      <div class="card">
-        <b>ความครอบคลุมเงินสำรองฉุกเฉิน</b>
-        <div class="stat" style="border:none;padding:8px 0"><div class="v">${f.essential>0 ? (DB.savingsCurrent/f.essential).toFixed(1) : '0'} เดือน</div><div class="l">เทียบกับค่าใช้จ่ายจำเป็นต่อเดือน (฿${money(f.essential)})</div></div>
-        ${(f.essential>0 && (DB.savingsCurrent/f.essential) < 3) ? `<div class="check-alert show">แนะนำให้มีเงินสำรองอย่างน้อย 3 เดือนของค่าใช้จ่ายจำเป็นก่อนทุ่มเงินโปะหนี้ทั้งหมด เพื่อป้องกันเหตุฉุกเฉิน</div>` : ''}
-      </div>`;
-  }
-}
-function renderIncomeList(){
-  document.getElementById('income-list').innerHTML = DB.incomes.length ? DB.incomes.map(i=>`
-    <div class="list-item">
-      <div class="thumb ph">💵</div>
-      <div class="grow"><div class="li-title">${esc(i.name)} <span class="badge ${i.type==='regular'?'ok':'warn'}">${i.type==='regular'?'ประจำ':'ไม่แน่นอน'}</span></div>
-      <div class="li-sub">฿${money(i.amount)} / ${freqLabel(i.frequency)} · เฉลี่ย ฿${money(monthlyAmount(i))}/เดือน</div></div>
-      <div class="li-actions"><button class="btn btn-outline btn-sm" onclick="openIncomeForm('${i.id}')">แก้ไข</button><button class="btn btn-danger btn-sm" onclick="deleteIncome('${i.id}')">ลบ</button></div>
-    </div>`).join('') : `<div class="empty">ยังไม่มีข้อมูลรายรับ</div>`;
-}
-function freqLabel(f){ return {monthly:'เดือน', weekly:'สัปดาห์', daily:'วัน', yearly:'ปี'}[f]||f; }
-function openIncomeForm(id){
-  const i = id ? DB.incomes.find(x=>x.id===id) : null;
-  openModal(`
-    <div class="modal-head"><h3>${i?'แก้ไขรายรับ':'เพิ่มรายรับ'}</h3><button class="close-x" onclick="closeModal()">✕</button></div>
-    <label>ชื่อรายรับ <span class="req">*</span></label>
-    <input type="text" id="if-name" value="${i?esc(i.name):''}" placeholder="เช่น เงินเดือน">
-    <div class="row">
-      <div class="grow"><label>จำนวนเงิน (บาท) <span class="req">*</span></label><input type="number" min="0" id="if-amount" value="${i?i.amount:''}"></div>
-      <div class="grow"><label>ความถี่</label><select id="if-freq"><option value="monthly" ${!i||i.frequency==='monthly'?'selected':''}>ต่อเดือน</option><option value="weekly" ${i&&i.frequency==='weekly'?'selected':''}>ต่อสัปดาห์</option><option value="daily" ${i&&i.frequency==='daily'?'selected':''}>ต่อวัน</option><option value="yearly" ${i&&i.frequency==='yearly'?'selected':''}>ต่อปี</option></select></div>
-    </div>
-    <label>ประเภท</label>
-    <select id="if-type"><option value="regular" ${!i||i.type==='regular'?'selected':''}>รายได้ประจำ</option><option value="irregular" ${i&&i.type==='irregular'?'selected':''}>รายได้ไม่แน่นอน</option></select>
-    <button class="btn btn-primary btn-block" style="margin-top:16px" onclick="saveIncome(${i?`'${i.id}'`:'null'})">บันทึก</button>
-  `);
-}
-function saveIncome(id){
-  const name = document.getElementById('if-name').value.trim();
-  const amount = Number(document.getElementById('if-amount').value);
-  if(!name || !(amount>0)){ toast('กรุณากรอกข้อมูลให้ครบและถูกต้อง'); return; }
-  const data = {name, amount, frequency:document.getElementById('if-freq').value, type:document.getElementById('if-type').value};
-  if(id) Object.assign(DB.incomes.find(x=>x.id===id), data);
-  else DB.incomes.push({id:uid(), ...data});
-  saveDB(); closeModal(); renderIncomeList();
-}
-function deleteIncome(id){ if(!confirm('ยืนยันการลบ?'))return; DB.incomes=DB.incomes.filter(x=>x.id!==id); saveDB(); renderIncomeList(); }
-
-function renderExpenseList(){
-  document.getElementById('expense-list').innerHTML = DB.expenses.length ? EXPENSE_LEVELS.map(lv=>{
-    const items = DB.expenses.filter(e=>e.level===lv.key);
-    if(!items.length) return '';
-    return `<div style="margin-bottom:10px"><b style="font-size:13px"><span class="badge ${lv.color}">${lv.label}</span></b>
-      ${items.map(e=>`<div class="list-item">
-        <div class="grow"><div class="li-title">${esc(e.name)}</div><div class="li-sub">฿${money(e.amount)} / ${freqLabel(e.frequency)} · เฉลี่ย ฿${money(monthlyAmount(e))}/เดือน</div></div>
-        <div class="li-actions"><button class="btn btn-outline btn-sm" onclick="openExpenseForm('${e.id}')">แก้ไข</button><button class="btn btn-danger btn-sm" onclick="deleteExpense('${e.id}')">ลบ</button></div>
-      </div>`).join('')}</div>`;
-  }).join('') : `<div class="empty">ยังไม่มีข้อมูลรายจ่าย</div>`;
-}
-function openExpenseForm(id){
-  const e = id ? DB.expenses.find(x=>x.id===id) : null;
-  openModal(`
-    <div class="modal-head"><h3>${e?'แก้ไขรายจ่าย':'เพิ่มรายจ่าย'}</h3><button class="close-x" onclick="closeModal()">✕</button></div>
-    <label>ชื่อรายจ่าย <span class="req">*</span></label>
-    <input type="text" id="ef-name" value="${e?esc(e.name):''}" placeholder="เช่น ค่าเช่าบ้าน">
-    <div class="row">
-      <div class="grow"><label>จำนวนเงิน (บาท) <span class="req">*</span></label><input type="number" min="0" id="ef-amount" value="${e?e.amount:''}"></div>
-      <div class="grow"><label>ความถี่</label><select id="ef-freq"><option value="monthly" ${!e||e.frequency==='monthly'?'selected':''}>ต่อเดือน</option><option value="weekly" ${e&&e.frequency==='weekly'?'selected':''}>ต่อสัปดาห์</option><option value="daily" ${e&&e.frequency==='daily'?'selected':''}>ต่อวัน</option><option value="yearly" ${e&&e.frequency==='yearly'?'selected':''}>ต่อปี</option></select></div>
-    </div>
-    <label>ระดับความจำเป็น</label>
-    <select id="ef-level">${EXPENSE_LEVELS.map(lv=>`<option value="${lv.key}" ${e&&e.level===lv.key?'selected':(!e&&lv.key==='essential'?'selected':'')}>${lv.label}</option>`).join('')}</select>
-    <button class="btn btn-primary btn-block" style="margin-top:16px" onclick="saveExpense(${e?`'${e.id}'`:'null'})">บันทึก</button>
-  `);
-}
-function saveExpense(id){
-  const name = document.getElementById('ef-name').value.trim();
-  const amount = Number(document.getElementById('ef-amount').value);
-  if(!name || !(amount>0)){ toast('กรุณากรอกข้อมูลให้ครบและถูกต้อง'); return; }
-  const data = {name, amount, frequency:document.getElementById('ef-freq').value, level:document.getElementById('ef-level').value};
-  if(id) Object.assign(DB.expenses.find(x=>x.id===id), data);
-  else DB.expenses.push({id:uid(), ...data});
-  saveDB(); closeModal(); renderExpenseList();
-}
-function deleteExpense(id){ if(!confirm('ยืนยันการลบ?'))return; DB.expenses=DB.expenses.filter(x=>x.id!==id); saveDB(); renderExpenseList(); }
-function saveSavings(){
-  DB.monthlySavingsGoal = Number(document.getElementById('sv-goal').value)||0;
-  DB.savingsCurrent = Number(document.getElementById('sv-current').value)||0;
-  saveDB(); toast('บันทึกแล้ว'); switchFinanceTab('savings');
-}
-
-/* =========================================================================
-   TRANSACTIONS — dated income/expense log, filters, summaries, charts,
-   smart "what to cut" recommendations, and Excel export.
-   ========================================================================= */
-function openTransactionForm(id){
-  const t = id ? DB.transactions.find(x=>x.id===id) : null;
-  const today = new Date().toISOString().slice(0,10);
-  const type = t ? t.type : 'expense';
-  openModal(`
-    <div class="modal-head"><h3>${t?'แก้ไขรายการ':'เพิ่มรายการ'}</h3><button class="close-x" onclick="closeModal()">✕</button></div>
-    <label>ประเภท</label>
-    <div class="seg" id="tf-type-seg">
-      <button type="button" class="${type==='income'?'active':''}" onclick="txSetType('income')">รายรับ</button>
-      <button type="button" class="${type==='expense'?'active':''}" onclick="txSetType('expense')">รายจ่าย</button>
-    </div>
-    <input type="hidden" id="tf-type" value="${type}">
-    <label>รายการ <span class="req">*</span></label>
-    <input type="text" id="tf-name" value="${t?esc(t.name):''}" placeholder="เช่น ค่ากาแฟ, เงินเดือน">
-    <div class="row">
-      <div class="grow"><label>จำนวนเงิน (บาท) <span class="req">*</span></label><input type="number" min="0" id="tf-amount" value="${t?t.amount:''}"></div>
-      <div class="grow"><label>วันที่ <span class="req">*</span></label><input type="date" id="tf-date" value="${t?t.date:today}"></div>
-    </div>
-    <div id="tf-cat-wrap"></div>
-    <label>โน้ต (ไม่บังคับ)</label>
-    <input type="text" id="tf-note" value="${t?esc(t.note||''):''}">
-    <button class="btn btn-primary btn-block" style="margin-top:16px" onclick="saveTransaction(${t?`'${t.id}'`:'null'})">บันทึก</button>
-  `);
-  renderTxCatField(t ? t.category : (type==='income'?TX_INCOME_CATS[0]:TX_EXPENSE_CATS[0]), t ? t.level : 'essential');
-}
-function txSetType(type){
-  document.getElementById('tf-type').value = type;
-  document.querySelectorAll('#tf-type-seg button').forEach((b,i)=>b.classList.toggle('active', (i===0)===(type==='income')));
-  renderTxCatField();
-}
-function renderTxCatField(presetCat, presetLevel){
-  const type = document.getElementById('tf-type').value;
-  const wrap = document.getElementById('tf-cat-wrap');
-  const cats = type==='income' ? TX_INCOME_CATS : TX_EXPENSE_CATS;
-  let html = `<label>หมวดหมู่</label><select id="tf-cat">${cats.map(c=>`<option ${presetCat===c?'selected':''}>${c}</option>`).join('')}</select>`;
-  if(type==='expense'){
-    html += `<label>ระดับความจำเป็น</label><select id="tf-level">${EXPENSE_LEVELS.map(lv=>`<option value="${lv.key}" ${presetLevel===lv.key?'selected':''}>${lv.label}</option>`).join('')}</select>`;
-  }
-  wrap.innerHTML = html;
-}
-function saveTransaction(id){
-  const name = document.getElementById('tf-name').value.trim();
-  const amount = Number(document.getElementById('tf-amount').value);
-  const date = document.getElementById('tf-date').value;
-  const type = document.getElementById('tf-type').value;
-  if(!name || !(amount>0) || !date){ toast('กรุณากรอกข้อมูลให้ครบและถูกต้อง'); return; }
-  const data = {
-    type, name, amount, date,
-    category: document.getElementById('tf-cat').value,
-    level: type==='expense' ? document.getElementById('tf-level').value : null,
-    note: document.getElementById('tf-note').value.trim()
-  };
-  if(id) Object.assign(DB.transactions.find(x=>x.id===id), data);
-  else DB.transactions.push({id:uid(), ...data});
-  saveDB(); closeModal(); toast('บันทึกรายการแล้ว');
-  renderHistoryBody();
-}
-function deleteTransaction(id){
-  if(!confirm('ยืนยันการลบรายการนี้?')) return;
-  DB.transactions = DB.transactions.filter(x=>x.id!==id);
-  saveDB(); renderHistoryBody();
-}
-
-/* ---- filtering ---- */
-function txFilterState(){
-  window._txFilter = window._txFilter || {period:'month', typeFilter:'all', levelFilter:'all', start:null, end:null};
-  return window._txFilter;
-}
-function periodRange(period, anchor){
-  const d = anchor ? new Date(anchor) : new Date();
-  let start, end;
-  if(period==='week'){
-    const day = d.getDay(); const diffToMon = (day+6)%7;
-    start = new Date(d); start.setDate(d.getDate()-diffToMon); start.setHours(0,0,0,0);
-    end = new Date(start); end.setDate(start.getDate()+6); end.setHours(23,59,59,999);
-  } else if(period==='month'){
-    start = new Date(d.getFullYear(), d.getMonth(), 1);
-    end = new Date(d.getFullYear(), d.getMonth()+1, 0, 23,59,59,999);
-  } else if(period==='year'){
-    start = new Date(d.getFullYear(), 0, 1);
-    end = new Date(d.getFullYear(), 11, 31, 23,59,59,999);
-  } else { return null; }
-  return {start, end};
-}
-function getFilteredTransactions(){
-  const f = txFilterState();
-  let list = DB.transactions.slice();
-  if(f.period!=='all' && f.period!=='custom'){
-    const r = periodRange(f.period);
-    list = list.filter(t=>{ const dt=new Date(t.date); return dt>=r.start && dt<=r.end; });
-  } else if(f.period==='custom' && f.start && f.end){
-    const s=new Date(f.start), e=new Date(f.end); e.setHours(23,59,59,999);
-    list = list.filter(t=>{ const dt=new Date(t.date); return dt>=s && dt<=e; });
-  }
-  if(f.typeFilter!=='all') list = list.filter(t=>t.type===f.typeFilter);
-  if(f.levelFilter!=='all') list = list.filter(t=>t.type==='expense' && t.level===f.levelFilter);
-  return list.sort((a,b)=> new Date(b.date)-new Date(a.date));
-}
-function setTxFilter(key, val){
-  const f = txFilterState(); f[key]=val;
-  if(key==='period' && val!=='custom'){ f.start=null; f.end=null; }
-  renderHistoryBody();
-}
-
-/* ---- grouping / summaries ---- */
-function groupKey(dateStr, granularity){
-  const d = new Date(dateStr);
-  if(granularity==='day') return dateStr;
-  if(granularity==='week'){ const r = periodRange('week', dateStr); return r.start.toISOString().slice(0,10); }
-  if(granularity==='year') return String(d.getFullYear());
-  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); /* month default */
-}
-function groupLabel(key, granularity){
-  if(granularity==='year') return key+' พ.ศ.'+(Number(key)+543 - Number(key)); /* keep simple, show AD year */
-  if(granularity==='month'){ const [y,m]=key.split('-'); return new Date(y,m-1,1).toLocaleDateString('th-TH',{month:'short',year:'numeric'}); }
-  if(granularity==='week') return 'สัปดาห์ของ '+fmtDate(key);
-  return fmtDate(key);
-}
-function summarizeByPeriod(list, granularity){
-  const map = {};
-  list.forEach(t=>{
-    const k = groupKey(t.date, granularity);
-    if(!map[k]) map[k] = {key:k, income:0, expense:0, essential:0, reducible:0, cuttable:0};
-    if(t.type==='income') map[k].income += Number(t.amount);
-    else { map[k].expense += Number(t.amount); if(t.level) map[k][t.level] += Number(t.amount); }
-  });
-  return Object.values(map).sort((a,b)=> a.key<b.key?-1:1);
-}
-function summarizeByCategory(list){
-  const map = {};
-  list.filter(t=>t.type==='expense').forEach(t=>{
-    if(!map[t.category]) map[t.category] = 0;
-    map[t.category] += Number(t.amount);
-  });
-  return Object.entries(map).map(([category,total])=>({category,total})).sort((a,b)=>b.total-a.total);
-}
-
-/* ---- smart recommendations: what to reduce ---- */
-function computeRecommendations(){
-  const recs = [];
-  const f = computeFinance();
-  /* look at last 3 months of actual transactions for real spending patterns */
-  const since = new Date(); since.setMonth(since.getMonth()-3);
-  const recent = DB.transactions.filter(t=>t.type==='expense' && new Date(t.date)>=since);
-  const byCat = summarizeByCategory(recent);
-  const monthsSpan = Math.max(1, Math.round((Date.now()-since.getTime())/(30*24*3600*1000)));
-
-  /* 1) budget-level warning: reducible+cuttable eating too much of income */
-  if(f.income>0){
-    const flexPct = (f.reducible+f.cuttable)/f.income*100;
-    if(flexPct > 30){
-      recs.push({title:'ค่าใช้จ่ายที่ "ลดได้/ตัดได้" สูงเกินไป',
-        detail:`หมวดที่ลดได้และตัดได้รวมกัน ฿${money(f.reducible+f.cuttable)}/เดือน คิดเป็น ${Math.round(flexPct)}% ของรายได้ (แนะนำไม่ควรเกิน 30%) ลองลดลง 20% จะเหลือเงินโปะหนี้เพิ่มอีก ฿${money((f.reducible+f.cuttable)*0.2)}/เดือน`});
-    }
-  }
-  /* 2) top actual spending categories from transaction history (reducible/cuttable only) */
-  const cuttableCats = {};
-  recent.forEach(t=>{ if(t.level!=='essential'){ cuttableCats[t.category]=(cuttableCats[t.category]||0)+Number(t.amount); } });
-  Object.entries(cuttableCats).sort((a,b)=>b[1]-a[1]).slice(0,3).forEach(([cat,total])=>{
-    const perMonth = total/monthsSpan;
-    if(perMonth>0){
-      const extraIfCut30 = perMonth*0.3;
-      recs.push({title:`หมวด "${cat}" ใช้จ่ายเยอะและลดได้`,
-        detail:`เฉลี่ย ฿${money(Math.round(perMonth))}/เดือน จากประวัติ 3 เดือนล่าสุด — ลด 30% จะประหยัดได้ประมาณ ฿${money(Math.round(extraIfCut30))}/เดือน`});
-    }
-  });
-  /* 3) if extra payment capacity increases, show impact on payoff time */
-  const debts = activeDebts();
-  if(debts.length && recs.length){
-    const extraGuess = recs.reduce((s,r)=>{
-      const m = r.detail.match(/ประหยัด(?:ได้)?ประมาณ ฿([\d,]+)/);
-      return s + (m ? Number(m[1].replace(/,/g,'')) : 0);
-    },0);
-    if(extraGuess>0){
-      const base = simulateDebtPayoff(debts, DB.extraPayment, DB.strategy, DB.customOrder);
-      const boosted = simulateDebtPayoff(debts, Number(DB.extraPayment||0)+extraGuess, DB.strategy, DB.customOrder);
-      if(base.feasible && boosted.feasible && boosted.months < base.months){
-        recs.push({title:'ผลลัพธ์ถ้าทำตามคำแนะนำข้างต้นทั้งหมด',
-          detail:`ถ้านำเงินที่ประหยัดได้ (~฿${money(extraGuess)}/เดือน) ไปโปะหนี้เพิ่ม จะปลดหนี้เร็วขึ้น ${monthLabel(base.months-boosted.months)} จากแผนเดิม`});
+    function handleDropTask(e, newStatus) {
+      e.preventDefault();
+      const taskId = e.dataTransfer.getData('text/plain');
+      const task = state.tasks.find((t) => t.id === taskId);
+      if (task && task.status !== newStatus) {
+        task.status = newStatus;
+        renderAll();
       }
     }
-  }
-  /* 4) savings goal shortfall */
-  if(f.essential>0 && DB.savingsCurrent < f.essential*3){
-    recs.push({title:'เงินสำรองฉุกเฉินยังไม่ครบ 3 เดือน',
-      detail:`ปัจจุบันมี ฿${money(DB.savingsCurrent)} เทียบกับค่าใช้จ่ายจำเป็น ฿${money(f.essential)}/เดือน — ควรกันเงินส่วนหนึ่งไว้สำรองก่อนโปะหนี้ทั้งหมด`});
-  }
-  if(!recs.length) recs.push({title:'ยังไม่มีคำแนะนำในตอนนี้', detail:'บันทึกรายรับ-รายจ่ายต่อเนื่องสัก 2-3 เดือน ระบบจะวิเคราะห์และแนะนำสิ่งที่ควรลดให้อัตโนมัติ'});
-  return recs;
-}
 
-/* ---- render: history tab (filters + list + summary + chart + recs) ---- */
-let _txChart = null;
-function renderHistoryBody(){
-  const body = document.getElementById('finance-body');
-  if(!body) return;
-  const f = txFilterState();
-  const list = getFilteredTransactions();
-  const totalIn = list.filter(t=>t.type==='income').reduce((s,t)=>s+Number(t.amount),0);
-  const totalOut = list.filter(t=>t.type==='expense').reduce((s,t)=>s+Number(t.amount),0);
-  const granularity = f.period==='week' ? 'day' : f.period==='year' ? 'month' : f.period==='month' ? 'day' : 'month';
-  const grouped = summarizeByPeriod(list, granularity);
-  const byCat = summarizeByCategory(list).slice(0,8);
-  const recs = computeRecommendations();
+    function renderTable(tasks) {
+      const totalPages = Math.max(1, Math.ceil(tasks.length / PAGE_SIZE));
+      if (state.currentPage > totalPages) state.currentPage = totalPages;
 
-  body.innerHTML = `
-    <div class="card">
-      <div class="seg" style="margin-bottom:8px">
-        ${['week','month','year','custom'].map(p=>`<button class="${f.period===p?'active':''}" onclick="setTxFilter('period','${p}')">${{week:'สัปดาห์นี้',month:'เดือนนี้',year:'ปีนี้',custom:'กำหนดเอง'}[p]}</button>`).join('')}
-      </div>
-      ${f.period==='custom' ? `
-      <div class="row">
-        <div class="grow"><label>จากวันที่</label><input type="date" value="${f.start||''}" onchange="setTxFilter('start',this.value)"></div>
-        <div class="grow"><label>ถึงวันที่</label><input type="date" value="${f.end||''}" onchange="setTxFilter('end',this.value)"></div>
-      </div>` : ''}
-      <div class="filter-bar" style="margin-top:10px">
-        <select onchange="setTxFilter('typeFilter',this.value)">
-          <option value="all">ทุกประเภท</option>
-          <option value="income" ${f.typeFilter==='income'?'selected':''}>รายรับ</option>
-          <option value="expense" ${f.typeFilter==='expense'?'selected':''}>รายจ่าย</option>
-        </select>
-        <select onchange="setTxFilter('levelFilter',this.value)">
-          <option value="all">ทุกระดับ</option>
-          ${EXPENSE_LEVELS.map(lv=>`<option value="${lv.key}" ${f.levelFilter===lv.key?'selected':''}>${lv.label}</option>`).join('')}
-        </select>
-        <button class="btn btn-outline btn-sm" onclick="exportTransactionsExcel()">📊 Export Excel</button>
-      </div>
-    </div>
-    <div class="stat-grid">
-      <div class="stat"><div class="v" style="color:var(--good)">฿${money(totalIn)}</div><div class="l">รายรับรวม (ตามช่วงที่เลือก)</div></div>
-      <div class="stat"><div class="v" style="color:var(--danger)">฿${money(totalOut)}</div><div class="l">รายจ่ายรวม (ตามช่วงที่เลือก)</div></div>
-      <div class="stat accent"><div class="v">฿${money(totalIn-totalOut)}</div><div class="l">คงเหลือสุทธิ</div></div>
-    </div>
-    <div class="card">
-      <b>แนวโน้มรายรับ-รายจ่าย</b>
-      <div class="chart-wrap"><canvas id="tx-chart"></canvas></div>
-    </div>
-    <div class="card">
-      <b>สรุปตามหมวดหมู่ (รายจ่าย)</b>
-      <div class="chart-wrap" style="height:${Math.max(160,byCat.length*32)}px"><canvas id="cat-chart"></canvas></div>
-    </div>
-    <div class="card">
-      <b>💡 ระบบแนะนำสิ่งที่ควรลด</b>
-      <div style="margin-top:10px">${recs.map(r=>`<div class="rec-card"><b>${esc(r.title)}</b><p>${esc(r.detail)}</p></div>`).join('')}</div>
-    </div>
-    <div class="card">
-      <div class="row" style="justify-content:space-between;align-items:center"><b>สรุปตามช่วงเวลา</b></div>
-      <div class="tbl-wrap" style="margin-top:8px"><table class="summary-table">
-        <tr><th>ช่วง</th><th class="num">รายรับ</th><th class="num">รายจ่าย</th><th class="num">คงเหลือ</th></tr>
-        ${grouped.map(g=>`<tr><td>${groupLabel(g.key,granularity)}</td><td class="num" style="color:var(--good)">฿${money(g.income)}</td><td class="num" style="color:var(--danger)">฿${money(g.expense)}</td><td class="num">฿${money(g.income-g.expense)}</td></tr>`).join('') || `<tr><td colspan="4" style="text-align:center;color:var(--muted)">ไม่มีข้อมูลในช่วงนี้</td></tr>`}
-      </table></div>
-    </div>
-    <div class="card">
-      <div class="row" style="justify-content:space-between;align-items:center"><b>รายการทั้งหมด (${list.length})</b><button class="btn btn-primary btn-sm" onclick="openTransactionForm()">+ เพิ่มรายการ</button></div>
-      <div style="margin-top:8px">
-        ${list.length ? list.map(t=>`
-          <div class="tx-item">
-            <div class="tx-ico ${t.type}">${t.type==='income'?'💵':'🧾'}</div>
-            <div class="grow">
-              <div class="li-title">${esc(t.name)}</div>
-              <div class="li-sub">${esc(t.category)}${t.level?' · '+EXPENSE_LEVELS.find(lv=>lv.key===t.level).label:''} · ${fmtDate(t.date)}${t.note?' · '+esc(t.note):''}</div>
-            </div>
-            <div class="tx-amt ${t.type}">${t.type==='income'?'+':'-'}฿${money(t.amount)}</div>
-            <div class="li-actions">
-              <button class="btn btn-outline btn-sm" onclick="openTransactionForm('${t.id}')">แก้ไข</button>
-              <button class="btn btn-danger btn-sm" onclick="deleteTransaction('${t.id}')">ลบ</button>
-            </div>
-          </div>`).join('') : `<div class="empty">ยังไม่มีรายการในช่วงนี้ — กด "+ เพิ่มรายการ"</div>`}
-      </div>
-    </div>`;
+      const start = (state.currentPage - 1) * PAGE_SIZE;
+      const pageItems = tasks.slice(start, start + PAGE_SIZE);
 
-  drawTxCharts(grouped, granularity, byCat);
-}
-function drawTxCharts(grouped, granularity, byCat){
-  const ctx1 = document.getElementById('tx-chart');
-  if(ctx1 && window.Chart){
-    if(_txChart) _txChart.destroy();
-    _txChart = new Chart(ctx1, {
-      type:'bar',
-      data:{ labels: grouped.map(g=>groupLabel(g.key,granularity)),
-        datasets:[
-          {label:'รายรับ', data:grouped.map(g=>g.income), backgroundColor:'#1E8E5A'},
-          {label:'รายจ่าย', data:grouped.map(g=>g.expense), backgroundColor:'#C1502E'}
-        ]},
-      options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom'}}, scales:{y:{beginAtZero:true}}}
-    });
-  }
-  const ctx2 = document.getElementById('cat-chart');
-  if(ctx2 && window.Chart){
-    if(window._catChart) window._catChart.destroy();
-    window._catChart = new Chart(ctx2, {
-      type:'bar',
-      data:{ labels: byCat.map(c=>c.category), datasets:[{label:'บาท', data:byCat.map(c=>c.total), backgroundColor:'#137A68'}] },
-      options:{indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{beginAtZero:true}}}
-    });
-  }
-}
+      document.getElementById('taskTableBody').innerHTML = pageItems.length ? pageItems.map((t) => `
+        <tr class="hover:bg-slate-50">
+          <td class="p-3 font-mono text-xs">${t.id}</td>
+          <td class="p-3 font-medium">${t.title}</td>
+          <td class="p-3"><span class="px-2 py-0.5 rounded bg-slate-100 text-xs">${t.status}</span></td>
+          <td class="p-3">${t.sprint}</td>
+          <td class="p-3">${t.source}</td>
+          <td class="p-3">${t.department}</td>
+          <td class="p-3">${(t.assignees && t.assignees.length) ? t.assignees.join(', ') : 'Unassigned'}</td>
+        </tr>
+      `).join('') : `<tr><td colspan="7" class="p-6 text-center text-slate-400">ไม่พบข้อมูลที่ตรงกับฟิลเตอร์</td></tr>`;
 
-/* ---- Excel export (SheetJS) ---- */
-function exportTransactionsExcel(){
-  if(typeof XLSX==='undefined'){ toast('ไม่สามารถโหลดไลบรารี Excel ได้ ตรวจสอบการเชื่อมต่ออินเทอร์เน็ต'); return; }
-  const list = getFilteredTransactions();
-  const wb = XLSX.utils.book_new();
-  const txRows = list.map(t=>({
-    วันที่:t.date, ประเภท: t.type==='income'?'รายรับ':'รายจ่าย', รายการ:t.name, หมวดหมู่:t.category,
-    ระดับ: t.level ? EXPENSE_LEVELS.find(lv=>lv.key===t.level).label : '', จำนวนเงิน:Number(t.amount), โน้ต:t.note||''
-  }));
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(txRows.length?txRows:[{หมายเหตุ:'ไม่มีรายการในช่วงที่เลือก'}]), 'รายการ');
-  const monthly = summarizeByPeriod(list, 'month').map(g=>({เดือน:g.key, รายรับ:g.income, รายจ่าย:g.expense, คงเหลือ:g.income-g.expense}));
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(monthly.length?monthly:[{หมายเหตุ:'ไม่มีข้อมูล'}]), 'สรุปรายเดือน');
-  const cats = summarizeByCategory(list).map(c=>({หมวดหมู่:c.category, ยอดรวม:c.total}));
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(cats.length?cats:[{หมายเหตุ:'ไม่มีข้อมูล'}]), 'สรุปตามหมวดหมู่');
-  const debtsRows = DB.debts.map(d=>({ชื่อหนี้:d.name, เจ้าหนี้:d.creditor, คงเหลือ:d.principal, ดอกเบี้ย:d.interestRate+'%'+(d.rateUnit==='month'?'/เดือน':'/ปี'), ขั้นต่ำต่อเดือน:d.minPayment, สถานะ:d.status==='closed'?'ปิดแล้ว':'ค้างอยู่'}));
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(debtsRows.length?debtsRows:[{หมายเหตุ:'ไม่มีข้อมูลหนี้'}]), 'หนี้');
-  XLSX.writeFile(wb, `DebtFreedom_${new Date().toISOString().slice(0,10)}.xlsx`);
-  toast('ดาวน์โหลดไฟล์ Excel แล้ว');
-}
+      document.getElementById('tableInfo').textContent = `แสดง ${pageItems.length} จาก ${tasks.length} รายการ (หน้า ${state.currentPage}/${totalPages})`;
+      document.getElementById('prevPageBtn').disabled = state.currentPage <= 1;
+      document.getElementById('nextPageBtn').disabled = state.currentPage >= totalPages;
+    }
 
-/* =========================================================================
-   PLAN (strategy + schedule + recommendation)
-   ========================================================================= */
-/* =========================================================================
-   PAUSE / REDUCE PLAN — "หยุดจ่ายแบบไม่กระทบ": the smartest, safest set of
-   temporary cuts. Never touches 'essential' items. 'cuttable' items are
-   suggested to pause in full (already flagged by the user as non-essential);
-   'reducible' items are only trimmed ~30% so day-to-day life isn't disrupted.
-   ========================================================================= */
-function computePauseCandidates(){
-  return DB.expenses.filter(e=>e.level!=='essential').map(e=>{
-    const monthlyAmt = monthlyAmount(e);
-    const action = e.level==='cuttable' ? 'pause' : 'reduce';
-    const savings = action==='pause' ? monthlyAmt : monthlyAmt*0.3;
-    return {id:e.id, name:e.name, level:e.level, monthlyAmt, action, savings};
-  }).sort((a,b)=> (a.level==='cuttable'?0:1)-(b.level==='cuttable'?0:1) || b.savings-a.savings);
-}
-function pauseSelection(){
-  window._pauseSel = window._pauseSel || {};
-  return window._pauseSel;
-}
-function togglePauseItem(id){
-  const sel = pauseSelection();
-  sel[id] = !sel[id];
-  renderPlan();
-}
-function renderPausePlanCard(f, debts){
-  const candidates = computePauseCandidates();
-  const sel = pauseSelection();
-  candidates.forEach(c=>{ if(sel[c.id]===undefined) sel[c.id]=true; }); /* default: smart plan picks all of them */
-  if(!candidates.length){
-    return `<div class="card" style="border:2px solid var(--amber)">
-      <b>⏸️ แผนหยุด/ลดรายจ่ายชั่วคราว (แบบไม่กระทบ)</b>
-      <p class="hint" style="margin-top:6px">ยังไม่มีรายจ่ายที่ระบุระดับ "ลดได้" หรือ "ตัดได้" — ไปที่เมนู "การเงิน → รายจ่าย" แล้วระบุระดับความจำเป็นของแต่ละรายการ ระบบจะช่วยแนะนำแผนหยุดจ่ายที่ปลอดภัยให้อัตโนมัติ</p>
-    </div>`;
-  }
-  const selectedTotal = candidates.filter(c=>sel[c.id]).reduce((s,c)=>s+c.savings,0);
-  const base = simulateDebtPayoff(debts, DB.extraPayment, DB.strategy, DB.customOrder);
-  const withPause = simulateDebtPayoff(debts, Number(DB.extraPayment||0)+selectedTotal, DB.strategy, DB.customOrder);
-  const monthsSaved = (base.feasible && withPause.feasible) ? Math.max(0, base.months - withPause.months) : 0;
-  const interestSaved = Math.max(0, base.totalInterest - withPause.totalInterest);
-  let durationNote;
-  if(f.essential>0 && DB.savingsCurrent < f.essential*3){
-    const gap = f.essential*3 - DB.savingsCurrent;
-    const monthsToReserve = selectedTotal>0 ? Math.ceil(gap/selectedTotal) : null;
-    durationNote = monthsToReserve ? `แนะนำทำต่อเนื่องประมาณ ${monthsToReserve} เดือน จนกว่าเงินสำรองฉุกเฉินจะครบ 3 เท่าของค่าใช้จ่ายจำเป็น แล้วค่อยประเมินใหม่` : `แนะนำทำต่อเนื่องจนกว่าเงินสำรองฉุกเฉินจะครบ 3 เดือนของค่าใช้จ่ายจำเป็น`;
-  } else {
-    durationNote = `แนะนำทำต่อเนื่อง 3–6 เดือน แล้วทบทวนอีกครั้งว่ายังจำเป็นต้องหยุด/ลดต่อหรือไม่`;
-  }
-  return `
-    <div class="card" style="border:2px solid var(--amber)">
-      <b>⏸️ แผนหยุด/ลดรายจ่ายชั่วคราว (แบบไม่กระทบ) — แผนที่ฉลาดที่สุดตอนนี้</b>
-      <p class="hint" style="margin-top:6px">ระบบเลือกให้เฉพาะรายการที่ "ลดได้"/"ตัดได้" เท่านั้น ไม่แตะรายจ่ายจำเป็นเด็ดขาด รายการ "ตัดได้" แนะนำหยุดจ่ายเต็มจำนวน ส่วนรายการ "ลดได้" แนะนำลดลงแค่ ~30% เพื่อไม่ให้กระทบชีวิตประจำวันมากเกินไป — ปรับติ๊กเลือก/ไม่เลือกรายการได้ตามสะดวก</p>
-      <div style="margin-top:10px">
-        ${candidates.map(c=>`
-          <label class="list-item" style="cursor:pointer">
-            <input type="checkbox" ${sel[c.id]?'checked':''} onchange="togglePauseItem('${c.id}')" style="width:18px;height:18px;flex-shrink:0">
-            <div class="grow">
-              <div class="li-title">${esc(c.name)} <span class="badge ${c.level==='cuttable'?'danger':'warn'}">${c.level==='cuttable'?'ตัดได้':'ลดได้'}</span></div>
-              <div class="li-sub">${c.action==='pause'?'หยุดจ่ายชั่วคราว':'ลดลง ~30% ชั่วคราว'} · เดิม ฿${money(c.monthlyAmt)}/เดือน</div>
-            </div>
-            <div class="tx-amt income">ประหยัด ฿${money(Math.round(c.savings))}</div>
-          </label>`).join('')}
-      </div>
-      <div class="divider"></div>
-      <div class="stat-grid" style="margin-bottom:0">
-        <div class="stat accent"><div class="v">฿${money(Math.round(selectedTotal))}</div><div class="l">เงินที่ปลดล็อกได้/เดือน</div></div>
-        <div class="stat"><div class="v">${monthsSaved>0?monthLabel(monthsSaved):'-'}</div><div class="l">ปลดหนี้เร็วขึ้น</div></div>
-        <div class="stat"><div class="v">฿${money(Math.round(interestSaved))}</div><div class="l">ดอกเบี้ยที่ประหยัดได้</div></div>
-      </div>
-      <p class="hint" style="margin-top:10px">⏱️ ${durationNote}</p>
-      <button class="btn btn-amber btn-block" style="margin-top:10px" ${selectedTotal<=0?'disabled':''} onclick="applyPausePlan(${Math.round(selectedTotal)})">ใช้แผนนี้ — เพิ่มเข้ากับเงินโปะหนี้ต่อเดือน</button>
-    </div>`;
-}
-function applyPausePlan(amount){
-  DB.extraPayment = Number(DB.extraPayment||0) + Number(amount||0);
-  saveDB();
-  toast(`เพิ่มเงินโปะหนี้อีก ฿${money(amount)}/เดือนตามแผนหยุดจ่ายแล้ว`);
-  renderPlan();
-}
+    function changePage(delta) {
+      state.currentPage += delta;
+      renderTable(getFilteredTasks());
+    }
 
-function renderPlan(){
-  const main = document.getElementById('main');
-  const debts = activeDebts();
-  if(!debts.length){
-    main.innerHTML = `<div class="page-title">🎯 แผนปลดหนี้</div><div class="card empty">ยังไม่มีหนี้ที่ต้องวางแผน — ไปเพิ่มหนี้ที่เมนู "หนี้ของฉัน" ก่อน</div>`;
-    return;
-  }
-  const f = computeFinance();
-  const avalanche = simulateDebtPayoff(debts, DB.extraPayment, 'avalanche');
-  const snowball = simulateDebtPayoff(debts, DB.extraPayment, 'snowball');
-  const recommended = avalanche.totalInterest <= snowball.totalInterest ? 'avalanche' : 'snowball';
-  const recResult = recommended==='avalanche' ? avalanche : snowball;
-  const other = recommended==='avalanche' ? snowball : avalanche;
-  const saved = Math.max(0, other.totalInterest - recResult.totalInterest);
-  const monthsSaved = Math.max(0, other.months - recResult.months);
+    function openCreateModal() {
+      document.getElementById('createModal').classList.remove('hidden');
+    }
 
-  main.innerHTML = `
-    <div class="page-title">🎯 แผนปลดหนี้</div>
-    ${renderPausePlanCard(f, debts)}
-    <div class="card">
-      <label>เงินโปะเพิ่มเติมต่อเดือน (บาท) <span class="hint" style="display:inline">— สามารถโปะได้สูงสุดประมาณ ฿${money(f.extraCapacity)}/เดือน จากกระแสเงินสดปัจจุบัน</span></label>
-      <div class="slider-wrap">
-        <input type="range" id="plan-extra-slider" min="0" max="${Math.max(20000, Math.round(f.extraCapacity*2))}" step="500" value="${DB.extraPayment||0}" oninput="onExtraSliderChange(this.value)">
-        <div class="row" style="justify-content:space-between"><span class="hint">฿0</span><b id="plan-extra-value">฿${money(DB.extraPayment||0)}</b><span class="hint">฿${money(Math.max(20000, Math.round(f.extraCapacity*2)))}</span></div>
-      </div>
-    </div>
-    <div class="card">
-      <b>เลือกกลยุทธ์การโปะหนี้</b>
-      <div class="row wrap" style="margin-top:10px;gap:10px">
-        <div class="strategy-card grow ${DB.strategy==='avalanche'?'active':''}" onclick="setStrategy('avalanche')">
-          <h4>❄️ Avalanche</h4><p>เรียงดอกเบี้ยสูง → ต่ำ ประหยัดดอกเบี้ยรวมมากที่สุด</p>
-        </div>
-        <div class="strategy-card grow ${DB.strategy==='snowball'?'active':''}" onclick="setStrategy('snowball')">
-          <h4>⛄ Snowball</h4><p>เรียงยอดหนี้น้อย → มาก ปิดหนี้ทีละก้อนเร็ว ให้กำลังใจตัวเอง</p>
-        </div>
-      </div>
-    </div>
-    <div class="card" style="border:2px solid var(--teal-600)">
-      <b>💡 ระบบแนะนำ: ${recommended==='avalanche'?'Avalanche':'Snowball'}</b>
-      <p class="hint" style="margin-top:6px">เพราะ${monthsSaved>0?` หมดหนี้เร็วกว่าอีกแผน ${monthLabel(monthsSaved)}`:'ใช้เวลาเท่ากัน'}${saved>0?` และประหยัดดอกเบี้ยประมาณ ฿${money(saved)}`:''} (ค่างวดต่อเดือนเท่ากัน)</p>
-      <button class="btn btn-amber btn-sm" style="margin-top:6px" onclick="setStrategy('${recommended}')">ใช้แผนนี้</button>
-    </div>
-    <div class="card">
-      <b>เปรียบเทียบแผน</b>
-      <div class="tbl-wrap" style="margin-top:8px"><table>
-        <tr><th></th><th>Avalanche</th><th>Snowball</th></tr>
-        <tr><td>ระยะเวลาปลดหนี้</td><td>${avalanche.feasible?monthLabel(avalanche.months):'เกิน 50 ปี'}</td><td>${snowball.feasible?monthLabel(snowball.months):'เกิน 50 ปี'}</td></tr>
-        <tr><td>ดอกเบี้ยรวมโดยประมาณ</td><td>฿${money(avalanche.totalInterest)}</td><td>฿${money(snowball.totalInterest)}</td></tr>
-      </table></div>
-    </div>
-    <div class="card">
-      <b>ตารางคาดการณ์การปิดหนี้แต่ละก้อน (ตามแผนที่เลือก: ${DB.strategy==='avalanche'?'Avalanche':'Snowball'})</b>
-      <div class="timeline" style="margin-top:14px">
-        ${(DB.strategy==='avalanche'?avalanche:snowball).perDebt.filter(p=>p.closedMonth).sort((a,b)=>a.closedMonth-b.closedMonth).map(p=>`
-          <div class="tl-item done"><b>${esc(p.name)}</b> หมดหนี้ — อีก ${monthLabel(p.closedMonth)} 🎉</div>
-        `).join('') || '<div class="hint">คำนวณไม่สำเร็จ — ตรวจสอบว่ากรอกดอกเบี้ยและค่างวดขั้นต่ำครบทุกก้อนแล้ว</div>'}
-        <div class="tl-item"><b>ปลดหนี้ทั้งหมด 🎉</b> — อีก ${(DB.strategy==='avalanche'?avalanche:snowball).feasible ? monthLabel((DB.strategy==='avalanche'?avalanche:snowball).months) : 'เกิน 50 ปี'}</div>
-      </div>
-    </div>`;
-}
-function onExtraSliderChange(val){
-  DB.extraPayment = Number(val);
-  document.getElementById('plan-extra-value').textContent = '฿'+money(val);
-  saveDB();
-  clearTimeout(window._planT);
-  window._planT = setTimeout(()=>{ if(CURRENT_PAGE==='plan') renderPlan(); }, 350);
-}
-function setStrategy(s){ DB.strategy = s; saveDB(); renderPlan(); }
+    function closeCreateModal() {
+      document.getElementById('createModal').classList.add('hidden');
+      document.getElementById('createTaskForm').reset();
+    }
 
-/* =========================================================================
-   SETTINGS
-   ========================================================================= */
-function renderSettings(){
-  const main = document.getElementById('main');
-  main.innerHTML = `
-    <div class="page-title">⚙️ ตั้งค่า</div>
-    <div class="card">
-      <label>ชื่อของคุณ</label>
-      <input type="text" id="st-name" value="${esc(DB.profile.name)}">
-      <label>รหัส PIN (เว้นว่าง = ไม่ล็อกระบบ)</label>
-      <input type="password" id="st-pin" maxlength="4" inputmode="numeric" value="${esc(DB.profile.pin||'')}">
-      <button class="btn btn-primary btn-block" style="margin-top:14px" onclick="saveProfile()">บันทึก</button>
-    </div>
-    <div class="card">
-      <div class="row" style="justify-content:space-between;align-items:center">
-        <b>☁️ ซิงค์ข้อมูลกับ Firebase</b>
-        <span class="sync-badge ${fbConfigured()?'on':'off'}" id="sync-badge">${fbConfigured()?'🔄 กำลังเชื่อมต่อ...':'⚪ ยังไม่ได้ตั้งค่าในโค้ด'}</span>
-      </div>
-      ${fbConfigured() ? `
-        <p class="hint">เชื่อมต่อ Firebase ไว้แล้วในโค้ด ข้อมูลจะซิงค์ข้ามอุปกรณ์แบบเรียลไทม์โดยอัตโนมัติ — พิมพ์อะไรจากเครื่องหนึ่ง อีกเครื่องที่ใช้รหัสซิงค์เดียวกันและเปิดแอปค้างไว้จะเห็นทันที</p>
-        <button class="btn btn-ghost btn-sm" onclick="pullFromFirebase(true)">🔄 บังคับดึงข้อมูลล่าสุด</button>
-      ` : `
-        <p class="hint">ยังไม่ได้ตั้งค่า Firebase — แอปทำงานแบบเก็บข้อมูลในเบราว์เซอร์เครื่องนี้เท่านั้น (localStorage) ต้องการให้ข้อมูลซิงค์ข้ามอุปกรณ์? เปิดไฟล์นี้ด้วยโปรแกรมแก้ไขข้อความ ค้นหาคำว่า <b>FIREBASE_CONFIG</b> ใกล้ต้นไฟล์ในส่วน &lt;script&gt; แล้วใส่ค่าจากโปรเจกต์ Firebase ของคุณ พร้อมตั้ง <b>FIREBASE_SYNC_CODE</b> เป็นข้อความยาวๆ ที่คาดเดาไม่ได้ (มีคำอธิบายขั้นตอนเต็มเป็นคอมเมนต์กำกับไว้ในโค้ดตรงจุดนั้นแล้ว) จากนั้นบันทึกไฟล์แล้วเปิดใหม่</p>
-      `}
-    </div>
-    <div class="card" style="border:1px solid var(--danger-bg)">
-      <b style="color:var(--danger)">⚠️ เขตอันตราย</b>
-      <p class="hint">ล้างข้อมูลทั้งหมดในเบราว์เซอร์เครื่องนี้อย่างถาวร (รายรับ รายจ่าย หนี้ ประวัติการชำระ)</p>
-      <button class="btn btn-danger btn-sm" onclick="openResetModal()">🧹 ล้างข้อมูลทั้งหมด</button>
-    </div>
-    <div class="card">
-      <p class="hint">Debt Freedom System — เวอร์ชัน MVP (Phase 1): จัดการรายรับ-รายจ่าย (พร้อมประวัติย้อนหลัง ตัวกรอง สรุปรายสัปดาห์/เดือน/ปี คำแนะนำสิ่งที่ควรลด และ Export Excel), จัดการหนี้หลายก้อน, Debt Calculator, กลยุทธ์ Avalanche/Snowball, Dashboard, ตารางคาดการณ์การปลดหนี้ และซิงค์ข้ามอุปกรณ์ผ่าน Firebase (ไม่บังคับ) ข้อมูลหลักเก็บไว้ในเบราว์เซอร์เครื่องนี้เสมอ (localStorage) เป็นสำเนาสำรองแม้เชื่อมต่อ Firebase อยู่</p>
-    </div>`;
-  setSyncStatus(fbConfigured() ? (window._syncStatus||'syncing') : 'off');
-}
-function saveProfile(){
-  const name = document.getElementById('st-name').value.trim();
-  const pin = document.getElementById('st-pin').value.trim();
-  if(!name){ toast('กรุณากรอกชื่อ'); return; }
-  if(pin && !/^\d{4}$/.test(pin)){ toast('PIN ต้องเป็นตัวเลข 4 หลัก หรือเว้นว่างไว้'); return; }
-  DB.profile.name = name; DB.profile.pin = pin;
-  saveDB(); document.getElementById('tb-user').textContent = name;
-  toast('บันทึกแล้ว');
-}
+    function generateTaskId() {
+      const nums = state.tasks.map((t) => parseInt(String(t.id).replace(/\D/g, ''), 10) || 100);
+      return `TSK-${Math.max(...nums, 100) + 1}`;
+    }
 
-/* =========================================================================
-   BOOTSTRAP
-   ========================================================================= */
-loadDB();
-showLoginScreen();
-document.getElementById('unlock-pin')?.addEventListener('keydown', e=>{ if(e.key==='Enter') doUnlock(); });
-</script>
+    function handleCreateTask(e) {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const assignees = norm(fd.get('assignees'))
+        ? norm(fd.get('assignees')).split(',').map(norm).filter(Boolean)
+        : [];
+
+      state.tasks.unshift({
+        id: generateTaskId(),
+        title: norm(fd.get('title')),
+        status: STATUS_LIST.includes(norm(fd.get('status'))) ? norm(fd.get('status')) : 'To Do',
+        sprint: norm(fd.get('sprint')),
+        source: norm(fd.get('source')),
+        department: norm(fd.get('department')),
+        assignees
+      });
+
+      closeCreateModal();
+      showAlert('success', 'สร้างงานใหม่เรียบร้อยแล้ว');
+      renderAll();
+    }
+
+    function downloadTemplate() {
+      const sampleRows = [
+        {
+          title: 'ตัวอย่าง: ปรับปรุงหน้ารายงาน',
+          status: 'To Do',
+          sprint: 'Sprint 2',
+          source: 'Internal',
+          department: 'IT',
+          assignees: 'สมชาย, สมหญิง'
+        }
+      ];
+      const ws = XLSX.utils.json_to_sheet(sampleRows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'TasksTemplate');
+      XLSX.writeFile(wb, 'task_import_template.xlsx');
+    }
+
+    function handleExcelImport(e) {
+      const file = e.target.files?.[0];
+      e.target.value = ''; // Bug fix: เคลียร์ค่า input เพื่อให้เลือกไฟล์เดิมซ้ำได้
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        try {
+          const data = new Uint8Array(evt.target.result);
+          const wb = XLSX.read(data, { type: 'array' });
+          const firstSheet = wb.Sheets[wb.SheetNames[0]];
+          const rows = XLSX.utils.sheet_to_json(firstSheet, { defval: '' });
+
+          if (!rows.length) {
+            showAlert('error', 'ไฟล์ Excel ไม่มีข้อมูลแถวงาน');
+            return;
+          }
+
+          const errors = [];
+          const validTasks = [];
+
+          rows.forEach((row, idx) => {
+            const rowNum = idx + 2; // +2 เพราะแถว 1 คือ Header
+            const title = norm(row.title);
+            const rawStatus = norm(row.status) || 'To Do';
+            const sprint = norm(row.sprint);
+            const source = norm(row.source);
+            const department = norm(row.department);
+            const assignees = norm(row.assignees)
+              ? norm(row.assignees).split(',').map(norm).filter(Boolean)
+              : [];
+
+            const rowErrors = [];
+            if (!title) rowErrors.push('missing title');
+            if (!STATUS_LIST.includes(rawStatus)) rowErrors.push(`invalid status "${rawStatus}"`);
+            if (!sprint) rowErrors.push('missing sprint');
+            if (!source) rowErrors.push('missing source');
+            if (!department) rowErrors.push('missing department');
+
+            if (rowErrors.length) {
+              errors.push(`แถวที่ ${rowNum}: ${rowErrors.join(', ')}`);
+            } else {
+              validTasks.push({
+                id: generateTaskId() + (validTasks.length ? `-${validTasks.length + 1}` : ''),
+                title,
+                status: rawStatus,
+                sprint,
+                source,
+                department,
+                assignees
+              });
+            }
+          });
+
+          // ปรับ ID ให้เรียงต่อเนื่อง
+          const baseNum = Math.max(100, ...state.tasks.map((t) => parseInt(String(t.id).replace(/\D/g, ''), 10) || 100));
+          validTasks.forEach((t, i) => { t.id = `TSK-${baseNum + i + 1}`; });
+
+          if (validTasks.length) {
+            state.tasks = [...validTasks, ...state.tasks];
+            renderAll();
+          }
+
+          if (errors.length && validTasks.length) {
+            showAlert('warn', `นำเข้าสำเร็จ ${validTasks.length} แถว แต่ข้าม ${errors.length} แถวที่มีข้อผิดพลาด:<br>${errors.join('<br>')}`);
+          } else if (errors.length) {
+            showAlert('error', `นำเข้าไม่สำเร็จ พบข้อผิดพลาด:<br>${errors.join('<br>')}`);
+          } else {
+            showAlert('success', `นำเข้าข้อมูลจาก Excel สำเร็จทั้งหมด ${validTasks.length} รายการ`);
+          }
+        } catch (err) {
+          showAlert('error', `ไม่สามารถอ่านไฟล์ได้: ${err.message}`);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function showAlert(type, htmlMsg) {
+      const box = document.getElementById('alertBox');
+      const styles = {
+        success: 'bg-emerald-50 text-emerald-800 border border-emerald-200',
+        warn: 'bg-amber-50 text-amber-800 border border-amber-200',
+        error: 'bg-rose-50 text-rose-800 border border-rose-200'
+      };
+      box.className = `p-4 rounded-xl text-sm ${styles[type] || styles.success}`;
+      box.innerHTML = htmlMsg;
+      box.classList.remove('hidden');
+    }
+
+    function renderAll() {
+      renderFilterPanel();
+      const filtered = getFilteredTasks();
+      renderDashboard(filtered);
+      renderBoard(filtered);
+      renderTable(filtered);
+    }
+
+    renderAll();
+  </script>
 </body>
 </html>
