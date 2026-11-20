@@ -44,7 +44,7 @@
   <!-- Toast Container -->
   <div id="toast-container" class="fixed top-4 right-4 z-[70] flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 sm:px-0"></div>
 
-  <!-- Custom Confirm Modal (Replaces native confirm() safely inside iframes) -->
+  <!-- Custom Confirm Modal -->
   <div id="custom-confirm-modal" class="fixed inset-0 z-[80] hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden">
       <div class="px-5 py-4 bg-slate-50 border-b border-slate-200 flex items-center gap-2.5">
@@ -120,19 +120,23 @@
         <div class="mb-4 px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-2 text-xs">
           <div class="flex items-center gap-2 min-w-0">
             <span id="fb-status-dot" class="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0"></span>
-            <span id="fb-status-text" class="font-semibold text-slate-700 truncate">Local Storage</span>
+            <span id="fb-status-text" class="font-semibold text-slate-700 truncate">กำลังเชื่อมต่อ Firebase...</span>
           </div>
-          <button id="fb-sync-btn" type="button" onclick="syncNowWithFirebase(false)" class="hidden text-[11px] font-bold text-brand-600 hover:text-brand-700 shrink-0" title="ซิงก์ข้อมูลกับ Firebase ทันที">
+          <button id="fb-sync-btn" type="button" onclick="syncNowWithFirebase(false)" class="text-[11px] font-bold text-brand-600 hover:text-brand-700 shrink-0" title="ซิงก์ข้อมูลกับ Firebase ทันที">
             <i class="fa-solid fa-cloud-arrow-up mr-0.5"></i> Sync
           </button>
         </div>
 
         <!-- Role Switcher -->
         <div class="mb-4 p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
-          <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500">
+          <label for="active-role-select" class="block text-[11px] font-bold uppercase tracking-wider text-slate-500">
             <i class="fa-solid fa-user-shield mr-1 text-brand-600"></i> สลับบทบาทผู้ใช้งาน (Role)
           </label>
-          <select id="active-role-select" onchange="changeActiveRole(this.value)" class="w-full text-xs font-bold rounded-lg border border-slate-300 px-2.5 py-2 bg-white text-slate-800 focus:ring-2 focus:ring-brand-500 outline-none"></select>
+          <select id="active-role-select" onchange="changeActiveRole(this.value)" class="w-full text-xs font-bold rounded-lg border border-slate-300 px-2.5 py-2 bg-white text-slate-800 focus:ring-2 focus:ring-brand-500 outline-none cursor-pointer">
+            <option value="BA">BA (ผู้จัดการระบบ & คิวงานทั้งหมด)</option>
+            <option value="Manager">Manager (ดู Dashboard & รายละเอียดเท่านั้น)</option>
+            <option value="Member">Member (ดู Dashboard & รายละเอียดเท่านั้น)</option>
+          </select>
           <p id="role-permission-hint" class="text-[10px] text-brand-700 font-medium"></p>
         </div>
 
@@ -239,7 +243,7 @@
               </div>
             </div>
 
-            <!-- Horizon Mode: All / Current / Future Plan -->
+            <!-- Horizon Mode -->
             <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-100">
               <div class="flex flex-wrap items-center gap-1.5 text-xs">
                 <span class="text-slate-400 font-medium mr-1">ช่วงแผนงาน:</span>
@@ -361,7 +365,7 @@
           <div id="kpi-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4"></div>
           <div id="dash-risk-banner" class="hidden"></div>
 
-          <!-- Dashboard Task Directory (All Tasks List + Status Filter) -->
+          <!-- Dashboard Task Directory -->
           <div class="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
             <div class="p-4 sm:p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
@@ -577,6 +581,9 @@
                 </button>
                 <button type="button" onclick="exportTasksCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-medium px-3.5 py-2.5 rounded-xl shadow-2xs inline-flex items-center gap-2 transition">
                   <i class="fa-solid fa-file-csv"></i> Export CSV
+                </button>
+                <button type="button" onclick="deleteAllTasks()" class="bg-rose-50 hover:bg-rose-600 text-rose-700 hover:text-white border border-rose-200 text-xs sm:text-sm font-semibold px-3.5 py-2.5 rounded-xl inline-flex items-center gap-2 transition" title="ลบใบงานทั้งหมดในระบบ">
+                  <i class="fa-solid fa-trash-can"></i> ลบงานทั้งหมด
                 </button>
                 <button type="button" onclick="openCreateTaskModal()" class="bg-brand-600 hover:bg-brand-700 text-white text-xs sm:text-sm font-medium px-4 py-2.5 rounded-xl shadow-2xs inline-flex items-center gap-2 transition">
                   <i class="fa-solid fa-plus"></i> เพิ่มใบงานใหม่
@@ -952,10 +959,12 @@
               <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
                 <div>
                   <h3 class="font-bold text-lg text-slate-900 flex items-center gap-2">
-                    <i class="fa-solid fa-fire text-amber-500"></i> การเชื่อมต่อฐานข้อมูล Firebase (Firestore)
+                    <i class="fa-solid fa-fire text-amber-500"></i> การเชื่อมต่อฐานข้อมูล Firebase (Auto-Fallback Firestore / RTDB)
                   </h3>
-                  <p class="text-xs text-slate-500">ตั้งค่าเริ่มต้นเชื่อมกับโปรเจกต์ <code class="text-brand-700">deadmoney-31470</code> • Collection: <code class="text-brand-700">dev_queue_workspaces</code></p>
+                  <p class="text-xs text-slate-500">โปรเจกต์: <code class="text-brand-700">deadmoney-31470</code> • รองรับทั้ง Cloud Firestore และ Realtime Database อัตโนมัติ</p>
                 </div>
+
+                <div id="fb-diagnostic-box" class="hidden p-3 rounded-xl text-xs border"></div>
 
                 <div>
                   <label class="block text-xs font-semibold text-slate-700 mb-1">Workspace / Project Room ID</label>
@@ -1355,270 +1364,11 @@
     </div>
   </div>
 
-  <!-- Firebase Modular Integration -->
-  <script type="module">
-    import { initializeApp, getApps, deleteApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-    import { getFirestore, doc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-
-    const FB_META_KEY = 'dev_queue_firebase_meta_v3';
-    const DEFAULT_FIREBASE_CONFIG = {
-      apiKey: "AIzaSyB42OMFrvfKZTQKMNM_N4HFkKP-WVU6lMU",
-      authDomain: "deadmoney-31470.firebaseapp.com",
-      databaseURL: "https://deadmoney-31470-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "deadmoney-31470",
-      storageBucket: "deadmoney-31470.firebasestorage.app",
-      messagingSenderId: "674448296278",
-      appId: "1:674448296278:web:6684ae0c714b79722a2ef7",
-      measurementId: "G-WDHQE86KV1"
-    };
-    const DEFAULT_FIREBASE_CONFIG_JSON = JSON.stringify(DEFAULT_FIREBASE_CONFIG, null, 2);
-
-    let fbDb = null;
-    let fbUnsub = null;
-    let fbSyncTimer = null;
-    let isApplyingRemote = false;
-
-    function loadFirebaseMeta() {
-      try {
-        const raw = localStorage.getItem(FB_META_KEY);
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          return {
-            enabled: typeof parsed.enabled === 'boolean' ? parsed.enabled : true,
-            workspaceId: (parsed.workspaceId || 'default-operation-room').trim() || 'default-operation-room',
-            configJson: parsed.configJson || DEFAULT_FIREBASE_CONFIG_JSON
-          };
-        }
-      } catch (e) {}
-      return {
-        enabled: true,
-        workspaceId: 'default-operation-room',
-        configJson: DEFAULT_FIREBASE_CONFIG_JSON
-      };
-    }
-
-    function saveFirebaseMeta(meta) {
-      try {
-        localStorage.setItem(FB_META_KEY, JSON.stringify(meta));
-      } catch (e) {}
-    }
-
-    function updateFirebaseStatusUI(status, label) {
-      const dot = document.getElementById('fb-status-dot');
-      const txt = document.getElementById('fb-status-text');
-      const syncBtn = document.getElementById('fb-sync-btn');
-      const meta = loadFirebaseMeta();
-
-      if (dot) {
-        dot.className = 'w-2.5 h-2.5 rounded-full shrink-0 ' + (
-          status === 'connected' ? 'bg-emerald-500' :
-          status === 'syncing' ? 'bg-sky-500 animate-pulse' :
-          status === 'error' ? 'bg-rose-500' : 'bg-amber-500'
-        );
-      }
-      if (txt) txt.textContent = label || 'Local Storage';
-      if (syncBtn) syncBtn.classList.toggle('hidden', !meta.enabled);
-    }
-
-    window.syncFirebaseFormInputs = function() {
-      const meta = loadFirebaseMeta();
-      const cfgInput = document.getElementById('fb-config-json');
-      const wsInput = document.getElementById('fb-workspace-id');
-      if (cfgInput && document.activeElement !== cfgInput) {
-        cfgInput.value = meta.configJson || DEFAULT_FIREBASE_CONFIG_JSON;
-      }
-      if (wsInput && document.activeElement !== wsInput) {
-        wsInput.value = meta.workspaceId || 'default-operation-room';
-      }
-    };
-
-    async function teardownFirebase() {
-      if (fbSyncTimer) {
-        clearTimeout(fbSyncTimer);
-        fbSyncTimer = null;
-      }
-      if (typeof fbUnsub === 'function') {
-        try { fbUnsub(); } catch (e) {}
-        fbUnsub = null;
-      }
-      fbDb = null;
-      const apps = getApps();
-      for (const app of apps) {
-        try { await deleteApp(app); } catch (e) {}
-      }
-    }
-
-    window.connectFirebaseFromMeta = async function(silent = false) {
-      const meta = loadFirebaseMeta();
-      window.syncFirebaseFormInputs();
-
-      if (!meta.enabled || !meta.configJson) {
-        await teardownFirebase();
-        updateFirebaseStatusUI('local', 'Local Storage');
-        return;
-      }
-
-      let cfg;
-      try {
-        cfg = JSON.parse(meta.configJson);
-        if (!cfg.projectId || !cfg.apiKey) throw new Error('Missing projectId or apiKey');
-      } catch (err) {
-        updateFirebaseStatusUI('error', 'Config ไม่ถูกต้อง');
-        if (!silent) window.showToast('Firebase Config JSON ไม่ถูกต้อง (ต้องมี projectId และ apiKey)', 'error');
-        return;
-      }
-
-      try {
-        updateFirebaseStatusUI('syncing', 'กำลังเชื่อมต่อ...');
-        await teardownFirebase();
-        const app = initializeApp(cfg, 'devQueueCloudApp');
-        fbDb = getFirestore(app);
-
-        const wsId = (meta.workspaceId || 'default-operation-room').trim() || 'default-operation-room';
-        const docRef = doc(fbDb, 'dev_queue_workspaces', wsId);
-
-        fbUnsub = onSnapshot(docRef, (snap) => {
-          if (!snap.exists()) return;
-          const remoteData = snap.data();
-          if (!remoteData || !Array.isArray(remoteData.tasks)) return;
-
-          isApplyingRemote = true;
-          const localRole = window.state ? window.state.activeRole : 'BA';
-          const nextState = {
-            ...JSON.parse(JSON.stringify(window.defaultState)),
-            ...remoteData,
-            activeRole: localRole,
-            rules: { ...window.defaultState.rules, ...(remoteData.rules || {}) },
-            users: Array.isArray(remoteData.users) ? remoteData.users : window.defaultState.users,
-            leaves: Array.isArray(remoteData.leaves) ? remoteData.leaves : [],
-            organizations: Array.isArray(remoteData.organizations) && remoteData.organizations.length > 0 ? remoteData.organizations : window.defaultState.organizations,
-            tasks: remoteData.tasks,
-            auditLogs: Array.isArray(remoteData.auditLogs) ? remoteData.auditLogs : []
-          };
-          window.state = nextState;
-          if (typeof window.setMainStateReference === 'function') {
-            window.setMainStateReference(nextState);
-          }
-          try {
-            localStorage.setItem(window.STORAGE_KEY, JSON.stringify(nextState));
-          } catch (e) {}
-          window.populateAllSelects();
-          window.applyRolePermissions();
-          window.refreshCurrentView();
-          isApplyingRemote = false;
-          updateFirebaseStatusUI('connected', `Firestore (${wsId})`);
-        }, (err) => {
-          console.error(err);
-          const isPerm = err?.code === 'permission-denied';
-          updateFirebaseStatusUI('error', isPerm ? 'ติด Firestore Rules' : 'Firestore Error');
-          if (!silent) {
-            window.showToast(
-              isPerm
-                ? 'Firestore ปฏิเสธสิทธิ์ (Permission Denied) กรุณาตรวจสอบ Firestore Rules หรือเปิดใช้งาน Firestore'
-                : 'เชื่อมต่อ Firestore ไม่สำเร็จ ตรวจสอบ Config หรือการเปิดใช้งาน Firestore',
-              'warning'
-            );
-          }
-        });
-
-        await window.syncNowWithFirebase(silent);
-      } catch (err) {
-        console.error(err);
-        updateFirebaseStatusUI('error', 'เชื่อมต่อล้มเหลว');
-        if (!silent) window.showToast('ไม่สามารถเชื่อมต่อ Firebase ได้', 'error');
-      }
-    };
-
-    window.syncNowWithFirebase = async function(silent = false) {
-      const meta = loadFirebaseMeta();
-      if (!meta.enabled || !fbDb) {
-        if (!silent) window.showToast('ยังไม่ได้เปิดใช้งานการเชื่อมต่อ Firebase', 'info');
-        return;
-      }
-      if (isApplyingRemote || !window.state) return;
-
-      const wsId = (meta.workspaceId || 'default-operation-room').trim() || 'default-operation-room';
-      try {
-        updateFirebaseStatusUI('syncing', 'กำลังซิงก์...');
-        const payload = {
-          systemName: window.SYSTEM_NAME,
-          rules: window.state.rules,
-          users: window.state.users,
-          leaves: window.state.leaves,
-          organizations: window.state.organizations,
-          tasks: window.state.tasks,
-          auditLogs: window.state.auditLogs,
-          updatedAt: new Date().toISOString()
-        };
-        await setDoc(doc(fbDb, 'dev_queue_workspaces', wsId), payload, { merge: true });
-        updateFirebaseStatusUI('connected', `Firestore (${wsId})`);
-        if (!silent) window.showToast('ซิงก์ข้อมูลขึ้น Firebase สำเร็จ', 'success');
-      } catch (err) {
-        console.error(err);
-        const isPerm = err?.code === 'permission-denied';
-        updateFirebaseStatusUI('error', isPerm ? 'ติด Firestore Rules' : 'ซิงก์ไม่สำเร็จ');
-        if (!silent) {
-          window.showToast(
-            isPerm
-              ? 'ซิงก์ไม่สำเร็จ: ติดสิทธิ์ Firestore Rules (ตั้งค่า allow read, write: if true; ในโหมดทดสอบได้)'
-              : 'ซิงก์ข้อมูลขึ้น Firebase ไม่สำเร็จ',
-            'error'
-          );
-        }
-      }
-    };
-
-    window.scheduleFirebaseSync = function() {
-      const meta = loadFirebaseMeta();
-      if (!meta.enabled || isApplyingRemote) return;
-      if (fbSyncTimer) clearTimeout(fbSyncTimer);
-      fbSyncTimer = setTimeout(() => {
-        window.syncNowWithFirebase(true);
-      }, 250);
-    };
-
-    window.saveAndConnectFirebase = async function() {
-      if (!window.isBA()) {
-        window.showToast('เฉพาะ Role BA เท่านั้นที่ตั้งค่า Firebase ได้', 'error');
-        return;
-      }
-      const wsId = (document.getElementById('fb-workspace-id')?.value || 'default-operation-room').trim() || 'default-operation-room';
-      const cfgJson = (document.getElementById('fb-config-json')?.value || '').trim();
-      if (!cfgJson) {
-        window.showToast('กรุณาวาง Firebase Config JSON ก่อนเชื่อมต่อ', 'error');
-        return;
-      }
-      saveFirebaseMeta({ enabled: true, workspaceId: wsId, configJson: cfgJson });
-      await window.connectFirebaseFromMeta(false);
-    };
-
-    window.resetFirebaseConfigToDefault = async function() {
-      if (!window.isBA()) {
-        window.showToast('เฉพาะ Role BA เท่านั้นที่ตั้งค่า Firebase ได้', 'error');
-        return;
-      }
-      const wsId = (document.getElementById('fb-workspace-id')?.value || 'default-operation-room').trim() || 'default-operation-room';
-      saveFirebaseMeta({ enabled: true, workspaceId: wsId, configJson: DEFAULT_FIREBASE_CONFIG_JSON });
-      await window.connectFirebaseFromMeta(false);
-    };
-
-    window.disconnectFirebase = async function() {
-      if (!window.isBA()) return;
-      const meta = loadFirebaseMeta();
-      saveFirebaseMeta({ enabled: false, workspaceId: meta.workspaceId || 'default-operation-room', configJson: meta.configJson || DEFAULT_FIREBASE_CONFIG_JSON });
-      await teardownFirebase();
-      updateFirebaseStatusUI('local', 'Local Storage');
-      window.showToast('เปลี่ยนกลับเป็นโหมด Local Storage แล้ว', 'info');
-    };
-
-    window.addEventListener('DOMContentLoaded', () => {
-      window.connectFirebaseFromMeta(true);
-    });
-  </script>
-
+  <!-- Core Application Logic (Loaded First) -->
   <script>
     const SYSTEM_NAME = 'Dev Queue Operation Standard';
     const STORAGE_KEY = 'dev_queue_operation_standard_v3';
+    const ROLE_STORAGE_KEY = 'dev_queue_active_role_v3';
 
     const ALL_STATUSES = ['Queued', 'In Progress', 'In Review', 'Blocked', 'Completed'];
     const ALL_SOURCES = ['Internal', 'External'];
@@ -1953,6 +1703,11 @@
     };
 
     let state = loadState();
+    window.state = state;
+    window.defaultState = defaultState;
+    window.STORAGE_KEY = STORAGE_KEY;
+    window.SYSTEM_NAME = SYSTEM_NAME;
+
     let currentTab = 'dashboard';
     let currentAdminSubTab = 'users';
     let dashFocusMode = 'ALL';
@@ -1963,11 +1718,26 @@
       window.state = state;
     }
 
+    function getSavedRole() {
+      try {
+        const r = localStorage.getItem(ROLE_STORAGE_KEY);
+        if (r && r.trim()) return r.trim();
+      } catch (e) {}
+      return null;
+    }
+
+    function saveRoleLocal(role) {
+      try {
+        localStorage.setItem(ROLE_STORAGE_KEY, role);
+      } catch (e) {}
+    }
+
     function isBA() {
-      return state.activeRole === 'BA';
+      return String(state.activeRole || 'BA').trim().toUpperCase() === 'BA';
     }
 
     function loadState() {
+      const savedRole = getSavedRole();
       try {
         const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('dev_queue_operation_standard_v2') || localStorage.getItem('dev_queue_operation_standard_v1');
         if (raw) {
@@ -1976,18 +1746,20 @@
             ...JSON.parse(JSON.stringify(defaultState)),
             ...parsed,
             rules: { ...defaultState.rules, ...(parsed.rules || {}) },
-            users: Array.isArray(parsed.users) ? parsed.users : defaultState.users,
+            users: Array.isArray(parsed.users) && parsed.users.length > 0 ? parsed.users : defaultState.users,
             leaves: Array.isArray(parsed.leaves) ? parsed.leaves : [],
             organizations: Array.isArray(parsed.organizations) && parsed.organizations.length > 0 ? parsed.organizations : defaultState.organizations,
             tasks: Array.isArray(parsed.tasks) ? parsed.tasks : [],
             auditLogs: Array.isArray(parsed.auditLogs) ? parsed.auditLogs : [],
             systemName: SYSTEM_NAME
           };
-          if (!merged.activeRole) merged.activeRole = 'BA';
+          merged.activeRole = savedRole || merged.activeRole || 'BA';
           return merged;
         }
       } catch (e) { console.error(e); }
-      return JSON.parse(JSON.stringify(defaultState));
+      const fresh = JSON.parse(JSON.stringify(defaultState));
+      if (savedRole) fresh.activeRole = savedRole;
+      return fresh;
     }
 
     function saveState() {
@@ -2509,27 +2281,38 @@
     function populateRoleSwitcher() {
       const roleSel = document.getElementById('active-role-select');
       if (!roleSel) return;
+
+      const currentRole = String(state.activeRole || 'BA').trim() || 'BA';
       const customRoles = Array.from(new Set(
-        state.users.map(u => u.role).filter(r => r && !['BA', 'Manager', 'Member'].includes(r))
+        state.users
+          .map(u => String(u.role || '').trim())
+          .filter(r => r && r.toUpperCase() !== 'BA' && r.toUpperCase() !== 'MANAGER' && r.toUpperCase() !== 'MEMBER')
       ));
+
       const allRoles = [
         { value: 'BA', label: 'BA (ผู้จัดการระบบ & คิวงานทั้งหมด)' },
         { value: 'Manager', label: 'Manager (ดู Dashboard & รายละเอียดเท่านั้น)' },
         { value: 'Member', label: 'Member (ดู Dashboard & รายละเอียดเท่านั้น)' },
         ...customRoles.map(r => ({ value: r, label: `${r} (ดู Dashboard & รายละเอียดเท่านั้น)` }))
       ];
+
+      if (!allRoles.some(r => r.value.toUpperCase() === currentRole.toUpperCase())) {
+        allRoles.push({ value: currentRole, label: `${currentRole} (ดู Dashboard & รายละเอียดเท่านั้น)` });
+      }
+
       roleSel.innerHTML = allRoles.map(r =>
         `<option value="${escapeHTML(r.value)}">${escapeHTML(r.label)}</option>`
       ).join('');
-      if (!allRoles.some(r => r.value === state.activeRole)) {
-        roleSel.innerHTML += `<option value="${escapeHTML(state.activeRole)}">${escapeHTML(state.activeRole)} (ดูอย่างเดียว)</option>`;
-      }
-      roleSel.value = state.activeRole;
+
+      const matched = allRoles.find(r => r.value.toUpperCase() === currentRole.toUpperCase());
+      roleSel.value = matched ? matched.value : 'BA';
     }
 
     function changeActiveRole(role) {
-      state.activeRole = role || 'BA';
-      saveState();
+      const nextRole = String(role || 'BA').trim() || 'BA';
+      state.activeRole = nextRole;
+      saveRoleLocal(nextRole);
+
       applyRolePermissions();
       if (!isBA() && currentTab !== 'dashboard') {
         switchTab('dashboard');
@@ -2935,6 +2718,7 @@
             auditLogs: Array.isArray(parsed.auditLogs) ? parsed.auditLogs : []
           };
           setMainStateReference(nextState);
+          selectedTaskIdsForBulkDelete.clear();
           addAuditLog('IMPORT_JSON', '-', `นำเข้าข้อมูลจากไฟล์ ${file.name} (${state.tasks.length} ใบงาน)`);
           saveState();
           populateAllSelects();
@@ -3665,6 +3449,34 @@
       });
     }
 
+    function deleteAllTasks() {
+      if (!isBA()) {
+        showToast('เฉพาะ Role BA เท่านั้นที่ลบงานทั้งหมดได้', 'error');
+        return;
+      }
+      const total = state.tasks.length;
+      if (total === 0) {
+        showToast('ไม่มีใบงานในระบบให้ลบ', 'info');
+        return;
+      }
+
+      showConfirmModal({
+        title: `ยืนยันการลบงานทั้งหมด (${total} รายการ)`,
+        message: `คุณกำลังจะลบใบงานทั้งหมด ${total} รายการ (รวมถึงประวัติการลงเวลาในใบงานเหล่านั้น) ออกจากระบบและซิงก์การลบขึ้น Firebase ยืนยันหรือไม่?`,
+        okText: `ลบทั้งหมด (${total})`,
+        danger: true,
+        onConfirm: () => {
+          const countBefore = state.tasks.length;
+          state.tasks = [];
+          selectedTaskIdsForBulkDelete.clear();
+          addAuditLog('DELETE_ALL_TASKS', 'ALL', `ลบใบงานทั้งหมดจำนวน ${countBefore} รายการออกจากระบบ`);
+          saveState();
+          refreshCurrentView();
+          showToast(`ลบใบงานทั้งหมด ${countBefore} รายการเรียบร้อยแล้ว`, 'info');
+        }
+      });
+    }
+
     function deleteTaskFromEditModal() {
       const taskId = document.getElementById('task-edit-id')?.value;
       if (!taskId) return;
@@ -4018,65 +3830,64 @@
       const banner = document.getElementById('coord-conflict-banner');
       if (conflictMessages.length > 0) {
         banner.classList.remove('hidden');
-        banner.innerHTML = `<div class="font-bold flex items-center gap-1.5"><i class="fa-solid fa-triangle-exclamation text-rose-600"></i> พบงานทับซ้อนหรือชนวันลาในคิวของ ${escapeHTML(user.name)}:</div>` +
+        banner.innerHTML = `<div class="font-bold flex items-center gap-1.5"><i class="fa-solid fa-triangle-exclamation"></i> ตรวจพบวันทำงานทับซ้อน / เกินความจุ / วันลาในคิวของ ${escapeHTML(user.name)}:</div>` +
           conflictMessages.map(m => `<div>• ${m}</div>`).join('');
       } else {
         banner.classList.add('hidden');
       }
 
-      const listEl = document.getElementById('coord-queue-list');
+      const queueContainer = document.getElementById('coord-queue-list');
       if (memberTasks.length === 0) {
-        listEl.innerHTML = `<div class="text-center py-12 text-sm text-slate-400 bg-slate-50 rounded-2xl border border-dashed border-slate-200">ไม่มีคิวงานตามช่วงแผนงานที่เลือกสำหรับ ${escapeHTML(user.name)}</div>`;
+        queueContainer.innerHTML = `<div class="text-center py-10 text-xs text-slate-400 border border-dashed border-slate-200 rounded-xl">ยังไม่มีคิวงานที่ค้างทำสำหรับสมาชิกคนนี้</div>`;
         return;
       }
 
-      listEl.innerHTML = memberTasks.map((t, index) => {
+      queueContainer.innerHTML = memberTasks.map((t, idx) => {
         const conflict = analyzeTaskConflicts(t, t.id);
-        const isConflict = conflict.hasConflict || t.overrideWarning;
         return `
           <div draggable="true"
-               data-taskid="${t.id}"
-               ondragstart="handleDragStart(event, '${t.id}')"
-               ondragover="handleDragOver(event)"
-               ondrop="handleDrop(event, '${t.id}')"
-               ondragend="handleDragEnd(event)"
-               class="queue-card p-4 rounded-xl border ${isConflict ? 'border-rose-300 bg-rose-50/30' : 'border-slate-200 bg-white'} shadow-2xs hover:shadow-sm transition flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-move select-none">
-            <div class="flex items-start gap-3">
-              <div class="flex flex-col items-center justify-center w-9 h-9 rounded-xl bg-brand-600 text-white font-bold text-sm shrink-0 shadow-2xs">
-                #${t.queueOrder || (index + 1)}
-              </div>
-              <div class="space-y-1">
-                <div class="flex flex-wrap items-center gap-2">
-                  <span class="text-xs font-bold text-slate-600">${escapeHTML(t.code)}</span>
-                  ${getHorizonBadgeHTML(t, todayStr)}
-                  ${getTaskTypeBadgeHTML(t.taskType)}
-                  ${getStatusBadgeHTML(t.status)}
-                  ${getPriorityBadgeHTML(t.priority)}
-                  ${isConflict ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-rose-100 text-rose-700"><i class="fa-solid fa-triangle-exclamation"></i> ทับซ้อน</span>` : ''}
-                </div>
-                <div class="font-bold text-sm sm:text-base text-slate-900">${escapeHTML(t.title)}</div>
-                <div class="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                  ${getOrgBadgeHTML(t.orgId, t.source)}
-                  <span><i class="fa-regular fa-calendar mr-1"></i>${escapeHTML(formatDateRangeLabel(t.startDate, t.endDate))}</span>
-                  <span>• <b>${t.estimatedHours} ชม.</b></span>
-                </div>
+               ondragstart="draggedTaskId='${t.id}'; event.currentTarget.classList.add('dragging-item')"
+               ondragend="event.currentTarget.classList.remove('dragging-item')"
+               ondragover="event.preventDefault()"
+               ondrop="handleQueueDrop('${memberId}', '${t.id}')"
+               class="p-3.5 rounded-xl border ${conflict.hasConflict ? 'border-rose-300 bg-rose-50/30' : 'border-slate-200 bg-white'} shadow-2xs flex items-center gap-3 transition cursor-move">
+            <div class="flex flex-col items-center justify-center w-9 shrink-0">
+              <span class="w-7 h-7 rounded-full bg-brand-600 text-white text-xs font-bold flex items-center justify-center shadow-2xs">#${idx + 1}</span>
+              <div class="flex gap-1 mt-1">
+                <button type="button" onclick="moveQueueItem('${memberId}', '${t.id}', -1)" ${idx === 0 ? 'disabled' : ''} class="p-0.5 text-slate-400 hover:text-brand-600 disabled:opacity-25" title="เลื่อนขึ้น">
+                  <i class="fa-solid fa-caret-up text-sm"></i>
+                </button>
+                <button type="button" onclick="moveQueueItem('${memberId}', '${t.id}', 1)" ${idx === memberTasks.length - 1 ? 'disabled' : ''} class="p-0.5 text-slate-400 hover:text-brand-600 disabled:opacity-25" title="เลื่อนลง">
+                  <i class="fa-solid fa-caret-down text-sm"></i>
+                </button>
               </div>
             </div>
 
-            <div class="flex items-center gap-1.5 self-end sm:self-center shrink-0">
-              <button type="button" onclick="moveQueueOrder('${memberId}', '${t.id}', -1)" ${index === 0 ? 'disabled' : ''} class="p-2 rounded-lg border border-slate-200 hover:bg-slate-100 disabled:opacity-30 text-slate-600" title="เลื่อนคิวขึ้น">
-                <i class="fa-solid fa-arrow-up"></i>
+            <div class="flex-1 min-w-0 space-y-1">
+              <div class="flex flex-wrap items-center gap-1.5">
+                <span class="text-xs font-bold text-brand-700">${escapeHTML(t.code)}</span>
+                ${getHorizonBadgeHTML(t, todayStr)}
+                ${getTaskTypeBadgeHTML(t.taskType)}
+                ${getOrgBadgeHTML(t.orgId, t.source)}
+                ${getStatusBadgeHTML(t.status)}
+                ${conflict.hasConflict ? `<span class="text-[10px] font-bold bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full"><i class="fa-solid fa-triangle-exclamation mr-0.5"></i> ทับซ้อน/วันลา</span>` : ''}
+              </div>
+              <div class="font-semibold text-sm text-slate-900 truncate">${escapeHTML(t.title)}</div>
+              <div class="text-xs text-slate-500 flex flex-wrap items-center gap-3">
+                <span><i class="fa-regular fa-calendar mr-1"></i>${escapeHTML(formatDateRangeLabel(t.startDate, t.endDate))}</span>
+                <span><i class="fa-regular fa-clock mr-1"></i>${t.estimatedHours} ชม. (${getTaskDailyHours(t)} ชม./วัน)</span>
+                <span class="font-semibold text-slate-600">${t.storyPoints || 3} SP</span>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-1 shrink-0">
+              <button type="button" onclick="openDetailModal('${t.id}')" class="p-2 rounded-lg text-slate-400 hover:text-brand-600 hover:bg-brand-50" title="ดูรายละเอียด">
+                <i class="fa-solid fa-arrow-up-right-from-square"></i>
               </button>
-              <button type="button" onclick="moveQueueOrder('${memberId}', '${t.id}', 1)" ${index === memberTasks.length - 1 ? 'disabled' : ''} class="p-2 rounded-lg border border-slate-200 hover:bg-slate-100 disabled:opacity-30 text-slate-600" title="เลื่อนคิวลง">
-                <i class="fa-solid fa-arrow-down"></i>
-              </button>
-              <button type="button" onclick="unassignTaskToPool('${t.id}')" class="p-2 rounded-lg border border-slate-200 hover:bg-amber-50 hover:text-amber-700 text-slate-600" title="ดึงกลับเข้า Pool รอจ่ายคิว">
+              <button type="button" onclick="unassignTask('${t.id}')" class="p-2 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50" title="ดึงกลับ Pool">
                 <i class="fa-solid fa-user-minus"></i>
               </button>
-              <button type="button" onclick="openCreateTaskModal('${t.id}')" class="p-2 rounded-lg border border-slate-200 hover:bg-brand-50 hover:text-brand-700 text-slate-600" title="แก้ไขใบงาน">
-                <i class="fa-solid fa-pen"></i>
-              </button>
-              <button type="button" onclick="deleteTask('${t.id}')" class="p-2 rounded-lg border border-slate-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 text-slate-500" title="ลบใบงาน">
+              <button type="button" onclick="deleteTask('${t.id}')" class="p-2 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50" title="ลบใบงาน">
                 <i class="fa-solid fa-trash-can"></i>
               </button>
             </div>
@@ -4085,116 +3896,92 @@
       }).join('');
     }
 
-    function normalizeMemberQueueOrder(memberId) {
-      if (!memberId) return;
-      const remaining = state.tasks
-        .filter(t => t.assigneeId === memberId && t.status !== 'Completed')
-        .sort((a, b) => (a.queueOrder || 999) - (b.queueOrder || 999));
-      remaining.forEach((t, idx) => { t.queueOrder = idx + 1; });
-    }
-
-    function unassignTaskToPool(taskId) {
-      if (!isBA()) return;
-      const task = state.tasks.find(t => t.id === taskId);
-      if (!task) return;
-      const prevAssigneeId = task.assigneeId;
-      const prevUser = state.users.find(u => u.id === prevAssigneeId);
-      task.assigneeId = '';
-      task.queueOrder = 0;
-      task.overrideWarning = false;
-      if (prevAssigneeId) normalizeMemberQueueOrder(prevAssigneeId);
-      addAuditLog('UNASSIGN_POOL', task.code, `ดึงใบงานออกจากคิวของ ${prevUser ? prevUser.name : '-'} กลับเข้า Pool`);
-      saveState();
-      renderCoordinatorQueue();
-      showToast(`ดึง ${task.code} กลับเข้า Pool แล้ว`, 'info');
-    }
-
     function assignTaskToMember(taskId) {
       if (!isBA()) return;
       const sel = document.getElementById(`assign-sel-${taskId}`);
-      if (!sel) return;
-      const memberId = sel.value;
+      const memberId = sel ? sel.value : '';
       const task = state.tasks.find(t => t.id === taskId);
-      const user = state.users.find(u => u.id === memberId);
-      if (!task || !user) return;
+      if (!task || !memberId) return;
 
+      const user = state.users.find(u => u.id === memberId);
       const existingQueue = state.tasks.filter(t => t.assigneeId === memberId && t.status !== 'Completed');
       task.assigneeId = memberId;
       task.queueOrder = existingQueue.length + 1;
 
       const conflict = analyzeTaskConflicts(task, task.id);
-      if (conflict.hasConflict) {
-        task.overrideWarning = true;
-        showToast(`มอบหมายงานให้ ${user.name} แล้ว (พบแจ้งเตือนงานทับซ้อน!)`, 'warning');
-      } else {
-        showToast(`มอบหมาย ${task.code} เข้าคิว #${task.queueOrder} ของ ${user.name} แล้ว`, 'success');
-      }
+      task.overrideWarning = conflict.hasConflict;
 
-      addAuditLog('ASSIGN_QUEUE', task.code, `มอบหมายให้ ${user.name} (คิวที่ ${task.queueOrder})`);
       document.getElementById('coord-member-select').value = memberId;
+      addAuditLog('ASSIGN_QUEUE', task.code, `จ่ายงานเข้าคิว #${task.queueOrder} ของ ${user ? user.name : memberId} ${conflict.hasConflict ? '(พบวันทับซ้อน/วันลา)' : ''}`);
       saveState();
       renderCoordinatorQueue();
+      showToast(`จ่าย ${task.code} เข้าคิวของ ${user ? user.name : ''} แล้ว`, conflict.hasConflict ? 'warning' : 'success');
     }
 
-    function moveQueueOrder(memberId, taskId, direction) {
+    function unassignTask(taskId) {
       if (!isBA()) return;
-      const memberTasks = state.tasks
+      const task = state.tasks.find(t => t.id === taskId);
+      if (!task) return;
+      const prevMember = task.assigneeId;
+      task.assigneeId = '';
+      task.queueOrder = 0;
+      task.overrideWarning = false;
+      if (prevMember) normalizeMemberQueueOrder(prevMember);
+      addAuditLog('UNASSIGN_TASK', task.code, 'ดึงใบงานกลับเข้า Pool รอจัดคิว');
+      saveState();
+      renderCoordinatorQueue();
+      showToast(`ดึง ${task.code} กลับเข้า Pool แล้ว`, 'info');
+    }
+
+    function normalizeMemberQueueOrder(memberId) {
+      const list = state.tasks
         .filter(t => t.assigneeId === memberId && t.status !== 'Completed')
         .sort((a, b) => (a.queueOrder || 999) - (b.queueOrder || 999));
+      list.forEach((t, i) => { t.queueOrder = i + 1; });
+    }
 
-      const index = memberTasks.findIndex(t => t.id === taskId);
-      const targetIndex = index + direction;
-      if (index === -1 || targetIndex < 0 || targetIndex >= memberTasks.length) return;
+    function moveQueueItem(memberId, taskId, delta) {
+      if (!isBA()) return;
+      const list = state.tasks
+        .filter(t => t.assigneeId === memberId && t.status !== 'Completed')
+        .sort((a, b) => (a.queueOrder || 999) - (b.queueOrder || 999));
+      const idx = list.findIndex(t => t.id === taskId);
+      const targetIdx = idx + delta;
+      if (idx === -1 || targetIdx < 0 || targetIdx >= list.length) return;
 
-      const temp = memberTasks[index];
-      memberTasks[index] = memberTasks[targetIndex];
-      memberTasks[targetIndex] = temp;
-
-      memberTasks.forEach((t, idx) => { t.queueOrder = idx + 1; });
+      const [moved] = list.splice(idx, 1);
+      list.splice(targetIdx, 0, moved);
+      list.forEach((t, i) => { t.queueOrder = i + 1; });
 
       const user = state.users.find(u => u.id === memberId);
-      addAuditLog('REORDER_QUEUE', temp.code, `เปลี่ยนลำดับคิวของ ${user ? user.name : memberId}: ${temp.code} เป็นคิวที่ #${targetIndex + 1}`);
+      addAuditLog('REORDER_QUEUE', moved.code, `ปรับลำดับคิวของ ${user ? user.name : ''} เป็นคิวที่ #${targetIdx + 1}`);
       saveState();
       renderCoordinatorQueue();
-      showToast(`อัปเดตลำดับคิว #${targetIndex + 1} เรียบร้อย`, 'success');
     }
 
-    function handleDragStart(e, taskId) {
-      if (!isBA()) return;
-      draggedTaskId = taskId;
-      e.currentTarget.classList.add('dragging-item');
-    }
-    function handleDragOver(e) { e.preventDefault(); }
-    function handleDragEnd(e) { e.currentTarget.classList.remove('dragging-item'); }
-    function handleDrop(e, targetTaskId) {
-      e.preventDefault();
+    function handleQueueDrop(memberId, targetTaskId) {
       if (!isBA() || !draggedTaskId || draggedTaskId === targetTaskId) return;
-      reorderMemberQueueByIds(draggedTaskId, targetTaskId);
-    }
-
-    function reorderMemberQueueByIds(fromId, toId) {
-      if (!isBA()) return;
-      const memberId = document.getElementById('coord-member-select').value;
-      const memberTasks = state.tasks
+      const list = state.tasks
         .filter(t => t.assigneeId === memberId && t.status !== 'Completed')
         .sort((a, b) => (a.queueOrder || 999) - (b.queueOrder || 999));
-
-      const fromIdx = memberTasks.findIndex(t => t.id === fromId);
-      const toIdx = memberTasks.findIndex(t => t.id === toId);
+      const fromIdx = list.findIndex(t => t.id === draggedTaskId);
+      const toIdx = list.findIndex(t => t.id === targetTaskId);
+      draggedTaskId = null;
       if (fromIdx === -1 || toIdx === -1) return;
 
-      const [moved] = memberTasks.splice(fromIdx, 1);
-      memberTasks.splice(toIdx, 0, moved);
-      memberTasks.forEach((t, idx) => { t.queueOrder = idx + 1; });
+      const [moved] = list.splice(fromIdx, 1);
+      list.splice(toIdx, 0, moved);
+      list.forEach((t, i) => { t.queueOrder = i + 1; });
 
       const user = state.users.find(u => u.id === memberId);
-      addAuditLog('DRAG_REORDER', moved.code, `ลากจัดลำดับคิวใหม่ให้ ${user ? user.name : memberId}: ${moved.code} -> คิวที่ #${toIdx + 1}`);
+      addAuditLog('REORDER_QUEUE', moved.code, `ลากจัดลำดับคิวของ ${user ? user.name : ''} ไปที่คิว #${toIdx + 1}`);
       saveState();
       renderCoordinatorQueue();
-      showToast(`จัดลำดับคิว ${moved.code} เป็นคิวที่ #${toIdx + 1} แล้ว`, 'success');
+      showToast(`อัปเดตลำดับคิว ${moved.code} เป็น #${toIdx + 1}`, 'success');
     }
 
     function resetAllTasksFilter() {
+      document.getElementById('filter-task-search').value = '';
       document.getElementById('filter-task-start').value = '';
       document.getElementById('filter-task-end').value = '';
       document.getElementById('filter-task-horizon').value = 'ALL';
@@ -4203,121 +3990,136 @@
       document.getElementById('filter-task-source').value = 'ALL';
       document.getElementById('filter-task-assignee').value = 'ALL';
       document.getElementById('filter-task-status').value = 'ALL';
-      document.getElementById('filter-task-search').value = '';
       renderAllTasksTable();
     }
 
     function renderAllTasksTable() {
       if (!isBA()) return;
-      const fStart = document.getElementById('filter-task-start')?.value || '';
-      const fEnd = document.getElementById('filter-task-end')?.value || '';
+      const q = normalizeSearchText(document.getElementById('filter-task-search').value);
+      const fStart = document.getElementById('filter-task-start').value;
+      const fEnd = document.getElementById('filter-task-end').value;
       const fHorizon = document.getElementById('filter-task-horizon')?.value || 'ALL';
       const fSprint = document.getElementById('filter-task-sprint')?.value || 'ALL';
       const fType = document.getElementById('filter-task-type')?.value || 'ALL';
-      const fSource = document.getElementById('filter-task-source')?.value || 'ALL';
-      const fAssignee = document.getElementById('filter-task-assignee')?.value || 'ALL';
-      const fStatus = document.getElementById('filter-task-status')?.value || 'ALL';
-      const fSearch = normalizeSearchText(document.getElementById('filter-task-search')?.value || '');
+      const fSource = document.getElementById('filter-task-source').value;
+      const fAssignee = document.getElementById('filter-task-assignee').value;
+      const fStatus = document.getElementById('filter-task-status').value;
       const todayStr = getRelativeDate(0);
 
       const filtered = state.tasks.filter(t => {
+        const org = state.organizations.find(o => o.id === t.orgId);
+        const user = state.users.find(u => u.id === t.assigneeId);
+
+        if (q) {
+          const hay = normalizeSearchText([
+            t.code, t.title, t.description, t.sprint, t.taskType,
+            t.slaRef, org ? org.name : '', org ? org.code : '', user ? user.name : ''
+          ].join(' '));
+          if (!hay.includes(q)) return false;
+        }
         if (!matchesHorizonFilter(t, fHorizon, todayStr)) return false;
-        if (fStart && t.endDate && t.endDate < fStart) return false;
-        if (fEnd && t.startDate && t.startDate > fEnd) return false;
         if (fSprint !== 'ALL' && t.sprint !== fSprint) return false;
         if (fType !== 'ALL' && (t.taskType || 'Feature') !== fType) return false;
         if (fSource !== 'ALL' && t.source !== fSource) return false;
         if (fAssignee === 'UNASSIGNED' && t.assigneeId) return false;
         if (fAssignee !== 'ALL' && fAssignee !== 'UNASSIGNED' && t.assigneeId !== fAssignee) return false;
         if (fStatus !== 'ALL' && t.status !== fStatus) return false;
-
-        if (fSearch) {
-          const org = state.organizations.find(o => o.id === t.orgId);
-          const hay = normalizeSearchText(`${t.code} ${t.title} ${t.sprint || ''} ${t.slaRef || ''} ${org ? org.name + ' ' + org.code : ''}`);
-          if (!hay.includes(fSearch)) return false;
-        }
+        if (fStart && t.endDate && t.endDate < fStart) return false;
+        if (fEnd && t.startDate && t.startDate > fEnd) return false;
         return true;
       });
 
       const intCount = filtered.filter(t => t.source === 'Internal').length;
       const extCount = filtered.filter(t => t.source === 'External').length;
+      const curCount = filtered.filter(t => getTaskHorizon(t, todayStr) === 'CURRENT').length;
+      const futCount = filtered.filter(t => getTaskHorizon(t, todayStr) === 'FUTURE').length;
       const totalSP = filtered.reduce((s, t) => s + (t.storyPoints || 0), 0);
+      const totalEst = filtered.reduce((s, t) => s + (parseFloat(t.estimatedHours) || 0), 0);
+      const totalAct = filtered.reduce((s, t) => s + (t.timeLogs || []).reduce((a, b) => a + (parseFloat(b.hours) || 0), 0), 0);
+
       document.getElementById('all-tasks-summary').innerHTML = `
-        <span class="px-3 py-1 rounded-full bg-slate-200/70 text-slate-800 font-semibold">พบทั้งหมด ${filtered.length} รายการ (${totalSP} SP)</span>
-        <span class="px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 font-medium">Internal: ${intCount}</span>
-        <span class="px-3 py-1 rounded-full bg-teal-50 text-teal-700 font-medium">External: ${extCount}</span>
+        <span class="px-3 py-1 rounded-full bg-slate-900 text-white font-semibold">แสดง ${filtered.length} / ${state.tasks.length} ใบงาน</span>
+        <span class="px-3 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200 font-medium">ปัจจุบัน: ${curCount}</span>
+        <span class="px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 font-medium">อนาคต: ${futCount}</span>
+        <span class="px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 font-medium">Internal: ${intCount}</span>
+        <span class="px-3 py-1 rounded-full bg-teal-50 text-teal-700 border border-teal-200 font-medium">External: ${extCount}</span>
+        <span class="px-3 py-1 rounded-full bg-purple-50 text-purple-700 border border-purple-200 font-semibold">รวม ${totalSP} SP</span>
+        <span class="px-3 py-1 rounded-full bg-brand-50 text-brand-700 border border-brand-200 font-semibold">ประเมิน ${totalEst} ชม. / จริง ${totalAct} ชม.</span>
       `;
 
       const tbody = document.getElementById('all-tasks-tbody');
       if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="9" class="py-12 text-center text-slate-400">ไม่พบข้อมูลใบงานตามเงื่อนไขที่กรอง</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9" class="py-10 text-center text-slate-400">ไม่พบใบงานที่ตรงกับเงื่อนไขการค้นหา</td></tr>`;
         updateBulkDeleteBarUI();
         return;
       }
 
       tbody.innerHTML = filtered.map(t => {
         const user = state.users.find(u => u.id === t.assigneeId);
-        const actualHrs = (t.timeLogs || []).reduce((s, l) => s + (parseFloat(l.hours) || 0), 0);
-        const conflict = analyzeTaskConflicts(t, t.id);
-        const isConflict = (conflict.hasConflict || t.overrideWarning) && t.status !== 'Completed';
+        const actHrs = (t.timeLogs || []).reduce((s, l) => s + (parseFloat(l.hours) || 0), 0);
         const acTotal = (t.checklist || []).length;
         const acDone = (t.checklist || []).filter(c => c.done).length;
-
         const isChecked = selectedTaskIdsForBulkDelete.has(t.id);
+
         return `
-          <tr class="hover:bg-slate-50/90 transition ${isChecked ? 'bg-rose-50/30' : ''}">
+          <tr class="hover:bg-slate-50/80 transition ${isChecked ? 'bg-rose-50/30' : ''}">
             <td class="py-3.5 px-3 text-center">
-              <input type="checkbox" data-taskid="${t.id}" ${isChecked ? 'checked' : ''} onchange="toggleTaskBulkSelect('${t.id}', this.checked)" class="all-task-row-checkbox rounded text-brand-600 focus:ring-brand-500 border-slate-300 cursor-pointer" />
+              <input type="checkbox" data-taskid="${t.id}" ${isChecked ? 'checked' : ''}
+                     onchange="toggleTaskBulkSelect('${t.id}', this.checked)"
+                     class="all-task-row-checkbox rounded text-rose-600 focus:ring-rose-500 border-slate-300 cursor-pointer" />
             </td>
             <td class="py-3.5 px-4 whitespace-nowrap">
-              <div class="font-bold text-brand-700">${escapeHTML(t.code)}</div>
-              <div class="text-[11px] text-slate-500">${escapeHTML(t.sprint || '-')}</div>
-              <div class="mt-0.5">${getHorizonBadgeHTML(t, todayStr)}</div>
-              ${isConflict ? `<span class="block text-[10px] text-rose-600 font-semibold mt-0.5"><i class="fa-solid fa-triangle-exclamation"></i> งานทับซ้อน</span>` : ''}
+              <div class="font-bold text-xs text-brand-700">${escapeHTML(t.code)}</div>
+              <div class="text-[11px] text-slate-500 mt-0.5">${escapeHTML(t.sprint || '-')}</div>
+              <div class="mt-1">${getHorizonBadgeHTML(t, todayStr)}</div>
             </td>
-            <td class="py-3.5 px-4">
-              <div class="font-semibold text-slate-900">${escapeHTML(t.title)}</div>
-              <div class="flex flex-wrap items-center gap-1.5 mt-1">
+            <td class="py-3.5 px-4 max-w-xs">
+              <div class="flex items-center gap-1.5 flex-wrap mb-1">
                 ${getTaskTypeBadgeHTML(t.taskType)}
+                <span class="text-[10px] font-bold bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded">${t.storyPoints || 3} SP</span>
                 ${getPriorityBadgeHTML(t.priority)}
-                <span class="text-[10px] font-bold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">${t.storyPoints || 3} SP</span>
-                ${acTotal > 0 ? `<span class="text-[10px] font-semibold ${acDone === acTotal ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'} px-1.5 py-0.5 rounded"><i class="fa-solid fa-check-double mr-0.5"></i>AC ${acDone}/${acTotal}</span>` : ''}
-                ${t.slaRef ? `<span class="text-[10px] text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded font-medium">Ref: ${escapeHTML(t.slaRef)}</span>` : ''}
               </div>
+              <button type="button" onclick="openDetailModal('${t.id}')" class="font-semibold text-slate-900 hover:text-brand-600 text-left line-clamp-2">
+                ${escapeHTML(t.title)}
+              </button>
+              ${acTotal > 0 ? `<div class="text-[11px] text-slate-500 mt-1"><i class="fa-solid fa-list-check text-brand-500 mr-1"></i>AC: ${acDone}/${acTotal} ข้อ</div>` : ''}
             </td>
-            <td class="py-3.5 px-4 whitespace-nowrap">${getOrgBadgeHTML(t.orgId, t.source)}</td>
+            <td class="py-3.5 px-4 whitespace-nowrap">
+              ${getOrgBadgeHTML(t.orgId, t.source)}
+              ${t.slaRef ? `<div class="text-[11px] text-teal-700 font-medium mt-1"><i class="fa-solid fa-file-shield mr-1"></i>${escapeHTML(t.slaRef)}</div>` : ''}
+            </td>
             <td class="py-3.5 px-4 whitespace-nowrap">
               ${user
-                ? `<div class="font-medium text-slate-800">${escapeHTML(user.name)}</div><div class="text-[11px] text-slate-500">คิวลำดับที่ #${t.queueOrder || '-'}</div>`
-                : `<span class="text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded-md font-medium">ยังไม่มอบหมาย</span>`
+                ? `<div class="font-medium text-slate-800">${escapeHTML(user.name)}</div>
+                   <div class="text-[11px] text-brand-600 font-semibold">คิวลำดับที่ #${t.queueOrder || '-'}</div>`
+                : `<span class="text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md font-medium">ยังไม่มอบหมาย</span>`
               }
             </td>
             <td class="py-3.5 px-4 whitespace-nowrap text-xs text-slate-600">
-              ${t.startDate || t.endDate
-                ? `<div>${escapeHTML(formatThaiDate(t.startDate))}</div><div class="text-slate-400">ถึง ${escapeHTML(formatThaiDate(t.endDate))}</div>`
-                : `<span class="text-slate-400 italic">ยังไม่กำหนดวัน</span>`}
+              ${escapeHTML(formatDateRangeLabel(t.startDate, t.endDate))}
             </td>
-            <td class="py-3.5 px-4 text-right whitespace-nowrap">
-              <span class="font-bold text-slate-800">${t.estimatedHours}</span> <span class="text-xs text-slate-400">ชม.</span>
-              <div class="text-[11px] text-emerald-600 font-medium">ทำจริง: ${actualHrs} ชม.</div>
+            <td class="py-3.5 px-4 whitespace-nowrap text-right text-xs">
+              <span class="font-bold text-slate-800">${t.estimatedHours}h</span>
+              <span class="text-slate-400"> / </span>
+              <span class="font-semibold text-emerald-700">${actHrs}h</span>
             </td>
             <td class="py-3.5 px-4 whitespace-nowrap">
               ${getStatusBadgeHTML(t.status)}
-              ${t.status === 'Blocked' && t.blockerReason ? `<div class="text-[10px] text-rose-600 max-w-[160px] truncate mt-1" title="${escapeHTML(t.blockerReason)}">${escapeHTML(t.blockerReason)}</div>` : ''}
+              ${t.status === 'Blocked' && t.blockerReason ? `<div class="text-[10px] text-rose-600 mt-1 max-w-[160px] truncate" title="${escapeHTML(t.blockerReason)}">${escapeHTML(t.blockerReason)}</div>` : ''}
             </td>
-            <td class="py-3.5 px-4 text-center whitespace-nowrap">
+            <td class="py-3.5 px-4 whitespace-nowrap text-center">
               <div class="inline-flex items-center gap-1">
-                <button type="button" onclick="openDetailModal('${t.id}')" class="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-brand-600 hover:text-white text-slate-700 text-xs font-medium transition" title="ตรวจ Checklist / อัปเดตสถานะ / ลงเวลา">
-                  <i class="fa-solid fa-list-check"></i> จัดการ
+                <button type="button" onclick="openDetailModal('${t.id}')" class="p-1.5 rounded-lg bg-slate-100 hover:bg-brand-50 text-slate-600 hover:text-brand-700" title="อัปเดตสถานะ / ลงเวลา">
+                  <i class="fa-solid fa-eye text-xs"></i>
                 </button>
-                <button type="button" onclick="openCreateTaskModal('${t.id}')" class="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-600 text-xs" title="แก้ไขใบงาน">
-                  <i class="fa-solid fa-pen"></i>
+                <button type="button" onclick="openCreateTaskModal('${t.id}')" class="p-1.5 rounded-lg bg-slate-100 hover:bg-amber-50 text-slate-600 hover:text-amber-700" title="แก้ไขใบงาน">
+                  <i class="fa-solid fa-pen text-xs"></i>
                 </button>
-                <button type="button" onclick="duplicateTask('${t.id}')" class="p-1.5 rounded-lg border border-slate-200 hover:bg-indigo-50 hover:text-indigo-600 text-slate-600 text-xs" title="คัดลอกใบงาน">
-                  <i class="fa-solid fa-copy"></i>
+                <button type="button" onclick="duplicateTask('${t.id}')" class="p-1.5 rounded-lg bg-slate-100 hover:bg-indigo-50 text-slate-600 hover:text-indigo-700" title="คัดลอกใบงาน (Duplicate)">
+                  <i class="fa-solid fa-copy text-xs"></i>
                 </button>
-                <button type="button" onclick="deleteTask('${t.id}')" class="p-1.5 rounded-lg border border-slate-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 text-slate-500 text-xs" title="ลบใบงาน">
-                  <i class="fa-solid fa-trash"></i>
+                <button type="button" onclick="deleteTask('${t.id}')" class="p-1.5 rounded-lg bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-700" title="ลบใบงาน">
+                  <i class="fa-solid fa-trash-can text-xs"></i>
                 </button>
               </div>
             </td>
@@ -4329,85 +4131,74 @@
 
     function renderMyQueue() {
       if (!isBA()) return;
-      const userId = document.getElementById('myqueue-user-select').value;
+      const memberId = document.getElementById('myqueue-user-select').value;
       const horizonFilter = document.getElementById('myqueue-horizon-filter')?.value || 'ALL';
-      const user = state.users.find(u => u.id === userId);
-      const container = document.getElementById('myqueue-list');
-      if (!user) return;
       const todayStr = getRelativeDate(0);
 
-      const myTasks = state.tasks
-        .filter(t => t.assigneeId === userId && matchesHorizonFilter(t, horizonFilter, todayStr))
+      const tasks = state.tasks
+        .filter(t => t.assigneeId === memberId && matchesHorizonFilter(t, horizonFilter, todayStr))
         .sort((a, b) => {
           if (a.status === 'Completed' && b.status !== 'Completed') return 1;
           if (a.status !== 'Completed' && b.status === 'Completed') return -1;
           return (a.queueOrder || 999) - (b.queueOrder || 999);
         });
 
-      if (myTasks.length === 0) {
-        container.innerHTML = `<div class="col-span-full bg-white rounded-2xl border border-slate-200 p-12 text-center text-slate-400">ไม่มีรายการคิวงานตามช่วงแผนงานที่เลือกสำหรับสมาชิกคนนี้</div>`;
+      const container = document.getElementById('myqueue-list');
+      if (tasks.length === 0) {
+        container.innerHTML = `<div class="col-span-full bg-white p-10 rounded-2xl border border-slate-200 text-center text-slate-400 text-sm">ยังไม่มีใบงานในคิวของสมาชิกท่านนี้ตามช่วงที่เลือก</div>`;
         return;
       }
 
-      container.innerHTML = myTasks.map(t => {
-        const actualHrs = (t.timeLogs || []).reduce((s, l) => s + (parseFloat(l.hours) || 0), 0);
-        const pct = Math.min(100, Math.round((actualHrs / Math.max(1, parseFloat(t.estimatedHours) || 1)) * 100));
-        const conflict = analyzeTaskConflicts(t, t.id);
-        const isConflict = (conflict.hasConflict || t.overrideWarning) && t.status !== 'Completed';
+      container.innerHTML = tasks.map(t => {
+        const actHrs = (t.timeLogs || []).reduce((s, l) => s + (parseFloat(l.hours) || 0), 0);
+        const pct = t.estimatedHours > 0 ? Math.min(100, Math.round((actHrs / t.estimatedHours) * 100)) : 0;
+        const isDone = t.status === 'Completed';
         const acTotal = (t.checklist || []).length;
         const acDone = (t.checklist || []).filter(c => c.done).length;
 
         return `
-          <div class="bg-white rounded-2xl border ${isConflict ? 'border-rose-300' : 'border-slate-200'} shadow-2xs p-5 flex flex-col justify-between space-y-4">
+          <div class="bg-white p-5 rounded-2xl border ${t.status === 'Blocked' ? 'border-rose-300' : 'border-slate-200'} shadow-2xs flex flex-col justify-between space-y-4">
             <div class="space-y-2.5">
               <div class="flex items-center justify-between gap-2">
                 <div class="flex items-center gap-2 flex-wrap">
-                  <span class="px-2.5 py-1 rounded-lg bg-brand-600 text-white text-xs font-bold">คิวที่ #${t.queueOrder || '-'}</span>
+                  ${!isDone ? `<span class="px-2.5 py-0.5 rounded-lg bg-brand-600 text-white text-xs font-bold">คิวที่ #${t.queueOrder || '-'}</span>` : ''}
                   <span class="text-xs font-bold text-slate-500">${escapeHTML(t.code)}</span>
                   ${getHorizonBadgeHTML(t, todayStr)}
                   ${getTaskTypeBadgeHTML(t.taskType)}
+                  <span class="text-[11px] font-bold bg-slate-100 text-slate-700 px-2 py-0.5 rounded">${t.storyPoints || 3} SP</span>
                 </div>
-                ${getStatusBadgeHTML(t.status)}
+                <div class="flex items-center gap-1.5">
+                  ${getStatusBadgeHTML(t.status)}
+                  <button type="button" onclick="deleteTask('${t.id}')" class="p-1.5 rounded-lg bg-slate-100 hover:bg-rose-50 text-slate-500 hover:text-rose-700 transition" title="ลบใบงาน">
+                    <i class="fa-solid fa-trash-can text-xs"></i>
+                  </button>
+                </div>
               </div>
 
-              <h3 class="font-bold text-base text-slate-900">${escapeHTML(t.title)}</h3>
-
+              <h3 class="font-bold text-base text-slate-900 leading-snug">${escapeHTML(t.title)}</h3>
               <div class="flex flex-wrap items-center gap-2">
                 ${getOrgBadgeHTML(t.orgId, t.source)}
                 ${getPriorityBadgeHTML(t.priority)}
-                <span class="text-[11px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded">${t.storyPoints || 3} SP</span>
-                ${acTotal > 0 ? `<span class="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded"><i class="fa-solid fa-list-check mr-1"></i>AC: ${acDone}/${acTotal}</span>` : ''}
+                ${acTotal > 0 ? `<span class="text-xs font-semibold px-2 py-0.5 rounded-md bg-slate-100 text-slate-700"><i class="fa-solid fa-list-check text-brand-600 mr-1"></i>AC ${acDone}/${acTotal}</span>` : ''}
               </div>
 
-              ${isConflict ? `
-                <div class="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start gap-2">
-                  <i class="fa-solid fa-triangle-exclamation text-rose-600 mt-0.5"></i>
-                  <div><b>แจ้งเตือนงานทับซ้อน:</b> ${conflict.messages[0] || 'ช่วงเวลาซ้อนทับกับงานอื่นในคิว'}</div>
-                </div>
-              ` : ''}
-
               ${t.status === 'Blocked' && t.blockerReason ? `
-                <div class="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs">
+                <div class="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-800">
                   <b>สาเหตุที่ติดขัด:</b> ${escapeHTML(t.blockerReason)}
                 </div>
               ` : ''}
-
-              <div class="text-xs text-slate-500 flex items-center justify-between pt-1">
-                <span><i class="fa-regular fa-calendar mr-1"></i>${escapeHTML(formatDateRangeLabel(t.startDate, t.endDate))}</span>
-                <span>ทำจริง <b>${actualHrs}</b> / ${t.estimatedHours} ชม.</span>
-              </div>
-
-              <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                <div class="bg-brand-600 h-2 rounded-full transition-all" style="width: ${pct}%"></div>
-              </div>
             </div>
 
-            <div class="flex items-center gap-2">
-              <button type="button" onclick="openDetailModal('${t.id}')" class="flex-1 py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-brand-600 text-white text-xs sm:text-sm font-medium transition flex items-center justify-center gap-2">
-                <i class="fa-solid fa-pen-to-square"></i> ตรวจ Checklist / อัปเดตสถานะ & ลงเวลา
-              </button>
-              <button type="button" onclick="deleteTask('${t.id}')" class="py-2.5 px-3 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-600 text-xs sm:text-sm transition" title="ลบใบงาน">
-                <i class="fa-solid fa-trash-can"></i>
+            <div class="space-y-3 pt-3 border-t border-slate-100">
+              <div class="flex items-center justify-between text-xs text-slate-500">
+                <span><i class="fa-regular fa-calendar mr-1"></i>${escapeHTML(formatDateRangeLabel(t.startDate, t.endDate))}</span>
+                <span>ทำจริง <b>${actHrs}</b> / ${t.estimatedHours} ชม. (${pct}%)</span>
+              </div>
+              <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div class="h-full ${isDone ? 'bg-emerald-500' : 'bg-brand-600'} rounded-full transition-all" style="width: ${pct}%"></div>
+              </div>
+              <button type="button" onclick="openDetailModal('${t.id}')" class="w-full py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-brand-600 text-white text-xs sm:text-sm font-medium transition flex items-center justify-center gap-2">
+                <i class="fa-solid fa-pen-to-square"></i> อัปเดตสถานะ / ตรวจ AC / บันทึกเวลาทำจริง
               </button>
             </div>
           </div>
@@ -4416,86 +4207,75 @@
     }
 
     function openDetailModal(taskId) {
-      const t = state.tasks.find(x => x.id === taskId);
-      if (!t) return;
-      const org = state.organizations.find(o => o.id === t.orgId);
-      const user = state.users.find(u => u.id === t.assigneeId);
+      const task = state.tasks.find(t => t.id === taskId);
+      if (!task) return;
       const ba = isBA();
 
-      document.getElementById('det-task-id').value = t.id;
-      document.getElementById('det-code').textContent = t.code;
-      document.getElementById('det-horizon-badge').innerHTML = getHorizonBadgeHTML(t);
-      document.getElementById('det-type-badge').innerHTML = getTaskTypeBadgeHTML(t.taskType);
-      document.getElementById('det-sp-badge').textContent = `${t.storyPoints || 3} SP`;
-      document.getElementById('det-viewonly-badge').classList.toggle('hidden', ba);
-      document.getElementById('det-title').textContent = t.title;
-
+      document.getElementById('det-task-id').value = task.id;
+      document.getElementById('det-code').textContent = task.code;
+      document.getElementById('det-horizon-badge').innerHTML = getHorizonBadgeHTML(task);
+      document.getElementById('det-type-badge').innerHTML = getTaskTypeBadgeHTML(task.taskType);
+      document.getElementById('det-sp-badge').textContent = `${task.storyPoints || 3} SP • ${task.sprint || 'Backlog'}`;
+      document.getElementById('det-title').textContent = task.title;
+      document.getElementById('det-viewonly-badge')?.classList.toggle('hidden', ba);
       document.getElementById('det-ba-quick-actions')?.classList.toggle('hidden', !ba);
-      document.getElementById('det-status-editor').classList.toggle('hidden', !ba);
-      document.getElementById('det-timelog-form').classList.toggle('hidden', !ba);
 
-      if (ba) {
-        document.getElementById('det-status').value = t.status;
-        document.getElementById('det-blocker-reason').value = t.blockerReason || '';
-        toggleBlockerField();
-      }
-
+      const user = state.users.find(u => u.id === task.assigneeId);
       document.getElementById('det-meta').innerHTML = `
-        <div><span class="text-slate-400 block">หน่วยงาน:</span><b>${org ? escapeHTML(org.name) : escapeHTML(t.source || 'Internal')}</b></div>
-        <div><span class="text-slate-400 block">ผู้รับผิดชอบ:</span><b>${user ? escapeHTML(user.name) : 'ยังไม่มอบหมาย'}</b></div>
-        <div><span class="text-slate-400 block">กำหนดการ (${escapeHTML(t.sprint || '-')}):</span><b>${escapeHTML(formatDateRangeLabel(t.startDate, t.endDate))}</b></div>
-        <div><span class="text-slate-400 block">สถานะ / SLA:</span><b>${escapeHTML(t.status)}${t.slaRef ? ' • ' + escapeHTML(t.slaRef) : ''}</b></div>
+        <div><span class="text-slate-400">ผู้รับผิดชอบ:</span> <b class="text-slate-800">${user ? escapeHTML(user.name) : 'ยังไม่ระบุ'}</b></div>
+        <div><span class="text-slate-400">ช่วงวันที่ตามแผน:</span> <b class="text-slate-800">${escapeHTML(formatDateRangeLabel(task.startDate, task.endDate))}</b></div>
+        <div><span class="text-slate-400">แหล่งที่มา:</span> ${getOrgBadgeHTML(task.orgId, task.source)}</div>
+        <div><span class="text-slate-400">ความสำคัญ:</span> ${getPriorityBadgeHTML(task.priority)}</div>
       `;
 
       const descBox = document.getElementById('det-desc-box');
-      if (t.description) {
+      if (task.description) {
         descBox.classList.remove('hidden');
-        descBox.innerHTML = `<span class="font-semibold text-slate-700">ขอบเขตงาน:</span> ${escapeHTML(t.description)}`;
+        descBox.innerHTML = `<b class="text-slate-800">ขอบเขตงาน:</b> ${escapeHTML(task.description)}`;
       } else {
         descBox.classList.add('hidden');
       }
 
-      renderDetailChecklist(t);
+      const acSection = document.getElementById('det-ac-section');
+      const acList = document.getElementById('det-ac-list');
+      const checklist = task.checklist || [];
+      if (checklist.length > 0) {
+        acSection.classList.remove('hidden');
+        const doneCount = checklist.filter(c => c.done).length;
+        document.getElementById('det-ac-progress').textContent = `ผ่านแล้ว ${doneCount}/${checklist.length} ข้อ`;
+        acList.innerHTML = checklist.map((item, idx) => `
+          <label class="flex items-start gap-2.5 text-xs ${ba ? 'cursor-pointer hover:bg-white' : 'cursor-default'} p-1.5 rounded-lg transition">
+            <input type="checkbox" ${item.done ? 'checked' : ''} ${ba ? `onchange="toggleTaskChecklistItem('${task.id}', ${idx})"` : 'disabled'} class="mt-0.5 rounded text-brand-600 focus:ring-brand-500" />
+            <span class="${item.done ? 'line-through text-slate-400' : 'text-slate-800 font-medium'}">${escapeHTML(item.text)}</span>
+          </label>
+        `).join('');
+      } else {
+        acSection.classList.add('hidden');
+      }
 
-      document.getElementById('log-date').value = getRelativeDate(0);
+      document.getElementById('det-status-editor')?.classList.toggle('hidden', !ba);
+      document.getElementById('det-timelog-form')?.classList.toggle('hidden', !ba);
+
+      document.getElementById('det-status').value = task.status;
+      document.getElementById('det-blocker-reason').value = task.blockerReason || '';
+      toggleBlockerField();
+
+      document.getElementById('log-date').value = toLocalDateStr(new Date());
       document.getElementById('log-hours').value = 4;
       document.getElementById('log-note').value = '';
 
-      renderDetailTimeLogs(t);
+      renderDetailTimeLogs(task);
       document.getElementById('detail-modal').classList.remove('hidden');
     }
 
-    function renderDetailChecklist(task) {
-      const acSection = document.getElementById('det-ac-section');
-      const items = task.checklist || [];
-      if (items.length === 0) {
-        acSection.classList.add('hidden');
-        return;
-      }
-      acSection.classList.remove('hidden');
-      const doneCount = items.filter(i => i.done).length;
-      const ba = isBA();
-      document.getElementById('det-ac-progress').textContent = `ผ่านแล้ว ${doneCount}/${items.length} ข้อ`;
-
-      document.getElementById('det-ac-list').innerHTML = items.map((item, idx) => `
-        <label class="flex items-start gap-2.5 p-2 rounded-lg ${ba ? 'hover:bg-white cursor-pointer' : ''} transition text-xs">
-          <input type="checkbox" ${item.done ? 'checked' : ''} ${ba ? `onchange="toggleChecklistItem('${task.id}', ${idx})"` : 'disabled'} class="mt-0.5 rounded text-brand-600 focus:ring-brand-500 disabled:opacity-75" />
-          <span class="${item.done ? 'line-through text-slate-400' : 'text-slate-800 font-medium'}">${escapeHTML(item.text)}</span>
-        </label>
-      `).join('');
-    }
-
-    function toggleChecklistItem(taskId, idx) {
-      if (!isBA()) {
-        showToast('เฉพาะ Role BA เท่านั้นที่แก้ไข Checklist ได้', 'error');
-        return;
-      }
+    function toggleTaskChecklistItem(taskId, idx) {
+      if (!isBA()) return;
       const task = state.tasks.find(t => t.id === taskId);
       if (!task || !task.checklist || !task.checklist[idx]) return;
       task.checklist[idx].done = !task.checklist[idx].done;
-      addAuditLog('TOGGLE_AC', task.code, `อัปเดตเกณฑ์ตรวจรับ "${task.checklist[idx].text}" -> ${task.checklist[idx].done ? 'ผ่าน' : 'ยังไม่ผ่าน'}`);
+      addAuditLog('UPDATE_AC', task.code, `อัปเดต Acceptance Criteria ข้อที่ ${idx + 1} (${task.checklist[idx].done ? 'ผ่าน' : 'ยกเลิก'})`);
       saveState();
-      renderDetailChecklist(task);
+      openDetailModal(taskId);
       refreshCurrentView();
     }
 
@@ -4513,71 +4293,47 @@
         showToast('เฉพาะ Role BA เท่านั้นที่อัปเดตสถานะงานได้', 'error');
         return;
       }
-      const id = document.getElementById('det-task-id').value;
-      const status = document.getElementById('det-status').value;
-      const reason = document.getElementById('det-blocker-reason').value.trim();
+      const taskId = document.getElementById('det-task-id').value;
+      const task = state.tasks.find(t => t.id === taskId);
+      if (!task) return;
 
-      if (status === 'Blocked' && !reason) {
-        showToast('กรุณาระบุเหตุผลที่ติดขัด (Blocker Reason) ก่อนบันทึก', 'error');
+      const newStatus = document.getElementById('det-status').value;
+      const blockerReason = document.getElementById('det-blocker-reason').value.trim();
+
+      if (newStatus === 'Blocked' && !blockerReason) {
+        showToast('กรุณาระบุสาเหตุที่ติดปัญหา (Blocker Reason) ก่อนเปลี่ยนสถานะเป็น Blocked', 'error');
         return;
       }
-
-      const task = state.tasks.find(t => t.id === id);
-      if (!task) return;
 
       const oldStatus = task.status;
-      task.status = status;
-      task.blockerReason = status === 'Blocked' ? reason : '';
+      task.status = newStatus;
+      task.blockerReason = newStatus === 'Blocked' ? blockerReason : '';
 
-      addAuditLog('STATUS_CHANGE', task.code, `เปลี่ยนสถานะจาก ${oldStatus} เป็น ${status} ${reason ? '(' + reason + ')' : ''}`);
+      if (newStatus === 'Completed' && task.assigneeId) {
+        normalizeMemberQueueOrder(task.assigneeId);
+      }
+
+      addAuditLog('STATUS_CHANGE', task.code, `เปลี่ยนสถานะจาก ${oldStatus} เป็น ${newStatus} ${newStatus === 'Blocked' ? '(' + blockerReason + ')' : ''}`);
       saveState();
-      refreshCurrentView();
-      showToast(`อัปเดตสถานะเป็น ${status} เรียบร้อย`, 'success');
       closeDetailModal();
-    }
-
-    function submitTimeLog() {
-      if (!isBA()) {
-        showToast('เฉพาะ Role BA เท่านั้นที่บันทึกเวลาทำงานได้', 'error');
-        return;
-      }
-      const id = document.getElementById('det-task-id').value;
-      const date = document.getElementById('log-date').value;
-      const hours = parseFloat(document.getElementById('log-hours').value);
-      const note = document.getElementById('log-note').value.trim();
-
-      if (!date || isNaN(hours) || hours <= 0 || hours > 24) {
-        showToast('ชั่วโมงทำงานจริงต้องมากกว่า 0 และไม่เกิน 24 ชม./วัน', 'error');
-        return;
-      }
-
-      const task = state.tasks.find(t => t.id === id);
-      if (!task) return;
-
-      if (!task.timeLogs) task.timeLogs = [];
-      task.timeLogs.unshift({ id: 'tl_' + Date.now(), date, hours, note });
-
-      addAuditLog('TIME_LOG', task.code, `บันทึกเวลาทำงานจริง ${hours} ชม. (วันที่ ${formatThaiDate(date)})`);
-      saveState();
-      renderDetailTimeLogs(task);
       refreshCurrentView();
-      showToast(`บันทึกเวลาทำงาน ${hours} ชม. สำเร็จ`, 'success');
+      showToast(`อัปเดตสถานะ ${task.code} เป็น ${newStatus} เรียบร้อย`, 'success');
     }
 
     function renderDetailTimeLogs(task) {
       const logs = task.timeLogs || [];
-      const total = logs.reduce((s, l) => s + (parseFloat(l.hours) || 0), 0);
-      document.getElementById('det-hours-summary').textContent = `สะสมจริง: ${total} / ประเมิน ${task.estimatedHours} ชม.`;
+      const totalActual = logs.reduce((s, l) => s + (parseFloat(l.hours) || 0), 0);
+      document.getElementById('det-hours-summary').textContent = `ทำจริงแล้ว ${totalActual} / ประเมิน ${task.estimatedHours} ชม.`;
 
-      const histEl = document.getElementById('det-timelog-history');
+      const container = document.getElementById('det-timelog-history');
       if (logs.length === 0) {
-        histEl.innerHTML = `<div class="text-xs text-slate-400 italic">ยังไม่มีประวัติการลงเวลาทำงาน</div>`;
+        container.innerHTML = `<div class="text-xs text-slate-400 text-center py-3 bg-slate-50 rounded-xl">ยังไม่มีประวัติการลงเวลาทำงาน</div>`;
         return;
       }
-      histEl.innerHTML = logs.map(l => `
+      container.innerHTML = logs.slice().reverse().map(l => `
         <div class="flex items-center justify-between text-xs bg-slate-50 px-3 py-2 rounded-lg border border-slate-100">
           <div>
-            <span class="font-semibold text-slate-700">${escapeHTML(formatThaiDate(l.date))}</span>
+            <span class="font-semibold text-slate-800">${formatThaiDate(l.date)}</span>
             ${l.note ? `<span class="text-slate-500 ml-2">- ${escapeHTML(l.note)}</span>` : ''}
           </div>
           <span class="font-bold text-emerald-700">+${l.hours} ชม.</span>
@@ -4585,83 +4341,663 @@
       `).join('');
     }
 
+    function submitTimeLog() {
+      if (!isBA()) {
+        showToast('เฉพาะ Role BA เท่านั้นที่บันทึกเวลาทำงานได้', 'error');
+        return;
+      }
+      const taskId = document.getElementById('det-task-id').value;
+      const task = state.tasks.find(t => t.id === taskId);
+      if (!task) return;
+
+      const date = document.getElementById('log-date').value;
+      const hours = parseFloat(document.getElementById('log-hours').value);
+      const note = document.getElementById('log-note').value.trim();
+
+      if (!date || isNaN(hours) || hours <= 0 || hours > 24) {
+        showToast('กรุณาระบุวันที่และจำนวนชั่วโมงให้ถูกต้อง (0.5 - 24 ชม.)', 'error');
+        return;
+      }
+
+      if (!task.timeLogs) task.timeLogs = [];
+      task.timeLogs.push({ id: 'tl_' + Date.now(), date, hours, note });
+
+      if (task.status === 'Queued') {
+        task.status = 'In Progress';
+      }
+
+      addAuditLog('LOG_TIME', task.code, `บันทึกเวลาทำจริง ${hours} ชม. วันที่ ${formatThaiDate(date)} ${note ? '(' + note + ')' : ''}`);
+      saveState();
+      renderDetailTimeLogs(task);
+      refreshCurrentView();
+      showToast(`บันทึกเวลาทำงาน ${hours} ชม. เรียบร้อย`, 'success');
+    }
+
     function setDashPreset(preset) {
-      const startEl = document.getElementById('dash-start');
-      const endEl = document.getElementById('dash-end');
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+      const startInput = document.getElementById('dash-start');
+      const endInput = document.getElementById('dash-end');
+
       if (preset === 'this_week') {
-        startEl.value = getRelativeDate(-2);
-        endEl.value = getRelativeDate(5);
+        const day = now.getDay();
+        const diffToMon = now.getDate() - day + (day === 0 ? -6 : 1);
+        const mon = new Date(now);
+        mon.setDate(diffToMon);
+        const sun = new Date(mon);
+        sun.setDate(mon.getDate() + 6);
+        startInput.value = toLocalDateStr(mon);
+        endInput.value = toLocalDateStr(sun);
       } else if (preset === 'this_month') {
-        startEl.value = getRelativeDate(-14);
-        endEl.value = getRelativeDate(14);
-      } else if (preset === 'all') {
-        startEl.value = '';
-        endEl.value = '';
+        const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+        const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        startInput.value = toLocalDateStr(firstDay);
+        endInput.value = toLocalDateStr(lastDay);
+      } else {
+        startInput.value = '';
+        endInput.value = '';
       }
       renderDashboard();
     }
 
-    function setDashHorizon(horizon) {
-      dashHorizonMode = horizon;
+    function setDashHorizon(mode) {
+      dashHorizonMode = mode;
       document.querySelectorAll('.dash-horizon-btn').forEach(btn => {
-        btn.className = 'dash-horizon-btn px-3 py-1.5 rounded-xl font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 transition';
+        if (btn.id === `dash-horizon-${mode}`) {
+          btn.className = 'dash-horizon-btn px-3 py-1.5 rounded-xl font-semibold bg-brand-600 text-white transition';
+        } else {
+          btn.className = 'dash-horizon-btn px-3 py-1.5 rounded-xl font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 transition';
+        }
       });
-      const active = document.getElementById(`dash-horizon-${horizon}`);
-      if (active) {
-        active.className = 'dash-horizon-btn px-3 py-1.5 rounded-xl font-semibold bg-brand-600 text-white transition';
-      }
       renderDashboard();
     }
 
     function setDashFocus(mode) {
       dashFocusMode = mode;
       document.querySelectorAll('.dash-focus-btn').forEach(btn => {
-        btn.classList.remove('ring-2', 'ring-offset-1', 'ring-slate-900');
+        if (btn.id === `dash-focus-${mode}`) {
+          btn.className = 'dash-focus-btn px-3 py-1 rounded-full font-semibold bg-slate-900 text-white transition';
+        } else {
+          btn.className = 'dash-focus-btn px-3 py-1 rounded-full font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 transition';
+        }
       });
-      const active = document.getElementById(`dash-focus-${mode}`);
-      if (active) active.classList.add('ring-2', 'ring-offset-1', 'ring-slate-900');
       renderDashboard();
     }
 
-    let lastAvailableMembersCache = [];
-    let lastOverlappingTasksCache = [];
+    function calculateMemberMetrics(rangeStart, rangeEnd, scopedTasks) {
+      const todayStr = getRelativeDate(0);
+      const effStart = rangeStart || getRelativeDate(-7);
+      const effEnd = rangeEnd || getRelativeDate(14);
+      const daysList = enumerateDates(effStart, effEnd);
+      const workingDaysCount = daysList.filter(d => {
+        const dt = parseLocalDate(d);
+        if (!dt) return false;
+        const day = dt.getDay();
+        return day !== 0 && day !== 6;
+      }).length || 1;
 
-    function openAvailableMembersModal(availableMembers = null) {
-      const list = Array.isArray(availableMembers) ? availableMembers : lastAvailableMembersCache;
-      const body = document.getElementById('avail-modal-body');
-      if (!list || list.length === 0) {
-        body.innerHTML = `<div class="text-center py-8 text-slate-400">ไม่มีสมาชิกที่มีคิวว่างต่ำกว่าเกณฑ์ในช่วงเวลาที่เลือก</div>`;
+      const threshold = state.rules.availableThresholdPercent || 75;
+
+      return state.users.map(user => {
+        const userLeavesInRange = state.leaves.filter(l => l.userId === user.id && l.date >= effStart && l.date <= effEnd);
+        const leaveDays = userLeavesInRange.length;
+        const netWorkingDays = Math.max(0, workingDaysCount - leaveDays);
+        const netCapacityHours = netWorkingDays * (parseFloat(user.dailyCapacity) || 8);
+
+        const memberTasks = scopedTasks.filter(t => t.assigneeId === user.id && t.status !== 'Completed');
+        const activeInProgress = memberTasks.filter(t => t.status === 'In Progress');
+        const intCount = memberTasks.filter(t => t.source === 'Internal').length;
+        const extCount = memberTasks.filter(t => t.source === 'External').length;
+        const totalSP = memberTasks.reduce((s, t) => s + (t.storyPoints || 0), 0);
+
+        let allocatedHoursInRange = 0;
+        memberTasks.forEach(t => {
+          if (!t.startDate || !t.endDate || t.startDate > t.endDate) {
+            if (!rangeStart && !rangeEnd) {
+              allocatedHoursInRange += (parseFloat(t.estimatedHours) || 0);
+            }
+            return;
+          }
+          const overlapStart = t.startDate > effStart ? t.startDate : effStart;
+          const overlapEnd = t.endDate < effEnd ? t.endDate : effEnd;
+          if (overlapStart <= overlapEnd) {
+            const overlapDays = enumerateDates(overlapStart, overlapEnd).length;
+            allocatedHoursInRange += overlapDays * getTaskDailyHours(t);
+          }
+        });
+
+        const utilizationPct = netCapacityHours > 0
+          ? Math.round((allocatedHoursInRange / netCapacityHours) * 100)
+          : (allocatedHoursInRange > 0 ? 100 : 0);
+
+        const isAvailable = utilizationPct < threshold;
+
+        let nextFreeDate = todayStr;
+        const sortedFuture = memberTasks
+          .filter(t => t.endDate && t.endDate >= todayStr)
+          .sort((a, b) => a.endDate.localeCompare(b.endDate));
+        if (sortedFuture.length > 0 && !isAvailable) {
+          const lastEnd = parseLocalDate(sortedFuture[sortedFuture.length - 1].endDate);
+          if (lastEnd) {
+            lastEnd.setDate(lastEnd.getDate() + 1);
+            nextFreeDate = toLocalDateStr(lastEnd);
+          }
+        }
+
+        const hasOverlap = memberTasks.some(t => analyzeTaskConflicts(t, t.id).hasConflict || t.overrideWarning);
+
+        return {
+          user,
+          memberTasks,
+          activeInProgress,
+          intCount,
+          extCount,
+          totalSP,
+          leaveDays,
+          netCapacityHours,
+          allocatedHoursInRange: Number(allocatedHoursInRange.toFixed(1)),
+          utilizationPct,
+          isAvailable,
+          nextFreeDate,
+          hasOverlap
+        };
+      });
+    }
+
+    function renderDashboard() {
+      const startVal = document.getElementById('dash-start').value;
+      const endVal = document.getElementById('dash-end').value;
+      const threshold = state.rules.availableThresholdPercent || 75;
+      const todayStr = getRelativeDate(0);
+
+      const selStatuses = dashMultiFilters.status || [];
+      const selSprints = dashMultiFilters.sprint || [];
+      const selSources = dashMultiFilters.source || [];
+      const selOrgs = dashMultiFilters.org || [];
+      const selMembers = dashMultiFilters.member || [];
+
+      document.getElementById('lbl-avail-threshold').textContent = threshold;
+      document.getElementById('chart-lbl-threshold').textContent = threshold;
+
+      const overlappingAll = getAllOverlappingTasks();
+
+      const scopedTasks = state.tasks.filter(t => {
+        if (!matchesHorizonFilter(t, dashHorizonMode, todayStr)) return false;
+        if (selStatuses.length > 0 && !selStatuses.includes(t.status)) return false;
+        if (selSprints.length > 0 && !selSprints.includes(t.sprint)) return false;
+        if (selSources.length > 0 && !selSources.includes(t.source)) return false;
+        if (selOrgs.length > 0 && !selOrgs.includes(t.orgId)) return false;
+        if (selMembers.length > 0) {
+          const memberKey = t.assigneeId ? t.assigneeId : '__UNASSIGNED__';
+          if (!selMembers.includes(memberKey)) return false;
+        }
+        if (startVal && t.endDate && t.endDate < startVal) return false;
+        if (endVal && t.startDate && t.startDate > endVal) return false;
+
+        if (dashFocusMode === 'Blocked' && t.status !== 'Blocked') return false;
+        if (dashFocusMode === 'Overdue' && !(t.status !== 'Completed' && t.endDate && t.endDate < todayStr)) return false;
+        if (dashFocusMode === 'Overlap' && !overlappingAll.some(o => o.id === t.id)) return false;
+
+        return true;
+      });
+
+      const activeTasks = scopedTasks.filter(t => t.status !== 'Completed');
+      const currentTasksCount = scopedTasks.filter(t => getTaskHorizon(t, todayStr) === 'CURRENT').length;
+      const futureTasksCount = scopedTasks.filter(t => getTaskHorizon(t, todayStr) === 'FUTURE').length;
+      const intTasks = activeTasks.filter(t => t.source === 'Internal').length;
+      const extTasks = activeTasks.filter(t => t.source === 'External').length;
+      const blockedTasks = scopedTasks.filter(t => t.status === 'Blocked');
+      const overdueTasks = scopedTasks.filter(t => t.status !== 'Completed' && t.endDate && t.endDate < todayStr);
+      const overlappingTasks = activeTasks.filter(t => overlappingAll.some(o => o.id === t.id));
+
+      const metrics = calculateMemberMetrics(startVal, endVal, scopedTasks);
+      const visibleMetrics = selMembers.length > 0
+        ? metrics.filter(m => selMembers.includes(m.user.id))
+        : metrics;
+
+      const availableMembers = visibleMetrics.filter(m => m.isAvailable);
+      const totalSP = activeTasks.reduce((s, t) => s + (t.storyPoints || 0), 0);
+
+      document.getElementById('kpi-grid').innerHTML = `
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs flex items-center justify-between">
+          <div>
+            <p class="text-[11px] font-medium text-slate-500">งานทั้งหมด (ที่กรอง)</p>
+            <h4 class="text-2xl font-bold text-slate-900 mt-0.5">${scopedTasks.length}</h4>
+            <p class="text-[11px] text-slate-400 mt-0.5">ปัจจุบัน ${currentTasksCount} | อนาคต ${futureTasksCount}</p>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center text-lg"><i class="fa-solid fa-bars-progress"></i></div>
+        </div>
+
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs flex items-center justify-between">
+          <div>
+            <p class="text-[11px] font-medium text-slate-500">สัดส่วน Int / Ext</p>
+            <h4 class="text-xl font-bold text-slate-900 mt-0.5"><span class="text-indigo-600">${intTasks}</span> : <span class="text-teal-600">${extTasks}</span></h4>
+            <p class="text-[11px] text-slate-400 mt-0.5">รวม ${totalSP} Story Pts</p>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-lg"><i class="fa-solid fa-code-branch"></i></div>
+        </div>
+
+        <div onclick="openAvailableModal()" class="cursor-pointer bg-white p-4 rounded-2xl border border-emerald-200 hover:border-emerald-400 shadow-2xs flex items-center justify-between transition group">
+          <div>
+            <p class="text-[11px] font-semibold text-emerald-700">สมาชิกคิวว่าง (&lt;${threshold}%)</p>
+            <h4 class="text-2xl font-bold text-emerald-700 mt-0.5">${availableMembers.length} <span class="text-xs font-normal text-slate-500">/ ${visibleMetrics.length}</span></h4>
+            <p class="text-[11px] text-emerald-600 underline mt-0.5">ดูรายชื่อคิวว่าง</p>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg"><i class="fa-solid fa-user-check"></i></div>
+        </div>
+
+        <div onclick="setDashFocus(dashFocusMode === 'Overlap' ? 'ALL' : 'Overlap')" class="cursor-pointer bg-white p-4 rounded-2xl border ${overlappingTasks.length > 0 ? 'border-purple-300 bg-purple-50/20' : 'border-slate-200'} shadow-2xs flex items-center justify-between transition">
+          <div>
+            <p class="text-[11px] font-semibold text-purple-800">งานทับซ้อน (Overlap)</p>
+            <h4 class="text-2xl font-bold ${overlappingTasks.length > 0 ? 'text-purple-700' : 'text-slate-700'} mt-0.5">${overlappingTasks.length}</h4>
+            <p class="text-[11px] text-purple-600 mt-0.5">คลิกเพื่อกรองบนบอร์ด</p>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center text-lg"><i class="fa-solid fa-layer-group"></i></div>
+        </div>
+
+        <div onclick="setDashFocus(dashFocusMode === 'Overdue' ? 'ALL' : 'Overdue')" class="cursor-pointer bg-white p-4 rounded-2xl border ${overdueTasks.length > 0 ? 'border-amber-300 bg-amber-50/20' : 'border-slate-200'} shadow-2xs flex items-center justify-between transition">
+          <div>
+            <p class="text-[11px] font-semibold text-amber-800">เลยกำหนด (Overdue)</p>
+            <h4 class="text-2xl font-bold ${overdueTasks.length > 0 ? 'text-amber-700' : 'text-slate-700'} mt-0.5">${overdueTasks.length}</h4>
+            <p class="text-[11px] text-amber-600 mt-0.5">คลิกเพื่อกรองงานล่าช้า</p>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center text-lg"><i class="fa-regular fa-clock"></i></div>
+        </div>
+
+        <div onclick="setDashFocus(dashFocusMode === 'Blocked' ? 'ALL' : 'Blocked')" class="cursor-pointer bg-white p-4 rounded-2xl border ${blockedTasks.length > 0 ? 'border-rose-300 bg-rose-50/30' : 'border-slate-200'} shadow-2xs flex items-center justify-between transition">
+          <div>
+            <p class="text-[11px] font-semibold text-rose-700">ติดปัญหา (Blocked)</p>
+            <h4 class="text-2xl font-bold ${blockedTasks.length > 0 ? 'text-rose-600' : 'text-slate-700'} mt-0.5">${blockedTasks.length}</h4>
+            <p class="text-[11px] text-rose-600 mt-0.5">คลิกเพื่อกรองปัญหา</p>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center text-lg"><i class="fa-solid fa-ban"></i></div>
+        </div>
+      `;
+
+      const riskBanner = document.getElementById('dash-risk-banner');
+      if (blockedTasks.length > 0 || overdueTasks.length > 0) {
+        riskBanner.classList.remove('hidden');
+        riskBanner.innerHTML = `
+          <div class="bg-rose-50 border border-rose-200 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="space-y-1 text-xs text-rose-900">
+              <div class="font-bold text-sm flex items-center gap-2 text-rose-800">
+                <i class="fa-solid fa-bell-concierge text-rose-600"></i> แจ้งเตือนความเสี่ยงที่ต้องเร่งแก้ไข (${blockedTasks.length} Blocked, ${overdueTasks.length} Overdue)
+              </div>
+              ${blockedTasks.slice(0, 2).map(t => `<div>• <b>[Blocked] ${escapeHTML(t.code)}</b>: ${escapeHTML(t.title)} — <i>"${escapeHTML(t.blockerReason)}"</i></div>`).join('')}
+              ${overdueTasks.slice(0, 2).map(t => `<div>• <b>[Overdue] ${escapeHTML(t.code)}</b>: ${escapeHTML(t.title)} (ครบกำหนด ${formatThaiDate(t.endDate)})</div>`).join('')}
+            </div>
+            <button type="button" onclick="openOverlapModal()" class="px-3.5 py-2 rounded-xl bg-white border border-rose-300 text-rose-700 hover:bg-rose-100 text-xs font-bold shrink-0 self-start">
+              ตรวจสอบงานทับซ้อน (${overlappingTasks.length})
+            </button>
+          </div>
+        `;
       } else {
-        body.innerHTML = list.map(m => `
+        riskBanner.classList.add('hidden');
+      }
+
+      renderDashboardTaskDirectory(scopedTasks, todayStr);
+      renderDashboardCharts(scopedTasks, visibleMetrics, threshold);
+      renderWorkloadTable(visibleMetrics, threshold);
+      renderResourceTimeline(visibleMetrics, startVal, endVal, scopedTasks, todayStr);
+    }
+
+    function renderDashboardTaskDirectory(scopedTasks, todayStr) {
+      const countPill = document.getElementById('dash-task-count-pill');
+      if (countPill) countPill.textContent = `${scopedTasks.length} รายการ`;
+
+      const ba = isBA();
+      const thAct = document.getElementById('dash-tasks-th-action');
+      if (thAct) thAct.classList.toggle('hidden', !ba);
+
+      const tbody = document.getElementById('dash-tasks-tbody');
+      if (!tbody) return;
+
+      if (scopedTasks.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="${ba ? 7 : 6}" class="py-8 text-center text-slate-400 text-xs">ไม่พบรายชื่องานตามเงื่อนไขที่เลือก</td></tr>`;
+        return;
+      }
+
+      const sorted = [...scopedTasks].sort((a, b) => {
+        const order = { 'In Progress': 1, 'Blocked': 2, 'Queued': 3, 'In Review': 4, 'Completed': 5 };
+        return (order[a.status] || 9) - (order[b.status] || 9);
+      });
+
+      tbody.innerHTML = sorted.map(t => {
+        const user = state.users.find(u => u.id === t.assigneeId);
+        const isOverdue = t.status !== 'Completed' && t.endDate && t.endDate < todayStr;
+        return `
+          <tr onclick="openDetailModal('${t.id}')" class="hover:bg-slate-50/90 transition cursor-pointer">
+            <td class="py-3 px-4 whitespace-nowrap">
+              <div class="font-bold text-xs text-brand-700">${escapeHTML(t.code)}</div>
+              <div class="text-[10px] text-slate-400">${escapeHTML(t.sprint || '-')}</div>
+            </td>
+            <td class="py-3 px-4">
+              <div class="flex items-center gap-1.5 flex-wrap mb-0.5">
+                ${getTaskTypeBadgeHTML(t.taskType)}
+                ${getOrgBadgeHTML(t.orgId, t.source)}
+                ${isOverdue ? `<span class="text-[10px] font-bold bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded">เลยกำหนด</span>` : ''}
+              </div>
+              <div class="font-semibold text-xs sm:text-sm text-slate-900 line-clamp-1">${escapeHTML(t.title)}</div>
+              <div class="text-[11px] text-slate-400 mt-0.5">${escapeHTML(formatDateRangeLabel(t.startDate, t.endDate))}</div>
+            </td>
+            <td class="py-3 px-4 whitespace-nowrap">
+              ${getHorizonBadgeHTML(t, todayStr)}
+            </td>
+            <td class="py-3 px-4 whitespace-nowrap text-xs">
+              ${user
+                ? `<span class="font-semibold text-slate-800">${escapeHTML(user.name)}</span> <span class="text-slate-400">(#${t.queueOrder || '-'})</span>`
+                : `<span class="text-amber-700 bg-amber-50 px-2 py-0.5 rounded font-medium">รอจ่ายคิว</span>`}
+            </td>
+            <td class="py-3 px-4 whitespace-nowrap">
+              ${getStatusBadgeHTML(t.status)}
+            </td>
+            <td class="py-3 px-4 whitespace-nowrap text-right text-xs font-bold text-slate-700">
+              ${t.estimatedHours}h <span class="font-normal text-slate-400">(${t.storyPoints || 3} SP)</span>
+            </td>
+            ${ba ? `
+              <td class="py-3 px-4 whitespace-nowrap text-center" onclick="event.stopPropagation()">
+                <div class="inline-flex items-center gap-1">
+                  <button type="button" onclick="openCreateTaskModal('${t.id}')" class="p-1.5 rounded-lg bg-slate-100 hover:bg-amber-50 text-slate-600 hover:text-amber-700 transition" title="แก้ไขใบงาน">
+                    <i class="fa-solid fa-pen text-xs"></i>
+                  </button>
+                  <button type="button" onclick="deleteTask('${t.id}')" class="p-1.5 rounded-lg bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-700 transition" title="ลบใบงาน">
+                    <i class="fa-solid fa-trash-can text-xs"></i>
+                  </button>
+                </div>
+              </td>
+            ` : ''}
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderDashboardCharts(scopedTasks, visibleMetrics, threshold) {
+      const total = scopedTasks.length || 1;
+      const intCount = scopedTasks.filter(t => t.source === 'Internal').length;
+      const extCount = scopedTasks.filter(t => t.source === 'External').length;
+      const intPct = Math.round((intCount / total) * 100);
+      const extPct = scopedTasks.length > 0 ? (100 - intPct) : 0;
+
+      document.getElementById('chart-source-ratio').innerHTML = `
+        <div class="flex items-center justify-between text-xs font-semibold">
+          <span class="text-indigo-700 flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-indigo-600"></span> Internal (${intCount} งาน • ${intPct}%)</span>
+          <span class="text-teal-700 flex items-center gap-1.5">External (${extCount} งาน • ${extPct}%) <span class="w-2.5 h-2.5 rounded-full bg-teal-500"></span></span>
+        </div>
+        <div class="w-full h-3.5 bg-slate-100 rounded-full overflow-hidden flex">
+          <div class="bg-indigo-600 h-full transition-all duration-500" style="width: ${intPct}%"></div>
+          <div class="bg-teal-500 h-full transition-all duration-500" style="width: ${extPct}%"></div>
+        </div>
+      `;
+
+      const types = ['Feature', 'Bug Fix', 'Enhancement', 'UAT / QA', 'DevOps'];
+      document.getElementById('chart-type-breakdown').innerHTML = `
+        <div class="text-[11px] font-semibold text-slate-400 uppercase">แยกตามประเภทงาน (Task Type)</div>
+        <div class="flex flex-wrap gap-1.5">
+          ${types.map(tp => {
+            const cnt = scopedTasks.filter(t => (t.taskType || 'Feature') === tp).length;
+            return `<span class="text-[11px] px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 font-medium">${escapeHTML(tp)}: <b>${cnt}</b></span>`;
+          }).join('')}
+        </div>
+      `;
+
+      const statusDefs = [
+        { key: 'Queued', label: 'Queued', bg: 'bg-slate-100 text-slate-700' },
+        { key: 'In Progress', label: 'In Prog', bg: 'bg-blue-50 text-blue-700' },
+        { key: 'In Review', label: 'Review', bg: 'bg-purple-50 text-purple-700' },
+        { key: 'Blocked', label: 'Blocked', bg: 'bg-rose-50 text-rose-700' },
+        { key: 'Completed', label: 'Done', bg: 'bg-emerald-50 text-emerald-700' }
+      ];
+
+      const selectedStatuses = dashMultiFilters.status || [];
+      document.getElementById('chart-status-pills').innerHTML = statusDefs.map(st => {
+        const cnt = scopedTasks.filter(t => t.status === st.key).length;
+        const isSelected = selectedStatuses.includes(st.key);
+        return `
+          <div onclick="syncStatusFilterFromPill('${st.key}')" class="cursor-pointer ${st.bg} ${isSelected ? 'ring-2 ring-brand-600' : ''} rounded-xl py-2 px-1 border border-slate-200/60 hover:opacity-90 transition">
+            <div class="text-base font-bold leading-tight">${cnt}</div>
+            <div class="text-[10px] font-medium truncate">${st.label}</div>
+          </div>
+        `;
+      }).join('');
+
+      const totalSP = visibleMetrics.reduce((s, m) => s + m.totalSP, 0);
+      document.getElementById('chart-total-sp').textContent = `${totalSP} Story Points ถือครอง`;
+
+      const selectedMembers = dashMultiFilters.member || [];
+      document.getElementById('chart-member-bars').innerHTML = visibleMetrics.map(m => {
+        const barPct = Math.min(100, m.utilizationPct);
+        const barColor = m.utilizationPct > 100
+          ? 'bg-rose-500'
+          : (m.isAvailable ? 'bg-emerald-500' : 'bg-blue-500');
+        const isSelMember = selectedMembers.includes(m.user.id);
+
+        return `
+          <div onclick="toggleMemberFilterFromChart('${m.user.id}')" class="cursor-pointer group space-y-1 p-1.5 rounded-xl ${isSelMember ? 'bg-brand-50/70 ring-1 ring-brand-300' : ''}">
+            <div class="flex items-center justify-between text-xs">
+              <div class="font-semibold text-slate-800 group-hover:text-brand-600 transition flex items-center gap-2">
+                <span>${escapeHTML(m.user.name)}</span>
+                <span class="text-[11px] font-normal text-slate-400">(${m.totalSP} SP • ${m.allocatedHoursInRange}/${m.netCapacityHours}h)</span>
+              </div>
+              <span class="font-bold ${m.utilizationPct > 100 ? 'text-rose-600' : (m.isAvailable ? 'text-emerald-600' : 'text-blue-600')}">
+                ${m.utilizationPct}%
+              </span>
+            </div>
+            <div class="relative w-full h-3 bg-slate-100 rounded-full overflow-hidden">
+              <div class="h-full ${barColor} rounded-full transition-all duration-500" style="width: ${barPct}%"></div>
+              <div class="absolute top-0 bottom-0 w-0.5 bg-emerald-700/70 z-10" style="left: ${Math.min(100, threshold)}%"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderWorkloadTable(metrics, threshold) {
+      const tbody = document.getElementById('workload-table-body');
+      tbody.innerHTML = metrics.map(m => {
+        const barColor = m.utilizationPct > 100
+          ? 'bg-rose-500'
+          : (m.isAvailable ? 'bg-emerald-500' : 'bg-blue-500');
+        const barWidth = Math.min(100, m.utilizationPct);
+
+        return `
+          <tr class="hover:bg-slate-50/80 transition">
+            <td class="py-3.5 px-4">
+              <div class="font-semibold text-slate-900">${escapeHTML(m.user.name)}</div>
+              <div class="text-xs text-slate-500">${escapeHTML(m.user.position)} ${m.leaveDays > 0 ? `<span class="text-amber-600 font-medium">(ลา ${m.leaveDays} วัน)</span>` : ''}</div>
+            </td>
+            <td class="py-3.5 px-4 text-center">
+              <span class="font-bold text-slate-800">${m.memberTasks.length}</span>
+              <span class="text-xs text-slate-400 ml-1">(${m.intCount} Int / ${m.extCount} Ext)</span>
+            </td>
+            <td class="py-3.5 px-4 text-center">
+              <span class="text-xs font-bold bg-brand-50 text-brand-700 px-2 py-0.5 rounded-md">${m.totalSP} SP</span>
+            </td>
+            <td class="py-3.5 px-4 max-w-xs">
+              ${m.activeInProgress.length > 0
+                ? `<div class="text-xs font-medium text-blue-700 truncate" title="${escapeHTML(m.activeInProgress[0].title)}">
+                     <i class="fa-solid fa-spinner fa-spin mr-1"></i>${escapeHTML(m.activeInProgress[0].code)}: ${escapeHTML(m.activeInProgress[0].title)}
+                   </div>`
+                : `<span class="text-xs text-slate-400 italic">ไม่มีงานที่กำลังทำอยู่</span>`
+              }
+            </td>
+            <td class="py-3.5 px-4">
+              <div class="flex items-center justify-between text-xs mb-1">
+                <span class="font-bold ${m.utilizationPct > 100 ? 'text-rose-600' : (m.isAvailable ? 'text-emerald-600' : 'text-blue-600')}">${m.utilizationPct}%</span>
+                <span class="text-slate-400">${m.allocatedHoursInRange}/${m.netCapacityHours}h</span>
+              </div>
+              <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div class="h-full ${barColor} rounded-full" style="width: ${barWidth}%"></div>
+              </div>
+            </td>
+            <td class="py-3.5 px-4 text-xs">
+              ${m.isAvailable
+                ? `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 font-semibold"><i class="fa-solid fa-circle-check"></i> ว่างพร้อมรับงาน</span>`
+                : `<span class="text-slate-600 font-medium">${formatThaiDate(m.nextFreeDate)}</span>`
+              }
+            </td>
+            <td class="py-3.5 px-4 text-xs">
+              ${m.hasOverlap
+                ? `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 font-semibold border border-rose-200"><i class="fa-solid fa-triangle-exclamation"></i> มีงานทับซ้อน</span>`
+                : `<span class="text-slate-400">ปกติ</span>`
+              }
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderResourceTimeline(metrics, rangeStart, rangeEnd, scopedTasks, todayStr) {
+      const start = rangeStart || getRelativeDate(-3);
+      const end = rangeEnd || getRelativeDate(10);
+      const dates = enumerateDates(start, end);
+      const container = document.getElementById('timeline-container');
+
+      if (dates.length === 0 || dates.length > 62) {
+        container.innerHTML = `<div class="text-center py-8 text-xs text-slate-500">กรุณาเลือกช่วงวันที่ไม่เกิน 60 วันเพื่อแสดงตารางไทม์ไลน์รายวัน</div>`;
+        return;
+      }
+
+      const dayNames = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'];
+
+      let html = `<table class="w-full border-collapse text-xs min-w-[900px]">
+        <thead>
+          <tr class="bg-slate-50 border-b border-slate-200">
+            <th class="py-2.5 px-3 text-left font-bold text-slate-700 sticky left-0 bg-slate-50 z-10 w-56 border-r border-slate-200">สมาชิกในทีม / คิวรอจัดวัน</th>
+            ${dates.map(d => {
+              const dt = parseLocalDate(d);
+              const isWknd = dt ? (dt.getDay() === 0 || dt.getDay() === 6) : false;
+              const isToday = d === todayStr;
+              return `
+                <th class="py-2 px-1 text-center border-r border-slate-100 min-w-[54px] ${isToday ? 'bg-brand-50 text-brand-700 font-bold' : (isWknd ? 'bg-slate-100/80 text-slate-400' : 'text-slate-600')}">
+                  <div>${dt ? dayNames[dt.getDay()] : ''}</div>
+                  <div class="text-[11px]">${d.slice(8, 10)}/${d.slice(5, 7)}</div>
+                </th>
+              `;
+            }).join('')}
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-200">
+      `;
+
+      metrics.forEach(m => {
+        const userTasks = scopedTasks.filter(t => t.assigneeId === m.user.id && t.status !== 'Completed');
+        const datedTasks = userTasks.filter(t => t.startDate && t.endDate && t.startDate <= t.endDate);
+        const undatedTasks = userTasks.filter(t => !t.startDate || !t.endDate);
+        const userLeaves = state.leaves.filter(l => l.userId === m.user.id);
+
+        html += `
+          <tr>
+            <td class="py-3 px-3 font-semibold text-slate-800 sticky left-0 bg-white z-10 border-r border-slate-200 align-top">
+              <div>${escapeHTML(m.user.name)}</div>
+              <div class="text-[10px] font-normal text-slate-400">${escapeHTML(m.user.position)}</div>
+              ${undatedTasks.length > 0 ? `
+                <div class="mt-1.5 space-y-1">
+                  <div class="text-[10px] font-bold text-amber-700">คิวรอจัดวัน (${undatedTasks.length}):</div>
+                  ${undatedTasks.map(ut => `
+                    <div onclick="openDetailModal('${ut.id}')" class="cursor-pointer truncate px-1.5 py-0.5 rounded bg-amber-50 border border-amber-200 text-amber-900 text-[10px] font-medium hover:bg-amber-100">
+                      #${ut.queueOrder || '-'} ${escapeHTML(ut.code)}: ${escapeHTML(ut.title)}
+                    </div>
+                  `).join('')}
+                </div>
+              ` : ''}
+            </td>
+            ${dates.map(d => {
+              const dt = parseLocalDate(d);
+              const isWknd = dt ? (dt.getDay() === 0 || dt.getDay() === 6) : false;
+              const leave = userLeaves.find(l => l.date === d);
+              const tasksOnDay = datedTasks.filter(t => d >= t.startDate && d <= t.endDate);
+              const totalHrs = tasksOnDay.reduce((s, t) => s + getTaskDailyHours(t), 0);
+              const cap = parseFloat(m.user.dailyCapacity) || 8;
+              const isOver = totalHrs > cap || (state.rules.overlapMode === 'ANY_DATE_OVERLAP' && tasksOnDay.length > 1);
+
+              let cellBg = isWknd ? 'bg-slate-50/90' : 'bg-white';
+              if (leave) cellBg = 'bg-amber-50';
+              else if (isOver) cellBg = 'bg-rose-50/70';
+
+              return `
+                <td class="p-1 border-r border-slate-100 align-top ${cellBg}">
+                  <div class="flex flex-col gap-1 min-h-[42px]">
+                    ${leave ? `<div class="px-1.5 py-0.5 rounded bg-amber-200/80 text-amber-900 text-[10px] font-bold truncate" title="${escapeHTML(leave.reason)}"><i class="fa-solid fa-umbrella-beach mr-0.5"></i>ลา</div>` : ''}
+                    ${tasksOnDay.map(t => {
+                      const isInt = t.source === 'Internal';
+                      const barCls = t.status === 'Blocked'
+                        ? 'bg-rose-600 text-white'
+                        : (isInt ? 'bg-indigo-600 text-white' : 'bg-teal-600 text-white');
+                      return `
+                        <button type="button" onclick="openDetailModal('${t.id}')"
+                                title="${escapeHTML(t.code)}: ${escapeHTML(t.title)} (${getTaskDailyHours(t)} ชม./วัน)"
+                                class="w-full text-left px-1.5 py-0.5 rounded text-[10px] font-medium truncate ${barCls} hover:opacity-90 shadow-2xs">
+                          ${escapeHTML(t.code.replace('TASK-2026-', '#'))}
+                        </button>
+                      `;
+                    }).join('')}
+                  </div>
+                </td>
+              `;
+            }).join('')}
+          </tr>
+        `;
+      });
+
+      html += `</tbody></table>`;
+      container.innerHTML = html;
+    }
+
+    function openAvailableModal() {
+      const startVal = document.getElementById('dash-start').value;
+      const endVal = document.getElementById('dash-end').value;
+      const metrics = calculateMemberMetrics(startVal, endVal, state.tasks);
+      const avail = metrics.filter(m => m.isAvailable);
+
+      const body = document.getElementById('avail-modal-body');
+      if (avail.length === 0) {
+        body.innerHTML = `<div class="text-center py-6 text-slate-500">ขณะนี้ยังไม่มีสมาชิกที่ภาระงานต่ำกว่าเกณฑ์คิวว่าง (${state.rules.availableThresholdPercent}%)</div>`;
+      } else {
+        body.innerHTML = avail.map(m => `
           <div class="p-3.5 rounded-xl border border-emerald-200 bg-emerald-50/40 flex items-center justify-between gap-3">
             <div>
               <div class="font-bold text-slate-900">${escapeHTML(m.user.name)} <span class="text-xs font-normal text-slate-500">(${escapeHTML(m.user.position)})</span></div>
-              <div class="text-xs text-slate-600 mt-0.5">ภาระงาน: <b>${m.utilPercent}%</b> (${m.allocatedHours}/${m.netCapacityHours} ชม.) • คิวว่างถัดไป: <b>${escapeHTML(m.nextFreeDate)}</b></div>
+              <div class="text-xs text-slate-600 mt-0.5">ถืออยู่ ${m.memberTasks.length} งาน (${m.totalSP} SP) | ภาระงานปัจจุบัน <b>${m.utilizationPct}%</b></div>
             </div>
-            <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">คิวว่าง</span>
+            ${isBA() ? `
+              <button type="button" onclick="document.getElementById('avail-list-modal').classList.add('hidden'); switchTab('coordinator'); document.getElementById('coord-member-select').value='${m.user.id}'; renderCoordinatorQueue();"
+                      class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shrink-0">
+                จ่ายงานให้คนนี้
+              </button>
+            ` : `<span class="text-xs font-bold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-lg">คิวว่าง</span>`}
           </div>
         `).join('');
       }
       document.getElementById('avail-list-modal').classList.remove('hidden');
     }
 
-    function openOverlappingTasksModal(overlappingTasks = null) {
-      const list = Array.isArray(overlappingTasks) ? overlappingTasks : lastOverlappingTasksCache;
+    function openOverlapModal() {
+      const overlaps = getAllOverlappingTasks();
       const body = document.getElementById('overlap-modal-body');
-      if (!list || list.length === 0) {
-        body.innerHTML = `<div class="text-center py-8 text-slate-400">ไม่พบรายการงานที่ทับซ้อนหรือเกินความจุ</div>`;
+      if (overlaps.length === 0) {
+        body.innerHTML = `<div class="text-center py-6 text-slate-500">ไม่พบรายการงานที่ทับซ้อนกันในขณะนี้</div>`;
       } else {
-        body.innerHTML = list.map(t => {
+        body.innerHTML = overlaps.map(t => {
           const user = state.users.find(u => u.id === t.assigneeId);
           const analysis = analyzeTaskConflicts(t, t.id);
           return `
             <div class="p-3.5 rounded-xl border border-rose-200 bg-rose-50/40 space-y-1.5">
               <div class="flex items-center justify-between">
-                <span class="font-bold text-rose-800">${escapeHTML(t.code)} - ${escapeHTML(t.title)}</span>
-                ${getStatusBadgeHTML(t.status)}
+                <span class="font-bold text-rose-700 text-xs">${escapeHTML(t.code)} — ${user ? escapeHTML(user.name) : ''}</span>
+                ${isBA() ? `
+                  <button type="button" onclick="document.getElementById('overlap-list-modal').classList.add('hidden'); openCreateTaskModal('${t.id}');"
+                          class="text-xs font-semibold text-brand-700 hover:underline">
+                    แก้ไข / เลื่อนวัน
+                  </button>
+                ` : `
+                  <button type="button" onclick="document.getElementById('overlap-list-modal').classList.add('hidden'); openDetailModal('${t.id}');"
+                          class="text-xs font-semibold text-brand-700 hover:underline">
+                    ดูรายละเอียด
+                  </button>
+                `}
               </div>
-              <div class="text-xs text-slate-700">ผู้รับผิดชอบ: <b>${user ? escapeHTML(user.name) : '-'}</b> | กำหนดการ: ${escapeHTML(formatDateRangeLabel(t.startDate, t.endDate))}</div>
-              <div class="text-xs text-rose-700">${analysis.messages[0] || 'บันทึกแบบ Override งานทับซ้อน'}</div>
+              <div class="font-semibold text-slate-900 text-sm">${escapeHTML(t.title)}</div>
+              <div class="text-xs text-rose-800">${analysis.messages.length > 0 ? analysis.messages[0] : 'ถูกบันทึกแบบ Override งานทับซ้อน'}</div>
             </div>
           `;
         }).join('');
@@ -4669,502 +5005,19 @@
       document.getElementById('overlap-list-modal').classList.remove('hidden');
     }
 
-    function renderDashboard() {
-      const startStr = document.getElementById('dash-start')?.value || '';
-      const endStr = document.getElementById('dash-end')?.value || '';
-      const todayStr = getRelativeDate(0);
-      const thresholdPct = parseFloat(state.rules.availableThresholdPercent) || 75;
-
-      const lblThresh = document.getElementById('lbl-avail-threshold');
-      if (lblThresh) lblThresh.textContent = thresholdPct;
-      const chartLblThresh = document.getElementById('chart-lbl-threshold');
-      if (chartLblThresh) chartLblThresh.textContent = thresholdPct;
-
-      const baseTasks = state.tasks.filter(t => {
-        if (!matchesHorizonFilter(t, dashHorizonMode, todayStr)) return false;
-        if (dashMultiFilters.status.length > 0 && !dashMultiFilters.status.includes(t.status)) return false;
-        if (dashMultiFilters.sprint.length > 0 && !dashMultiFilters.sprint.includes((t.sprint || '').trim())) return false;
-        if (dashMultiFilters.source.length > 0 && !dashMultiFilters.source.includes(t.source)) return false;
-        if (dashMultiFilters.org.length > 0 && !dashMultiFilters.org.includes(t.orgId)) return false;
-        if (dashMultiFilters.member.length > 0) {
-          const matchesMember = dashMultiFilters.member.some(mVal =>
-            mVal === '__UNASSIGNED__' ? !t.assigneeId : t.assigneeId === mVal
-          );
-          if (!matchesMember) return false;
-        }
-        return true;
-      });
-
-      const filteredTasks = baseTasks.filter(t => {
-        if (dashFocusMode === 'Blocked') return t.status === 'Blocked';
-        if (dashFocusMode === 'Overdue') return t.status !== 'Completed' && t.endDate && t.endDate < todayStr;
-        if (dashFocusMode === 'Overlap') {
-          if (t.status === 'Completed' || !t.assigneeId) return false;
-          const a = analyzeTaskConflicts(t, t.id);
-          return a.hasConflict || Boolean(t.overrideWarning);
-        }
-        return true;
-      });
-
-      const totalTasks = filteredTasks.length;
-      const internalCount = filteredTasks.filter(t => t.source === 'Internal').length;
-      const externalCount = filteredTasks.filter(t => t.source === 'External').length;
-      const inProgressCount = filteredTasks.filter(t => t.status === 'In Progress').length;
-      const completedCount = filteredTasks.filter(t => t.status === 'Completed').length;
-      const blockedCount = filteredTasks.filter(t => t.status === 'Blocked').length;
-      const overdueCount = filteredTasks.filter(t => t.status !== 'Completed' && t.endDate && t.endDate < todayStr).length;
-      const overlappingTasks = getAllOverlappingTasks();
-      const overlapCount = overlappingTasks.length;
-      const totalSP = filteredTasks.reduce((s, t) => s + (t.storyPoints || 0), 0);
-
-      let calcDays = 10;
-      if (startStr && endStr && startStr <= endStr) {
-        calcDays = Math.max(1, enumerateDates(startStr, endStr).length);
-      } else if (state.tasks.length > 0) {
-        const dated = state.tasks.filter(t => t.startDate && t.endDate && t.startDate <= t.endDate);
-        if (dated.length > 0) {
-          const minD = dated.reduce((m, t) => t.startDate < m ? t.startDate : m, dated[0].startDate);
-          const maxD = dated.reduce((m, t) => t.endDate > m ? t.endDate : m, dated[0].endDate);
-          calcDays = Math.max(1, enumerateDates(minD, maxD).length);
-        }
-      }
-
-      const memberMetrics = state.users.map(u => {
-        const capNum = parseFloat(u.dailyCapacity);
-        const cap = (!isNaN(capNum) && capNum > 0) ? capNum : 8;
-
-        const uTasks = state.tasks.filter(t => {
-          if (t.assigneeId !== u.id || t.status === 'Completed') return false;
-          if (!matchesHorizonFilter(t, dashHorizonMode, todayStr)) return false;
-          if (dashMultiFilters.status.length > 0 && !dashMultiFilters.status.includes(t.status)) return false;
-          if (dashMultiFilters.sprint.length > 0 && !dashMultiFilters.sprint.includes((t.sprint || '').trim())) return false;
-          if (dashMultiFilters.source.length > 0 && !dashMultiFilters.source.includes(t.source)) return false;
-          if (dashMultiFilters.org.length > 0 && !dashMultiFilters.org.includes(t.orgId)) return false;
-          if (startStr && endStr && startStr <= endStr && t.startDate && t.endDate) {
-            return !(t.endDate < startStr || t.startDate > endStr);
-          }
-          return true;
-        });
-
-        const uInt = uTasks.filter(t => t.source === 'Internal').length;
-        const uExt = uTasks.filter(t => t.source === 'External').length;
-        const uSP = uTasks.reduce((s, t) => s + (t.storyPoints || 0), 0);
-        const currentDoing = uTasks.filter(t => t.status === 'In Progress');
-
-        const allocatedHours = Number(uTasks.reduce((s, t) => s + (parseFloat(t.estimatedHours) || 0), 0).toFixed(1));
-
-        const leavesInRange = state.leaves.filter(l => {
-          if (l.userId !== u.id) return false;
-          if (startStr && endStr && startStr <= endStr) return l.date >= startStr && l.date <= endStr;
-          return true;
-        }).length;
-
-        const netCapacityHours = Math.max(cap, (calcDays - leavesInRange) * cap);
-        const utilPercent = Math.round((allocatedHours / netCapacityHours) * 100);
-
-        let latestEnd = todayStr;
-        uTasks.forEach(t => {
-          if (t.endDate && t.endDate >= latestEnd) {
-            const d = parseLocalDate(t.endDate);
-            if (d) {
-              d.setDate(d.getDate() + 1);
-              latestEnd = toLocalDateStr(d);
-            }
-          }
-        });
-        while (state.leaves.some(l => l.userId === u.id && l.date === latestEnd)) {
-          const d = parseLocalDate(latestEnd);
-          if (!d) break;
-          d.setDate(d.getDate() + 1);
-          latestEnd = toLocalDateStr(d);
-        }
-
-        const hasConflict = uTasks.some(t => analyzeTaskConflicts(t, t.id).hasConflict || t.overrideWarning);
-
-        return {
-          user: u,
-          tasks: uTasks,
-          uInt, uExt, uSP,
-          currentDoing,
-          allocatedHours,
-          netCapacityHours,
-          utilPercent,
-          nextFreeDate: formatThaiDate(latestEnd),
-          hasConflict
-        };
-      });
-
-      const visibleMemberMetrics = dashMultiFilters.member.length > 0
-        ? memberMetrics.filter(m => dashMultiFilters.member.includes(m.user.id))
-        : memberMetrics;
-
-      const availableMembers = visibleMemberMetrics.filter(m => m.utilPercent < thresholdPct);
-      lastAvailableMembersCache = availableMembers;
-      lastOverlappingTasksCache = overlappingTasks;
-
-      document.getElementById('kpi-grid').innerHTML = `
-        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-2xs flex flex-col justify-between">
-          <div class="flex items-center justify-between text-slate-500 text-xs font-medium">
-            <span>งานทั้งหมด (Tasks)</span>
-            <span class="w-8 h-8 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center"><i class="fa-solid fa-layer-group"></i></span>
-          </div>
-          <div class="mt-3 flex items-baseline gap-2">
-            <span class="text-2xl sm:text-3xl font-bold text-slate-900">${totalTasks}</span>
-            <span class="text-xs text-slate-400">ใบงาน (${totalSP} SP)</span>
-          </div>
-          <div class="mt-2 text-[11px] text-slate-500">Int: <b>${internalCount}</b> • Ext: <b>${externalCount}</b></div>
-        </div>
-
-        <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-2xs flex flex-col justify-between">
-          <div class="flex items-center justify-between text-slate-500 text-xs font-medium">
-            <span>กำลังทำ / เสร็จแล้ว</span>
-            <span class="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center"><i class="fa-solid fa-spinner"></i></span>
-          </div>
-          <div class="mt-3 flex items-baseline gap-2">
-            <span class="text-2xl sm:text-3xl font-bold text-blue-600">${inProgressCount}</span>
-            <span class="text-xs text-slate-400">กำลังทำ</span>
-          </div>
-          <div class="mt-2 text-[11px] text-emerald-700 font-medium">เสร็จสิ้นแล้ว: <b>${completedCount}</b> งาน</div>
-        </div>
-
-        <div onclick="setDashFocus(dashFocusMode === 'Blocked' ? 'ALL' : 'Blocked')" class="cursor-pointer bg-white p-4 sm:p-5 rounded-2xl border ${blockedCount > 0 ? 'border-rose-300 ring-2 ring-rose-100' : 'border-slate-200'} shadow-2xs flex flex-col justify-between hover:border-rose-400 transition">
-          <div class="flex items-center justify-between text-slate-500 text-xs font-medium">
-            <span>งานติดปัญหา (Blocked)</span>
-            <span class="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center"><i class="fa-solid fa-ban"></i></span>
-          </div>
-          <div class="mt-3 flex items-baseline gap-2">
-            <span class="text-2xl sm:text-3xl font-bold ${blockedCount > 0 ? 'text-rose-600' : 'text-slate-900'}">${blockedCount}</span>
-            <span class="text-xs text-slate-400">รายการ</span>
-          </div>
-          <div class="mt-2 text-[11px] ${blockedCount > 0 ? 'text-rose-600 font-semibold' : 'text-slate-400'}">คลิกเพื่อกรองเฉพาะงาน Blocked</div>
-        </div>
-
-        <div onclick="setDashFocus(dashFocusMode === 'Overdue' ? 'ALL' : 'Overdue')" class="cursor-pointer bg-white p-4 sm:p-5 rounded-2xl border ${overdueCount > 0 ? 'border-amber-300 ring-2 ring-amber-100' : 'border-slate-200'} shadow-2xs flex flex-col justify-between hover:border-amber-400 transition">
-          <div class="flex items-center justify-between text-slate-500 text-xs font-medium">
-            <span>งานเลยกำหนด (Overdue)</span>
-            <span class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center"><i class="fa-solid fa-clock-rotate-left"></i></span>
-          </div>
-          <div class="mt-3 flex items-baseline gap-2">
-            <span class="text-2xl sm:text-3xl font-bold ${overdueCount > 0 ? 'text-amber-600' : 'text-slate-900'}">${overdueCount}</span>
-            <span class="text-xs text-slate-400">รายการ</span>
-          </div>
-          <div class="mt-2 text-[11px] ${overdueCount > 0 ? 'text-amber-700 font-semibold' : 'text-slate-400'}">คลิกเพื่อกรองงานเลยกำหนด</div>
-        </div>
-
-        <div onclick="openAvailableMembersModal()" class="cursor-pointer bg-white p-4 sm:p-5 rounded-2xl border border-emerald-200 shadow-2xs flex flex-col justify-between hover:border-emerald-400 transition">
-          <div class="flex items-center justify-between text-slate-500 text-xs font-medium">
-            <span>สมาชิกคิวว่าง (&lt;${thresholdPct}%)</span>
-            <span class="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center"><i class="fa-solid fa-user-check"></i></span>
-          </div>
-          <div class="mt-3 flex items-baseline gap-2">
-            <span class="text-2xl sm:text-3xl font-bold text-emerald-600">${availableMembers.length}</span>
-            <span class="text-xs text-slate-400">/ ${visibleMemberMetrics.length} คน</span>
-          </div>
-          <div class="mt-2 text-[11px] text-emerald-700 font-medium">คลิกเพื่อดูรายชื่อคนคิวว่าง</div>
-        </div>
-
-        <div onclick="openOverlappingTasksModal()" class="cursor-pointer bg-white p-4 sm:p-5 rounded-2xl border ${overlapCount > 0 ? 'border-rose-300 ring-2 ring-rose-100' : 'border-slate-200'} shadow-2xs flex flex-col justify-between hover:border-rose-400 transition">
-          <div class="flex items-center justify-between text-slate-500 text-xs font-medium">
-            <span>งานทับซ้อน / เกินความจุ</span>
-            <span class="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center"><i class="fa-solid fa-triangle-exclamation"></i></span>
-          </div>
-          <div class="mt-3 flex items-baseline gap-2">
-            <span class="text-2xl sm:text-3xl font-bold ${overlapCount > 0 ? 'text-rose-600' : 'text-emerald-600'}">${overlapCount}</span>
-            <span class="text-xs text-slate-400">รายการ</span>
-          </div>
-          <div class="mt-2 text-[11px] ${overlapCount > 0 ? 'text-rose-600 font-semibold' : 'text-slate-400'}">คลิกเพื่อดูรายละเอียดงานทับซ้อน</div>
-        </div>
-      `;
-
-      const riskBanner = document.getElementById('dash-risk-banner');
-      if (blockedCount > 0 || overdueCount > 0 || overlapCount > 0) {
-        riskBanner.classList.remove('hidden');
-        riskBanner.className = 'bg-rose-50/90 border border-rose-200 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3';
-        riskBanner.innerHTML = `
-          <div class="flex items-start gap-3 text-rose-900">
-            <i class="fa-solid fa-circle-exclamation text-xl text-rose-600 mt-0.5"></i>
-            <div class="text-xs sm:text-sm space-y-0.5">
-              <div class="font-bold">ตรวจพบรายการที่ต้องติดตามความเสี่ยงในระบบ:</div>
-              <div>
-                ${blockedCount > 0 ? `<span class="font-semibold underline">ติดปัญหา (Blocked) ${blockedCount} งาน</span> • ` : ''}
-                ${overdueCount > 0 ? `<span class="font-semibold underline">เลยกำหนด (Overdue) ${overdueCount} งาน</span> • ` : ''}
-                ${overlapCount > 0 ? `<span class="font-semibold underline">งานทับซ้อน / เกินความจุ ${overlapCount} งาน</span>` : ''}
-              </div>
-            </div>
-          </div>
-          <div class="flex items-center gap-2 shrink-0">
-            ${blockedCount > 0 ? `<button type="button" onclick="setDashFocus('Blocked')" class="px-3 py-1.5 rounded-xl bg-rose-600 text-white text-xs font-semibold hover:bg-rose-700">ดูงาน Blocked</button>` : ''}
-            ${overlapCount > 0 ? `<button type="button" onclick="setDashFocus('Overlap')" class="px-3 py-1.5 rounded-xl bg-white border border-rose-300 text-rose-700 text-xs font-semibold hover:bg-rose-100">ดูงานทับซ้อน</button>` : ''}
-          </div>
-        `;
-      } else {
-        riskBanner.classList.add('hidden');
-      }
-
-      const dashCountPill = document.getElementById('dash-task-count-pill');
-      if (dashCountPill) dashCountPill.textContent = `${filteredTasks.length} รายการ`;
-
-      const dashThAction = document.getElementById('dash-tasks-th-action');
-      if (dashThAction) dashThAction.classList.toggle('hidden', !isBA());
-
-      const dashTbody = document.getElementById('dash-tasks-tbody');
-      if (dashTbody) {
-        const baMode = isBA();
-        if (filteredTasks.length === 0) {
-          dashTbody.innerHTML = `<tr><td colspan="${baMode ? 7 : 6}" class="py-10 text-center text-slate-400">ไม่พบรายการงานตามเงื่อนไข Checkbox ที่เลือก</td></tr>`;
-        } else {
-          dashTbody.innerHTML = filteredTasks.map(t => {
-            const user = state.users.find(u => u.id === t.assigneeId);
-            const isOverdue = t.status !== 'Completed' && t.endDate && t.endDate < todayStr;
-            return `
-              <tr onclick="openDetailModal('${t.id}')" class="hover:bg-brand-50/40 transition cursor-pointer">
-                <td class="py-3 px-4 whitespace-nowrap font-bold text-brand-700">${escapeHTML(t.code)}</td>
-                <td class="py-3 px-4">
-                  <div class="font-semibold text-slate-900">${escapeHTML(t.title)}</div>
-                  <div class="flex flex-wrap items-center gap-1.5 mt-1">
-                    ${getHorizonBadgeHTML(t, todayStr)}
-                    ${getTaskTypeBadgeHTML(t.taskType)}
-                    ${getOrgBadgeHTML(t.orgId, t.source)}
-                    ${isOverdue ? `<span class="text-[10px] font-bold bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded">เลยกำหนด</span>` : ''}
-                  </div>
-                </td>
-                <td class="py-3 px-4 whitespace-nowrap text-xs text-slate-600">${escapeHTML(formatDateRangeLabel(t.startDate, t.endDate))}</td>
-                <td class="py-3 px-4 whitespace-nowrap text-xs font-medium text-slate-700">${user ? escapeHTML(user.name) : '<span class="text-amber-700">ยังไม่ระบุ</span>'}</td>
-                <td class="py-3 px-4 whitespace-nowrap">${getStatusBadgeHTML(t.status)}</td>
-                <td class="py-3 px-4 whitespace-nowrap text-right font-bold text-slate-800">${t.estimatedHours} <span class="text-xs font-normal text-slate-400">ชม.</span></td>
-                ${baMode ? `
-                  <td class="py-3 px-4 whitespace-nowrap text-center" onclick="event.stopPropagation()">
-                    <div class="inline-flex items-center gap-1">
-                      <button type="button" onclick="openCreateTaskModal('${t.id}')" class="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-600 text-xs" title="แก้ไขใบงาน">
-                        <i class="fa-solid fa-pen"></i>
-                      </button>
-                      <button type="button" onclick="deleteTask('${t.id}')" class="p-1.5 rounded-lg border border-slate-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 text-slate-500 text-xs" title="ลบใบงาน">
-                        <i class="fa-solid fa-trash-can"></i>
-                      </button>
-                    </div>
-                  </td>
-                ` : ''}
-              </tr>
-            `;
-          }).join('');
-        }
-      }
-
-      const intPct = totalTasks > 0 ? Math.round((internalCount / totalTasks) * 100) : 0;
-      const extPct = totalTasks > 0 ? 100 - intPct : 0;
-      document.getElementById('chart-source-ratio').innerHTML = `
-        <div class="flex justify-between text-xs font-semibold">
-          <span class="text-indigo-700">Internal: ${internalCount} งาน (${intPct}%)</span>
-          <span class="text-teal-700">External: ${externalCount} งาน (${extPct}%)</span>
-        </div>
-        <div class="w-full h-4 rounded-full bg-slate-100 overflow-hidden flex">
-          <div class="bg-indigo-500 h-full transition-all" style="width:${intPct}%"></div>
-          <div class="bg-teal-500 h-full transition-all" style="width:${extPct}%"></div>
-        </div>
-      `;
-
-      const typeCounts = ['Feature', 'Bug Fix', 'Enhancement', 'UAT / QA', 'DevOps'].map(tp => ({
-        type: tp,
-        count: filteredTasks.filter(t => (t.taskType || 'Feature') === tp).length
-      })).filter(x => x.count > 0);
-
-      document.getElementById('chart-type-breakdown').innerHTML = typeCounts.length === 0
-        ? `<div class="text-xs text-slate-400">ไม่มีข้อมูลประเภทงาน</div>`
-        : typeCounts.map(item => {
-            const pct = totalTasks > 0 ? Math.round((item.count / totalTasks) * 100) : 0;
-            return `
-              <div class="space-y-1">
-                <div class="flex justify-between text-[11px] font-medium text-slate-600">
-                  <span>${escapeHTML(item.type)}</span>
-                  <span>${item.count} งาน (${pct}%)</span>
-                </div>
-                <div class="w-full h-1.5 rounded-full bg-slate-100 overflow-hidden">
-                  <div class="bg-brand-500 h-full rounded-full" style="width:${pct}%"></div>
-                </div>
-              </div>
-            `;
-          }).join('');
-
-      document.getElementById('chart-status-pills').innerHTML = ALL_STATUSES.map(st => {
-        const cnt = filteredTasks.filter(t => t.status === st).length;
-        const isSelected = dashMultiFilters.status.includes(st);
-        return `
-          <button type="button" onclick="syncStatusFilterFromPill('${st}')" class="p-2 rounded-xl border ${isSelected ? 'border-brand-500 bg-brand-50 ring-1 ring-brand-400' : 'border-slate-100 bg-slate-50 hover:bg-slate-100'} transition">
-            <div class="text-base font-bold text-slate-800">${cnt}</div>
-            <div class="text-[10px] font-medium text-slate-500 truncate">${st}</div>
-          </button>
-        `;
-      }).join('');
-
-      const totalVisibleSP = visibleMemberMetrics.reduce((s, m) => s + m.uSP, 0);
-      document.getElementById('chart-total-sp').textContent = `${totalVisibleSP} Story Points`;
-
-      document.getElementById('chart-member-bars').innerHTML = visibleMemberMetrics.map(m => {
-        const widthPct = Math.min(100, m.utilPercent);
-        const barColor = m.utilPercent > 100 ? 'bg-rose-500' : (m.utilPercent < thresholdPct ? 'bg-emerald-500' : 'bg-blue-500');
-        const isMemberSelected = dashMultiFilters.member.includes(m.user.id);
-        return `
-          <div onclick="toggleMemberFilterFromChart('${m.user.id}')" class="space-y-1 cursor-pointer p-1.5 rounded-xl ${isMemberSelected ? 'bg-brand-50/70 ring-1 ring-brand-300' : 'hover:bg-slate-50'} transition" title="คลิกเพื่อสลับฟิลเตอร์สมาชิก">
-            <div class="flex items-center justify-between text-xs">
-              <span class="font-semibold text-slate-800">${escapeHTML(m.user.name)} <span class="text-[10px] font-normal text-slate-400">(${m.uSP} SP)</span></span>
-              <span class="font-bold ${m.utilPercent > 100 ? 'text-rose-600' : (m.utilPercent < thresholdPct ? 'text-emerald-600' : 'text-blue-600')}">
-                ${m.utilPercent}% <span class="font-normal text-slate-400">(${m.allocatedHours}/${m.netCapacityHours}h)</span>
-              </span>
-            </div>
-            <div class="relative w-full h-3 rounded-full bg-slate-100 overflow-visible">
-              <div class="${barColor} h-3 rounded-full transition-all" style="width:${widthPct}%"></div>
-              <div class="absolute top-0 bottom-0 border-r-2 border-dashed border-emerald-600" style="left:${Math.min(100, thresholdPct)}%"></div>
-            </div>
-          </div>
-        `;
-      }).join('');
-
-      document.getElementById('workload-table-body').innerHTML = visibleMemberMetrics.map(m => {
-        const barColor = m.utilPercent > 100 ? 'bg-rose-500' : (m.utilPercent < thresholdPct ? 'bg-emerald-500' : 'bg-blue-500');
-        const statusLabel = m.utilPercent > 100
-          ? `<span class="text-xs font-bold text-rose-600">เกินกำลัง (${m.utilPercent}%)</span>`
-          : (m.utilPercent < thresholdPct
-            ? `<span class="text-xs font-bold text-emerald-600">คิวว่าง (${m.utilPercent}%)</span>`
-            : `<span class="text-xs font-semibold text-blue-600">ปกติ (${m.utilPercent}%)</span>`);
-
-        return `
-          <tr class="hover:bg-slate-50/70">
-            <td class="py-3.5 px-4">
-              <div class="font-bold text-slate-900">${escapeHTML(m.user.name)}</div>
-              <div class="text-xs text-slate-500">${escapeHTML(m.user.position)} • ${m.user.dailyCapacity} ชม./วัน</div>
-            </td>
-            <td class="py-3.5 px-4 text-center">
-              <span class="font-bold text-slate-800">${m.tasks.length}</span>
-              <div class="text-[11px] text-slate-500"><span class="text-indigo-600 font-medium">${m.uInt} Int</span> / <span class="text-teal-600 font-medium">${m.uExt} Ext</span></div>
-            </td>
-            <td class="py-3.5 px-4 text-center font-bold text-brand-700">${m.uSP} SP</td>
-            <td class="py-3.5 px-4">
-              ${m.currentDoing.length > 0
-                ? m.currentDoing.map(d => `<div class="text-xs font-medium text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md mb-1 truncate max-w-[220px]">${escapeHTML(d.code)}: ${escapeHTML(d.title)}</div>`).join('')
-                : `<span class="text-xs text-slate-400">-</span>`}
-            </td>
-            <td class="py-3.5 px-4">
-              <div class="flex items-center justify-between text-xs mb-1">${statusLabel}</div>
-              <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                <div class="${barColor} h-2 rounded-full" style="width:${Math.min(100, m.utilPercent)}%"></div>
-              </div>
-            </td>
-            <td class="py-3.5 px-4 text-xs font-semibold text-slate-700">${escapeHTML(m.nextFreeDate)}</td>
-            <td class="py-3.5 px-4">
-              ${m.hasConflict
-                ? `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-700"><i class="fa-solid fa-triangle-exclamation"></i> มีงานทับซ้อน</span>`
-                : `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700"><i class="fa-solid fa-check"></i> ปกติ</span>`}
-            </td>
-          </tr>
-        `;
-      }).join('');
-
-      renderResourceTimeline(startStr, endStr, visibleMemberMetrics);
-    }
-
-    function renderResourceTimeline(startStr, endStr, visibleMemberMetrics = null) {
-      const container = document.getElementById('timeline-container');
-      let rangeStart = startStr || getRelativeDate(-2);
-      let rangeEnd = endStr || getRelativeDate(9);
-      if (rangeStart > rangeEnd) {
-        const tmp = rangeStart;
-        rangeStart = rangeEnd;
-        rangeEnd = tmp;
-      }
-
-      const days = enumerateDates(rangeStart, rangeEnd).slice(0, 31);
-      const todayStr = getRelativeDate(0);
-      const membersToRender = visibleMemberMetrics
-        ? visibleMemberMetrics.map(m => m.user)
-        : state.users;
-
-      if (days.length === 0) {
-        container.innerHTML = `<div class="text-center py-8 text-slate-400 text-sm">กรุณาเลือกช่วงวันที่ที่ถูกต้อง</div>`;
-        return;
-      }
-
-      const headerCells = days.map(d => {
-        const isToday = d === todayStr;
-        const parts = d.split('-');
-        return `<th class="py-2 px-2 text-center text-[11px] font-semibold border-b border-slate-200 min-w-[78px] ${isToday ? 'bg-brand-50 text-brand-700' : 'text-slate-600 bg-slate-50'}">
-          <div>${parseInt(parts[2], 10)}/${parseInt(parts[1], 10)}</div>
-          ${isToday ? `<span class="text-[9px] bg-brand-600 text-white px-1.5 rounded-full">วันนี้</span>` : ''}
-        </th>`;
-      }).join('');
-
-      const rowsHTML = membersToRender.map(u => {
-        const uTasks = state.tasks.filter(t => t.assigneeId === u.id && t.status !== 'Completed');
-        const unscheduled = uTasks.filter(t => !t.startDate || !t.endDate);
-        const uLeaves = state.leaves.filter(l => l.userId === u.id);
-
-        const dayCells = days.map(d => {
-          const leave = uLeaves.find(l => l.date === d);
-          const dayTasks = uTasks.filter(t => t.startDate && t.endDate && d >= t.startDate && d <= t.endDate);
-          const conflictOnDay = dayTasks.some(t => analyzeTaskConflicts(t, t.id).conflictDates.includes(d) || t.overrideWarning);
-
-          let cellContent = '';
-          if (leave) {
-            cellContent += `<div class="text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300 rounded px-1.5 py-0.5 mb-1 truncate" title="${escapeHTML(leave.reason)}">ลา: ${escapeHTML(leave.reason || 'หยุด')}</div>`;
-          }
-
-          dayTasks.forEach(t => {
-            const isInt = t.source === 'Internal';
-            const baseStyle = conflictOnDay
-              ? 'bg-rose-100 text-rose-900 border border-rose-400 font-bold'
-              : (isInt ? 'bg-indigo-100 text-indigo-900 border border-indigo-200' : 'bg-teal-100 text-teal-900 border border-teal-200');
-            cellContent += `
-              <button type="button" onclick="openDetailModal('${t.id}')"
-                      class="w-full text-left text-[10px] rounded px-1.5 py-1 mb-1 truncate block transition hover:brightness-95 ${baseStyle}"
-                      title="${escapeHTML(t.code)}: ${escapeHTML(t.title)} (${t.status})">
-                ${conflictOnDay ? '<i class="fa-solid fa-triangle-exclamation text-rose-600 mr-0.5"></i>' : ''}#${t.queueOrder || '-'} ${escapeHTML(t.code)}
-              </button>
-            `;
-          });
-
-          return `<td class="p-1.5 border-b border-r border-slate-100 align-top ${leave ? 'bg-amber-50/40' : (conflictOnDay ? 'bg-rose-50/40' : '')}">${cellContent}</td>`;
-        }).join('');
-
-        return `
-          <tr>
-            <td class="p-3 border-b border-r border-slate-200 bg-white sticky left-0 z-10 min-w-[180px]">
-              <div class="font-bold text-xs text-slate-900">${escapeHTML(u.name)}</div>
-              <div class="text-[10px] text-slate-500">${escapeHTML(u.position)}</div>
-              ${unscheduled.length > 0
-                ? `<div class="mt-1.5 flex flex-wrap gap-1">${unscheduled.map(ut => `<button type="button" onclick="openDetailModal('${ut.id}')" class="text-[10px] bg-amber-50 text-amber-800 border border-amber-200 px-1.5 py-0.5 rounded font-medium" title="ยังไม่ระบุวันที่">รอวัน: ${escapeHTML(ut.code)}</button>`).join('')}</div>`
-                : ''}
-            </td>
-            ${dayCells}
-          </tr>
-        `;
-      }).join('');
-
-      container.innerHTML = `
-        <table class="w-full border-collapse min-w-[820px]">
-          <thead>
-            <tr>
-              <th class="py-2 px-3 text-left text-xs font-bold text-slate-700 bg-slate-100 border-b border-r border-slate-200 sticky left-0 z-20">สมาชิก / คิวรอวัน</th>
-              ${headerCells}
-            </tr>
-          </thead>
-          <tbody>${rowsHTML}</tbody>
-        </table>
-      `;
-    }
-
     function switchAdminSubTab(sub) {
       if (!isBA()) return;
       currentAdminSubTab = sub;
       document.querySelectorAll('.admin-sub-view').forEach(el => el.classList.add('hidden'));
-      document.getElementById(`admin-sub-${sub}`)?.classList.remove('hidden');
+      document.getElementById(`admin-sub-${sub}`).classList.remove('hidden');
 
       document.querySelectorAll('.admin-sub-btn').forEach(btn => {
         if (btn.dataset.admintab === sub) {
-          btn.className = 'admin-sub-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition bg-brand-600 text-white shadow-2xs';
+          btn.className = 'admin-sub-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition bg-slate-900 text-white';
         } else {
-          btn.className = 'admin-sub-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition bg-slate-100 text-slate-600 hover:bg-slate-200';
+          btn.className = 'admin-sub-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition bg-slate-100 text-slate-700 hover:bg-slate-200';
         }
       });
-
       renderAdminView();
     }
 
@@ -5178,9 +5031,6 @@
       } else if (currentAdminSubTab === 'rules') {
         document.getElementById('rule-overlap-mode').value = state.rules.overlapMode;
         document.getElementById('rule-avail-percent').value = state.rules.availableThresholdPercent;
-        if (typeof window.syncFirebaseFormInputs === 'function') {
-          window.syncFirebaseFormInputs();
-        }
       }
     }
 
@@ -5188,30 +5038,59 @@
       const tbody = document.getElementById('admin-users-tbody');
       tbody.innerHTML = state.users.map(u => {
         const leaveCnt = state.leaves.filter(l => l.userId === u.id).length;
-        const taskCnt = state.tasks.filter(t => t.assigneeId === u.id && t.status !== 'Completed').length;
         return `
-          <tr>
+          <tr class="hover:bg-slate-50">
             <td class="py-3 px-4">
-              <div class="font-bold text-slate-900">${escapeHTML(u.name)}</div>
+              <div class="font-semibold text-slate-900">${escapeHTML(u.name)}</div>
               <div class="text-xs text-slate-500">${escapeHTML(u.position)}</div>
             </td>
-            <td class="py-3 px-4"><span class="px-2.5 py-0.5 rounded-md text-xs font-semibold bg-slate-100 text-slate-700">${escapeHTML(u.role)}</span></td>
-            <td class="py-3 px-4 text-center font-bold text-brand-700">${u.dailyCapacity} ชม.</td>
-            <td class="py-3 px-4 text-center text-xs text-amber-700 font-semibold">${leaveCnt} วัน</td>
+            <td class="py-3 px-4"><span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-xs font-medium">${escapeHTML(u.role)}</span></td>
+            <td class="py-3 px-4 text-center font-bold text-brand-700">${u.dailyCapacity} ชม./วัน</td>
+            <td class="py-3 px-4 text-center text-xs text-slate-600">${leaveCnt} วัน</td>
             <td class="py-3 px-4 text-right space-x-1">
-              <button type="button" onclick="editUser('${u.id}')" class="px-2.5 py-1 rounded-lg border border-slate-200 hover:bg-slate-100 text-xs">แก้ไข</button>
-              ${state.users.length > 1 ? `<button type="button" onclick="deleteUser('${u.id}')" class="px-2.5 py-1 rounded-lg border border-rose-200 text-rose-600 hover:bg-rose-50 text-xs" title="${taskCnt > 0 ? 'ลบสมาชิกและคืน ' + taskCnt + ' งานเข้า Pool' : 'ลบสมาชิก'}">ลบ</button>` : ''}
+              <button type="button" onclick="editUser('${u.id}')" class="p-1.5 rounded-lg bg-slate-100 hover:bg-amber-50 text-slate-600 hover:text-amber-700" title="แก้ไขสมาชิก"><i class="fa-solid fa-pen text-xs"></i></button>
+              <button type="button" onclick="deleteUser('${u.id}')" class="p-1.5 rounded-lg bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-700" title="ลบสมาชิก"><i class="fa-solid fa-trash text-xs"></i></button>
             </td>
           </tr>
         `;
       }).join('');
     }
 
+    function saveUser() {
+      if (!isBA()) return;
+      const id = document.getElementById('edit-user-id').value;
+      const name = document.getElementById('user-name').value.trim();
+      const position = document.getElementById('user-position').value.trim();
+      const role = document.getElementById('user-role').value;
+      const dailyCapacity = parseFloat(document.getElementById('user-capacity').value) || 8;
+
+      if (!name || !position) {
+        showToast('กรุณากรอกชื่อและตำแหน่งของสมาชิก', 'error');
+        return;
+      }
+
+      if (id) {
+        const idx = state.users.findIndex(u => u.id === id);
+        if (idx !== -1) state.users[idx] = { ...state.users[idx], name, position, role, dailyCapacity };
+        addAuditLog('UPDATE_USER', id, `แก้ไขข้อมูลสมาชิก ${name} (Capacity ${dailyCapacity} ชม./วัน)`);
+      } else {
+        const newId = 'u_' + Date.now();
+        state.users.push({ id: newId, name, position, role, dailyCapacity });
+        addAuditLog('CREATE_USER', newId, `เพิ่มสมาชิกทีมใหม่ ${name} (${position})`);
+      }
+
+      saveState();
+      resetUserForm();
+      populateAllSelects();
+      renderAdminUsers();
+      showToast('บันทึกข้อมูลสมาชิกเรียบร้อย', 'success');
+    }
+
     function editUser(id) {
       if (!isBA()) return;
       const u = state.users.find(x => x.id === id);
       if (!u) return;
-      document.getElementById('user-form-title').textContent = `แก้ไขข้อมูล: ${u.name}`;
+      document.getElementById('user-form-title').textContent = 'แก้ไขข้อมูลสมาชิก';
       document.getElementById('edit-user-id').value = u.id;
       document.getElementById('user-name').value = u.name;
       document.getElementById('user-position').value = u.position;
@@ -5228,72 +5107,29 @@
       document.getElementById('user-capacity').value = 8;
     }
 
-    function saveUser() {
-      if (!isBA()) {
-        showToast('เฉพาะ Role BA เท่านั้นที่จัดการสมาชิกได้', 'error');
-        return;
-      }
-      const editId = document.getElementById('edit-user-id').value;
-      const name = document.getElementById('user-name').value.trim();
-      const position = document.getElementById('user-position').value.trim();
-      const role = document.getElementById('user-role').value;
-      const cap = parseFloat(document.getElementById('user-capacity').value);
-
-      if (!name || !position || isNaN(cap) || cap <= 0) {
-        showToast('กรุณากรอกชื่อ ตำแหน่ง และความจุต่อวันให้ถูกต้อง', 'error');
-        return;
-      }
-
-      if (editId) {
-        const idx = state.users.findIndex(u => u.id === editId);
-        if (idx !== -1) {
-          state.users[idx] = { ...state.users[idx], name, position, role, dailyCapacity: cap };
-          addAuditLog('UPDATE_USER', '-', `แก้ไขข้อมูลสมาชิก ${name} (Capacity ${cap} ชม./วัน)`);
-          showToast('อัปเดตข้อมูลสมาชิกเรียบร้อย', 'success');
-        }
-      } else {
-        state.users.push({ id: 'u_' + Date.now(), name, position, role, dailyCapacity: cap });
-        addAuditLog('ADD_USER', '-', `เพิ่มสมาชิกใหม่ ${name} (${position})`);
-        showToast('เพิ่มสมาชิกทีมใหม่เรียบร้อย', 'success');
-      }
-
-      saveState();
-      populateAllSelects();
-      resetUserForm();
-      renderAdminUsers();
-    }
-
     function deleteUser(id) {
       if (!isBA()) return;
-      const u = state.users.find(x => x.id === id);
-      if (!u) return;
       if (state.users.length <= 1) {
-        showToast('ต้องมีสมาชิกในระบบอย่างน้อย 1 คน', 'warning');
+        showToast('ต้องมีสมาชิกในทีมอย่างน้อย 1 คน', 'error');
         return;
       }
-      const assignedTasks = state.tasks.filter(t => t.assigneeId === id);
-      const warnExtra = assignedTasks.length > 0
-        ? ` (ใบงานที่มอบหมายให้ ${u.name} จำนวน ${assignedTasks.length} รายการ จะถูกย้ายกลับเข้า Pool อัตโนมัติ)`
-        : '';
+      const user = state.users.find(u => u.id === id);
+      if (!user) return;
       showConfirmModal({
         title: 'ยืนยันการลบสมาชิก',
-        message: `ยืนยันลบสมาชิก ${u.name} ออกจากระบบ?${warnExtra}`,
+        message: `ยืนยันลบสมาชิก "${user.name}" ออกจากระบบ? (งานที่ค้างอยู่จะถูกดึงกลับเข้า Pool รอจัดคิว)`,
         okText: 'ลบสมาชิก',
         danger: true,
         onConfirm: () => {
+          state.users = state.users.filter(u => u.id !== id);
+          state.leaves = state.leaves.filter(l => l.userId !== id);
           state.tasks.forEach(t => {
             if (t.assigneeId === id) {
               t.assigneeId = '';
               t.queueOrder = 0;
-              t.overrideWarning = false;
             }
           });
-          state.users = state.users.filter(x => x.id !== id);
-          state.leaves = state.leaves.filter(l => l.userId !== id);
-          if (document.getElementById('edit-user-id').value === id) {
-            resetUserForm();
-          }
-          addAuditLog('DELETE_USER', '-', `ลบสมาชิก ${u.name} และคืนใบงาน ${assignedTasks.length} รายการเข้า Pool`);
+          addAuditLog('DELETE_USER', id, `ลบสมาชิก ${user.name} ออกจากทีม`);
           saveState();
           populateAllSelects();
           renderAdminUsers();
@@ -5303,52 +5139,28 @@
       });
     }
 
-    function editLeave(leaveId) {
-      if (!isBA()) return;
-      const lv = state.leaves.find(x => x.id === leaveId);
-      if (!lv) return;
-      document.getElementById('edit-leave-id').value = lv.id;
-      document.getElementById('leave-form-title').textContent = 'แก้ไขรายการวันลา / วันหยุด';
-      document.getElementById('leave-user-id').value = lv.userId;
-      document.getElementById('leave-date').value = lv.date;
-      document.getElementById('leave-reason').value = lv.reason || '';
-      document.getElementById('leave-submit-btn').innerHTML = '<i class="fa-solid fa-floppy-disk mr-1"></i> อัปเดตวันลา';
-    }
-
-    function resetLeaveForm() {
-      document.getElementById('edit-leave-id').value = '';
-      document.getElementById('leave-form-title').textContent = 'บันทึกวันลา / วันหยุดประจำปีของสมาชิก';
-      document.getElementById('leave-date').value = '';
-      document.getElementById('leave-reason').value = '';
-      const btn = document.getElementById('leave-submit-btn');
-      if (btn) btn.innerHTML = '<i class="fa-solid fa-calendar-plus mr-1"></i> บันทึกวันลา';
-    }
-
     function saveUserLeave() {
-      if (!isBA()) {
-        showToast('เฉพาะ Role BA เท่านั้นที่จัดการวันลาได้', 'error');
-        return;
-      }
+      if (!isBA()) return;
       const editId = document.getElementById('edit-leave-id')?.value || '';
       const userId = document.getElementById('leave-user-id').value;
       const date = document.getElementById('leave-date').value;
-      const reason = document.getElementById('leave-reason').value.trim() || 'ลาหยุด';
-      if (!userId || !date || !parseLocalDate(date)) {
-        showToast('กรุณาเลือกสมาชิกและระบุวันที่ลาที่ถูกต้อง', 'error');
+      const reason = document.getElementById('leave-reason').value.trim() || 'วันลาหยุด';
+      if (!userId || !date) {
+        showToast('กรุณาเลือกสมาชิกและวันที่ลา', 'error');
         return;
       }
-      const u = state.users.find(x => x.id === userId);
+      const user = state.users.find(u => u.id === userId);
       if (editId) {
-        const idx = state.leaves.findIndex(x => x.id === editId);
+        const idx = state.leaves.findIndex(l => l.id === editId);
         if (idx !== -1) {
           state.leaves[idx] = { ...state.leaves[idx], userId, date, reason };
-          addAuditLog('UPDATE_LEAVE', '-', `แก้ไขวันลาของ ${u ? u.name : userId} เป็น ${formatThaiDate(date)} (${reason})`);
-          showToast('อัปเดตข้อมูลวันลาเรียบร้อยแล้ว', 'success');
+          addAuditLog('UPDATE_LEAVE', editId, `แก้ไขวันลาของ ${user ? user.name : ''} วันที่ ${formatThaiDate(date)} (${reason})`);
+          showToast('อัปเดตวันลาหยุดเรียบร้อย', 'success');
         }
       } else {
         state.leaves.push({ id: 'lv_' + Date.now(), userId, date, reason });
-        addAuditLog('ADD_LEAVE', '-', `บันทึกวันลาของ ${u ? u.name : userId} วันที่ ${formatThaiDate(date)} (${reason})`);
-        showToast('บันทึกวันลาเรียบร้อยแล้ว', 'success');
+        addAuditLog('ADD_LEAVE', userId, `บันทึกวันลาของ ${user ? user.name : ''} วันที่ ${formatThaiDate(date)} (${reason})`);
+        showToast('บันทึกวันลาหยุดเรียบร้อย', 'success');
       }
       resetLeaveForm();
       saveState();
@@ -5356,26 +5168,50 @@
       renderAdminLeaves();
     }
 
-    function removeLeave(leaveId) {
+    function editUserLeave(id) {
       if (!isBA()) return;
-      const lv = state.leaves.find(x => x.id === leaveId);
+      const lv = state.leaves.find(l => l.id === id);
       if (!lv) return;
-      const u = state.users.find(x => x.id === lv.userId);
+      document.getElementById('leave-form-title').textContent = 'แก้ไขวันลา / วันหยุดประจำปีของสมาชิก';
+      document.getElementById('edit-leave-id').value = lv.id;
+      document.getElementById('leave-user-id').value = lv.userId;
+      document.getElementById('leave-date').value = lv.date;
+      document.getElementById('leave-reason').value = lv.reason || '';
+      const btn = document.getElementById('leave-submit-btn');
+      if (btn) btn.innerHTML = `<i class="fa-solid fa-floppy-disk mr-1"></i> อัปเดตวันลา`;
+    }
+
+    function resetLeaveForm() {
+      const title = document.getElementById('leave-form-title');
+      if (title) title.textContent = 'บันทึกวันลา / วันหยุดประจำปีของสมาชิก';
+      const editId = document.getElementById('edit-leave-id');
+      if (editId) editId.value = '';
+      const dateEl = document.getElementById('leave-date');
+      if (dateEl) dateEl.value = '';
+      const reasonEl = document.getElementById('leave-reason');
+      if (reasonEl) reasonEl.value = '';
+      const btn = document.getElementById('leave-submit-btn');
+      if (btn) btn.innerHTML = `<i class="fa-solid fa-calendar-plus mr-1"></i> บันทึกวันลา`;
+    }
+
+    function removeUserLeave(id) {
+      if (!isBA()) return;
+      const lv = state.leaves.find(l => l.id === id);
+      if (!lv) return;
+      const user = state.users.find(u => u.id === lv.userId);
       showConfirmModal({
         title: 'ยืนยันการลบวันลา',
-        message: `ยืนยันลบรายการวันลาของ ${u ? escapeHTML(u.name) : '-'} วันที่ ${escapeHTML(formatThaiDate(lv.date))} (${escapeHTML(lv.reason)})?`,
+        message: `ยืนยันลบวันลาของ ${user ? user.name : 'สมาชิก'} วันที่ ${formatThaiDate(lv.date)} (${lv.reason || 'วันลาหยุด'})?`,
         okText: 'ลบวันลา',
         danger: true,
         onConfirm: () => {
-          state.leaves = state.leaves.filter(l => l.id !== leaveId);
-          if (document.getElementById('edit-leave-id')?.value === leaveId) {
-            resetLeaveForm();
-          }
-          addAuditLog('DELETE_LEAVE', '-', `ลบวันลาของ ${u ? u.name : '-'} วันที่ ${formatThaiDate(lv.date)}`);
+          state.leaves = state.leaves.filter(l => l.id !== id);
+          if (document.getElementById('edit-leave-id')?.value === id) resetLeaveForm();
+          addAuditLog('DELETE_LEAVE', id, `ลบวันลาของ ${user ? user.name : ''} วันที่ ${formatThaiDate(lv.date)}`);
           saveState();
           renderAdminUsers();
           renderAdminLeaves();
-          showToast('ลบรายการวันลาเรียบร้อยแล้ว', 'info');
+          showToast('ลบรายการวันลาเรียบร้อย', 'info');
         }
       });
     }
@@ -5383,16 +5219,20 @@
     function renderAdminLeaves() {
       const container = document.getElementById('admin-leaves-list');
       if (state.leaves.length === 0) {
-        container.innerHTML = `<span class="text-xs text-slate-400">ยังไม่มีรายการบันทึกวันลา</span>`;
+        container.innerHTML = `<span class="text-xs text-slate-400">ยังไม่มีรายการวันลาหยุดที่บันทึกไว้</span>`;
         return;
       }
       container.innerHTML = state.leaves.map(l => {
         const u = state.users.find(x => x.id === l.userId);
         return `
-          <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-medium">
-            <b>${u ? escapeHTML(u.name) : '-'}</b> • ${escapeHTML(formatThaiDate(l.date))} (${escapeHTML(l.reason)})
-            <button type="button" onclick="editLeave('${l.id}')" class="text-amber-700 hover:text-brand-700" title="แก้ไขวันลา"><i class="fa-solid fa-pen"></i></button>
-            <button type="button" onclick="removeLeave('${l.id}')" class="text-amber-700 hover:text-rose-600" title="ลบวันลา"><i class="fa-solid fa-xmark"></i></button>
+          <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900">
+            <b>${u ? escapeHTML(u.name) : '-'}</b>: ${formatThaiDate(l.date)} (${escapeHTML(l.reason)})
+            <button type="button" onclick="editUserLeave('${l.id}')" class="text-amber-700 hover:text-brand-700 ml-1" title="แก้ไขวันลา">
+              <i class="fa-solid fa-pen"></i>
+            </button>
+            <button type="button" onclick="removeUserLeave('${l.id}')" class="text-amber-700 hover:text-rose-600" title="ลบวันลา">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
           </span>
         `;
       }).join('');
@@ -5400,39 +5240,79 @@
 
     function renderAdminOrgs() {
       const tbody = document.getElementById('admin-orgs-tbody');
-      tbody.innerHTML = state.organizations.map(o => {
-        const refTaskCount = state.tasks.filter(t => t.orgId === o.id).length;
-        return `
-          <tr>
-            <td class="py-3 px-4">
-              <span class="inline-flex items-center gap-2 font-bold text-xs px-2.5 py-1 rounded-lg" style="background:${escapeHTML(o.color)}18;color:${escapeHTML(o.color)}">
-                <span class="w-2.5 h-2.5 rounded-full" style="background:${escapeHTML(o.color)}"></span>${escapeHTML(o.code)}
-              </span>
-            </td>
-            <td class="py-3 px-4">
-              <div class="font-semibold text-slate-800">${escapeHTML(o.name)}</div>
-              <div class="text-[11px] text-slate-400">เชื่อมโยง ${refTaskCount} ใบงาน</div>
-            </td>
-            <td class="py-3 px-4 text-xs">${o.type === 'Internal' ? '<span class="text-indigo-700 font-semibold">Internal</span>' : '<span class="text-teal-700 font-semibold">External</span>'}</td>
-            <td class="py-3 px-4 text-center">${o.active ? '<span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">ใช้งานอยู่</span>' : '<span class="text-xs font-medium text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">ปิดใช้งาน</span>'}</td>
-            <td class="py-3 px-4 text-right whitespace-nowrap space-x-1">
-              <button type="button" onclick="editOrganization('${o.id}')" class="px-2.5 py-1 rounded-lg border border-slate-200 hover:bg-slate-100 text-xs font-medium">แก้ไข</button>
-              <button type="button" onclick="toggleOrgActive('${o.id}')" class="px-2.5 py-1 rounded-lg border border-slate-200 hover:bg-slate-100 text-xs font-medium">
-                ${o.active ? 'ปิดใช้งาน' : 'เปิดใช้งาน'}
-              </button>
-              ${state.organizations.length > 1 ? `<button type="button" onclick="deleteOrganization('${o.id}')" class="px-2.5 py-1 rounded-lg border border-rose-200 text-rose-600 hover:bg-rose-50 text-xs font-medium">ลบ</button>` : ''}
-            </td>
-          </tr>
-        `;
-      }).join('');
+      tbody.innerHTML = state.organizations.map(o => `
+        <tr class="hover:bg-slate-50">
+          <td class="py-3 px-4">
+            <span class="inline-flex items-center gap-2 font-bold text-xs px-2.5 py-1 rounded-lg border"
+                  style="background-color:${escapeHTML(o.color)}15; color:${escapeHTML(o.color)}; border-color:${escapeHTML(o.color)}40;">
+              <span class="w-2.5 h-2.5 rounded-full" style="background-color:${escapeHTML(o.color)}"></span>
+              ${escapeHTML(o.code)}
+            </span>
+          </td>
+          <td class="py-3 px-4 font-medium text-slate-900">${escapeHTML(o.name)}</td>
+          <td class="py-3 px-4 text-xs">${o.type === 'Internal' ? 'Internal Dept' : 'External Subsidiary'}</td>
+          <td class="py-3 px-4 text-center">
+            ${o.active
+              ? `<span class="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full">Active</span>`
+              : `<span class="text-xs font-medium text-slate-400 bg-slate-100 px-2.5 py-0.5 rounded-full">Inactive</span>`
+            }
+          </td>
+          <td class="py-3 px-4 text-right space-x-1 whitespace-nowrap">
+            <button type="button" onclick="editOrganization('${o.id}')" class="p-1.5 rounded-lg bg-slate-100 hover:bg-amber-50 text-slate-600 hover:text-amber-700" title="แก้ไขหน่วยงาน">
+              <i class="fa-solid fa-pen text-xs"></i>
+            </button>
+            <button type="button" onclick="toggleOrgActive('${o.id}')" class="px-2.5 py-1 rounded-lg border border-slate-200 hover:bg-slate-100 text-xs font-medium">
+              ${o.active ? 'ปิดใช้งาน' : 'เปิดใช้งาน'}
+            </button>
+            <button type="button" onclick="deleteOrganization('${o.id}')" class="p-1.5 rounded-lg bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-700" title="ลบหน่วยงาน">
+              <i class="fa-solid fa-trash text-xs"></i>
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function saveOrganization() {
+      if (!isBA()) return;
+      const editId = document.getElementById('edit-org-id')?.value || '';
+      const type = document.getElementById('org-type').value;
+      const name = document.getElementById('org-name').value.trim();
+      const code = document.getElementById('org-code').value.trim().toUpperCase();
+      const color = document.getElementById('org-color').value;
+
+      if (!name || !code) {
+        showToast('กรุณากรอกชื่อหน่วยงานและรหัสย่อ (Code)', 'error');
+        return;
+      }
+
+      if (editId) {
+        const idx = state.organizations.findIndex(o => o.id === editId);
+        if (idx !== -1) {
+          state.organizations[idx] = { ...state.organizations[idx], type, name, code, color };
+          state.tasks.forEach(t => {
+            if (t.orgId === editId) t.source = type;
+          });
+          addAuditLog('UPDATE_ORG', code, `แก้ไขหน่วยงาน ${name} (${type})`);
+          showToast('อัปเดตข้อมูลหน่วยงานเรียบร้อย', 'success');
+        }
+      } else {
+        state.organizations.push({ id: 'org_' + Date.now(), type, name, code, color, active: true });
+        addAuditLog('CREATE_ORG', code, `เพิ่มหน่วยงานใหม่ ${name} (${type})`);
+        showToast('เพิ่มหน่วยงานใหม่เรียบร้อย', 'success');
+      }
+
+      resetOrgForm();
+      saveState();
+      renderAdminOrgs();
+      refreshCurrentView();
     }
 
     function editOrganization(id) {
       if (!isBA()) return;
-      const org = state.organizations.find(x => x.id === id);
+      const org = state.organizations.find(o => o.id === id);
       if (!org) return;
+      document.getElementById('org-form-title').textContent = `แก้ไขหน่วยงาน (${org.code})`;
       document.getElementById('edit-org-id').value = org.id;
-      document.getElementById('org-form-title').textContent = `แก้ไขหน่วยงาน: ${org.code}`;
       document.getElementById('org-type').value = org.type;
       document.getElementById('org-name').value = org.name;
       document.getElementById('org-code').value = org.code;
@@ -5440,96 +5320,51 @@
     }
 
     function resetOrgForm() {
-      document.getElementById('edit-org-id').value = '';
-      document.getElementById('org-form-title').textContent = 'เพิ่มหน่วยงานภายใน / บริษัทลูก';
-      document.getElementById('org-type').value = 'Internal';
-      document.getElementById('org-name').value = '';
-      document.getElementById('org-code').value = '';
-      document.getElementById('org-color').value = '#4f46e5';
-    }
-
-    function saveOrganization() {
-      if (!isBA()) {
-        showToast('เฉพาะ Role BA เท่านั้นที่จัดการหน่วยงานได้', 'error');
-        return;
-      }
-      const editId = document.getElementById('edit-org-id')?.value || '';
-      const type = document.getElementById('org-type').value;
-      const name = document.getElementById('org-name').value.trim();
-      const code = document.getElementById('org-code').value.trim().toUpperCase();
-      const color = document.getElementById('org-color').value;
-      if (!name || !code) {
-        showToast('กรุณากรอกชื่อหน่วยงานและรหัสย่อ', 'error');
-        return;
-      }
-      const duplicate = state.organizations.find(o => o.code.toUpperCase() === code && o.id !== editId);
-      if (duplicate) {
-        showToast(`รหัสย่อ "${code}" มีอยู่ในระบบแล้ว`, 'warning');
-        return;
-      }
-
-      if (editId) {
-        const idx = state.organizations.findIndex(x => x.id === editId);
-        if (idx !== -1) {
-          state.organizations[idx] = { ...state.organizations[idx], type, name, code, color };
-          state.tasks.forEach(t => {
-            if (t.orgId === editId) t.source = type;
-          });
-          addAuditLog('UPDATE_ORG', '-', `แก้ไขหน่วยงาน ${code} (${name}) [${type}]`);
-          showToast('อัปเดตข้อมูลหน่วยงานเรียบร้อยแล้ว', 'success');
-        }
-      } else {
-        state.organizations.push({ id: 'org_' + Date.now(), type, name, code, color, active: true });
-        addAuditLog('ADD_ORG', '-', `เพิ่มหน่วยงาน ${type}: ${code} - ${name}`);
-        showToast('เพิ่มหน่วยงานใหม่เรียบร้อยแล้ว', 'success');
-      }
-
-      resetOrgForm();
-      saveState();
-      populateAllSelects();
-      renderAdminOrgs();
-      refreshCurrentView();
+      const title = document.getElementById('org-form-title');
+      if (title) title.textContent = 'เพิ่มหน่วยงานภายใน / บริษัทลูก';
+      const editId = document.getElementById('edit-org-id');
+      if (editId) editId.value = '';
+      const typeEl = document.getElementById('org-type');
+      if (typeEl) typeEl.value = 'Internal';
+      const nameEl = document.getElementById('org-name');
+      if (nameEl) nameEl.value = '';
+      const codeEl = document.getElementById('org-code');
+      if (codeEl) codeEl.value = '';
+      const colorEl = document.getElementById('org-color');
+      if (colorEl) colorEl.value = '#4f46e5';
     }
 
     function deleteOrganization(id) {
       if (!isBA()) return;
-      const org = state.organizations.find(x => x.id === id);
-      if (!org) return;
       if (state.organizations.length <= 1) {
-        showToast('ต้องมีหน่วยงานในระบบอย่างน้อย 1 แห่ง', 'warning');
+        showToast('ต้องมีหน่วยงานในระบบอย่างน้อย 1 รายการ', 'error');
         return;
       }
-      const replacement = state.organizations.find(x => x.id !== id && x.active) || state.organizations.find(x => x.id !== id);
-      const affectedTasks = state.tasks.filter(t => t.orgId === id);
-      const warnMsg = affectedTasks.length > 0 && replacement
-        ? ` (ใบงานที่ผูกกับ ${org.code} จำนวน ${affectedTasks.length} รายการ จะถูกย้ายไปที่ ${replacement.code} อัตโนมัติ)`
-        : '';
-
+      const org = state.organizations.find(o => o.id === id);
+      if (!org) return;
+      const linkedCount = state.tasks.filter(t => t.orgId === id).length;
       showConfirmModal({
         title: 'ยืนยันการลบหน่วยงาน',
-        message: `ยืนยันลบหน่วยงาน ${org.code} - ${org.name}?${warnMsg}`,
+        message: `ยืนยันลบหน่วยงาน "${org.code} - ${org.name}" ออกจากระบบ?${linkedCount > 0 ? ` (มีใบงานที่ผูกอยู่ ${linkedCount} รายการจะถูกโอนไปยังหน่วยงานหลักแทน)` : ''}`,
         okText: 'ลบหน่วยงาน',
         danger: true,
         onConfirm: () => {
-          if (replacement) {
+          state.organizations = state.organizations.filter(o => o.id !== id);
+          const fallback = state.organizations.find(o => o.active) || state.organizations[0];
+          if (fallback) {
             state.tasks.forEach(t => {
               if (t.orgId === id) {
-                t.orgId = replacement.id;
-                t.source = replacement.type;
+                t.orgId = fallback.id;
+                t.source = fallback.type;
               }
             });
           }
-          dashMultiFilters.org = (dashMultiFilters.org || []).filter(oid => oid !== id);
-          state.organizations = state.organizations.filter(x => x.id !== id);
-          if (document.getElementById('edit-org-id')?.value === id) {
-            resetOrgForm();
-          }
-          addAuditLog('DELETE_ORG', '-', `ลบหน่วยงาน ${org.code} (${org.name})`);
+          if (document.getElementById('edit-org-id')?.value === id) resetOrgForm();
+          addAuditLog('DELETE_ORG', org.code, `ลบหน่วยงาน ${org.name} ออกจากระบบ`);
           saveState();
-          populateAllSelects();
           renderAdminOrgs();
           refreshCurrentView();
-          showToast('ลบหน่วยงานเรียบร้อยแล้ว', 'info');
+          showToast(`ลบหน่วยงาน ${org.code} เรียบร้อยแล้ว`, 'info');
         }
       });
     }
@@ -5539,66 +5374,394 @@
       const org = state.organizations.find(o => o.id === id);
       if (!org) return;
       org.active = !org.active;
-      addAuditLog('TOGGLE_ORG', '-', `${org.active ? 'เปิด' : 'ปิด'}ใช้งานหน่วยงาน ${org.code}`);
+      addAuditLog('TOGGLE_ORG', org.code, `${org.active ? 'เปิดใช้งาน' : 'ปิดใช้งาน'} หน่วยงาน ${org.name}`);
       saveState();
-      populateAllSelects();
       renderAdminOrgs();
+      showToast('อัปเดตสถานะหน่วยงานแล้ว', 'info');
     }
 
     function saveSystemRules() {
-      if (!isBA()) {
-        showToast('เฉพาะ Role BA เท่านั้นที่บันทึกกฎระบบได้', 'error');
-        return;
-      }
+      if (!isBA()) return;
       const mode = document.getElementById('rule-overlap-mode').value;
-      const pct = parseFloat(document.getElementById('rule-avail-percent').value);
+      const pct = parseInt(document.getElementById('rule-avail-percent').value, 10);
       if (isNaN(pct) || pct < 1 || pct > 100) {
-        showToast('เกณฑ์ % คิวว่างต้องอยู่ระหว่าง 1 - 100', 'error');
+        showToast('กรุณาระบุเปอร์เซ็นต์คิวว่างระหว่าง 1 - 100', 'error');
         return;
       }
       state.rules.overlapMode = mode;
       state.rules.availableThresholdPercent = pct;
-      addAuditLog('UPDATE_RULES', '-', `อัปเดตกฎระบบ: Overlap=${mode}, คิวว่าง < ${pct}%`);
+      addAuditLog('UPDATE_RULES', 'SYSTEM', `อัปเดตกฎระบบ: Overlap=${mode}, Available<${pct}%`);
       saveState();
-      renderDashboard();
-      showToast('บันทึกการตั้งค่ากฎระบบเรียบร้อยแล้ว', 'success');
+      refreshCurrentView();
+      showToast('บันทึกการตั้งค่ากฎระบบเรียบร้อย', 'success');
     }
 
     function renderAuditLog() {
       if (!isBA()) return;
       const tbody = document.getElementById('audit-tbody');
       if (state.auditLogs.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" class="py-10 text-center text-slate-400">ยังไม่มีประวัติการเปลี่ยนแปลง</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" class="py-8 text-center text-slate-400">ยังไม่มีประวัติการแก้ไข</td></tr>`;
         return;
       }
       tbody.innerHTML = state.auditLogs.map(log => `
-        <tr class="hover:bg-slate-50/70">
-          <td class="py-3 px-4 text-xs text-slate-500 whitespace-nowrap">${escapeHTML(log.timestamp)}</td>
-          <td class="py-3 px-4"><span class="px-2 py-0.5 rounded-md text-[11px] font-bold bg-slate-100 text-slate-700">${escapeHTML(log.action)}</span></td>
-          <td class="py-3 px-4 text-xs font-bold text-brand-700 whitespace-nowrap">${escapeHTML(log.taskCode || '-')}</td>
+        <tr class="hover:bg-slate-50">
+          <td class="py-3 px-4 whitespace-nowrap text-xs text-slate-500">${escapeHTML(log.timestamp)}</td>
+          <td class="py-3 px-4 whitespace-nowrap"><span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-bold text-[11px]">${escapeHTML(log.action)}</span></td>
+          <td class="py-3 px-4 whitespace-nowrap font-bold text-xs text-brand-700">${escapeHTML(log.taskCode)}</td>
           <td class="py-3 px-4 text-xs text-slate-700">${escapeHTML(log.detail)}</td>
         </tr>
       `).join('');
     }
 
-    window.addEventListener('DOMContentLoaded', () => {
-      window.state = state;
-      window.defaultState = defaultState;
-      window.SYSTEM_NAME = SYSTEM_NAME;
-      window.STORAGE_KEY = STORAGE_KEY;
-      window.isBA = isBA;
-      window.setMainStateReference = setMainStateReference;
-      window.populateAllSelects = populateAllSelects;
-      window.applyRolePermissions = applyRolePermissions;
-      window.refreshCurrentView = refreshCurrentView;
-
-      setDashPreset('this_month');
-      setDashFocus('ALL');
-      setDashHorizon('ALL');
-      populateAllSelects();
+    // Initialize UI immediately before Firebase module connects
+    (function initAppUI() {
       applyRolePermissions();
+      populateAllSelects();
+      setDashPreset('this_month');
       switchTab('dashboard');
-    });
+      window.__APP_UI_READY__ = true;
+    })();
+  </script>
+
+  <!-- Firebase Live Sync Module (Dual Engine: Cloud Firestore + Realtime Database Auto-Fallback) -->
+  <script type="module">
+    import { initializeApp, getApps, deleteApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, doc, onSnapshot, setDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getDatabase, ref, onValue, set as rtdbSet, get as rtdbGet } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+    const DEFAULT_FIREBASE_CONFIG = {
+      apiKey: "AIzaSyBc8vM0s-e9yT7oP2X7Y0l9z8_z8w7V5Q",
+      authDomain: "deadmoney-31470.firebaseapp.com",
+      databaseURL: "https://deadmoney-31470-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "deadmoney-31470",
+      storageBucket: "deadmoney-31470.appspot.com",
+      messagingSenderId: "1043289105421",
+      appId: "1:1043289105421:web:7f9e2d8c4b1a3f6e5d0c8b"
+    };
+
+    const FB_META_KEY = 'dev_queue_fb_meta_v3';
+    let fbApp = null;
+    let fbDb = null;
+    let fbRtdb = null;
+    let fbEngine = null; // 'firestore' | 'rtdb' | null
+    let fbUnsubscribe = null;
+    let fbWorkspaceId = 'default-operation-room';
+    let isApplyingRemote = false;
+    let syncDebounceTimer = null;
+    let lastSyncedPayloadStr = '';
+
+    function setFbStatusUI(status, text, diagMessage = '') {
+      const dot = document.getElementById('fb-status-dot');
+      const lbl = document.getElementById('fb-status-text');
+      const diagBox = document.getElementById('fb-diagnostic-box');
+      if (!dot || !lbl) return;
+
+      const styles = {
+        connected: 'w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0',
+        syncing: 'w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse shrink-0',
+        error: 'w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0',
+        local: 'w-2.5 h-2.5 rounded-full bg-slate-400 shrink-0'
+      };
+      dot.className = styles[status] || styles.local;
+      lbl.textContent = text;
+
+      if (diagBox) {
+        if (diagMessage) {
+          diagBox.classList.remove('hidden');
+          diagBox.className = status === 'error'
+            ? 'p-3 rounded-xl text-xs border border-rose-200 bg-rose-50 text-rose-800'
+            : 'p-3 rounded-xl text-xs border border-emerald-200 bg-emerald-50 text-emerald-800';
+          diagBox.innerHTML = diagMessage;
+        } else {
+          diagBox.classList.add('hidden');
+        }
+      }
+    }
+
+    function buildSyncPayload() {
+      const s = window.state;
+      // Do NOT sync activeRole to cloud so each user's browser keeps its own selected role
+      return {
+        systemName: window.SYSTEM_NAME,
+        rules: s.rules,
+        users: s.users,
+        leaves: s.leaves,
+        organizations: s.organizations,
+        tasks: s.tasks,
+        auditLogs: s.auditLogs
+      };
+    }
+
+    function applyRemoteData(data) {
+      if (!data || typeof data !== 'object' || !window.state) return;
+      const incoming = { ...data };
+      delete incoming.updatedAt;
+      delete incoming.activeRole;
+
+      const incomingStr = JSON.stringify(incoming);
+      if (incomingStr === lastSyncedPayloadStr) return;
+
+      isApplyingRemote = true;
+      lastSyncedPayloadStr = incomingStr;
+
+      const keepLocalRole = window.state.activeRole || 'BA';
+      const nextState = {
+        ...JSON.parse(JSON.stringify(window.defaultState)),
+        ...incoming,
+        activeRole: keepLocalRole,
+        systemName: window.SYSTEM_NAME,
+        rules: { ...window.defaultState.rules, ...(incoming.rules || {}) },
+        users: Array.isArray(incoming.users) && incoming.users.length > 0 ? incoming.users : window.defaultState.users,
+        leaves: Array.isArray(incoming.leaves) ? incoming.leaves : [],
+        organizations: Array.isArray(incoming.organizations) && incoming.organizations.length > 0 ? incoming.organizations : window.defaultState.organizations,
+        tasks: Array.isArray(incoming.tasks) ? incoming.tasks : [],
+        auditLogs: Array.isArray(incoming.auditLogs) ? incoming.auditLogs : []
+      };
+
+      setMainStateReference(nextState);
+      try {
+        localStorage.setItem(window.STORAGE_KEY, JSON.stringify(nextState));
+      } catch (e) {}
+
+      if (typeof populateAllSelects === 'function') populateAllSelects();
+      if (typeof applyRolePermissions === 'function') applyRolePermissions();
+      if (typeof refreshCurrentView === 'function') refreshCurrentView();
+
+      setTimeout(() => { isApplyingRemote = false; }, 150);
+    }
+
+    window.scheduleFirebaseSync = function () {
+      if (!fbEngine || isApplyingRemote) return;
+      clearTimeout(syncDebounceTimer);
+      syncDebounceTimer = setTimeout(() => {
+        window.syncNowWithFirebase(true);
+      }, 650);
+    };
+
+    window.syncNowWithFirebase = async function (silent = false) {
+      if (!fbEngine) {
+        if (!silent) showToast('ยังไม่ได้เชื่อมต่อ Firebase (กำลังใช้งาน Local Storage)', 'info');
+        return;
+      }
+      if (!isBA()) {
+        if (!silent) showToast('เฉพาะ Role BA เท่านั้นที่ส่งข้อมูลขึ้น Firebase ได้', 'warning');
+        return;
+      }
+      try {
+        setFbStatusUI('syncing', `กำลังซิงก์ (${fbEngine === 'firestore' ? 'Firestore' : 'RTDB'})...`);
+        const payload = buildSyncPayload();
+        lastSyncedPayloadStr = JSON.stringify(payload);
+
+        if (fbEngine === 'firestore' && fbDb) {
+          const refDoc = doc(fbDb, 'dev_queue_workspaces', fbWorkspaceId);
+          await setDoc(refDoc, {
+            ...payload,
+            updatedAt: serverTimestamp()
+          }, { merge: false });
+          setFbStatusUI('connected', `Firestore Connected (${fbWorkspaceId})`, `เชื่อมต่อ Cloud Firestore สำเร็จ — ห้อง: <b>${escapeHTML(fbWorkspaceId)}</b>`);
+        } else if (fbEngine === 'rtdb' && fbRtdb) {
+          const dbRef = ref(fbRtdb, `dev_queue_workspaces/${fbWorkspaceId}`);
+          await rtdbSet(dbRef, {
+            ...payload,
+            updatedAt: Date.now()
+          });
+          setFbStatusUI('connected', `RTDB Connected (${fbWorkspaceId})`, `เชื่อมต่อ Realtime Database สำเร็จ — ห้อง: <b>${escapeHTML(fbWorkspaceId)}</b>`);
+        }
+
+        if (!silent) showToast('ซิงก์ข้อมูลขึ้น Firebase เรียบร้อยแล้ว', 'success');
+      } catch (err) {
+        console.error('Firebase sync error:', err);
+        setFbStatusUI('error', 'ซิงก์ล้มเหลว (ตรวจสอบ Rules)', `<b>Firebase Sync Error:</b> ${escapeHTML(err.message || String(err))}`);
+        if (!silent) showToast('ซิงก์ Firebase ไม่สำเร็จ: ' + (err.message || 'ตรวจสอบสิทธิ์ Rules'), 'error');
+      }
+    };
+
+    async function attachRealtimeDatabase(app, workspaceId) {
+      const rtdb = getDatabase(app);
+      const dbRef = ref(rtdb, `dev_queue_workspaces/${workspaceId}`);
+
+      const snap = await rtdbGet(dbRef);
+      fbDb = null;
+      fbRtdb = rtdb;
+      fbEngine = 'rtdb';
+
+      if (snap.exists()) {
+        applyRemoteData(snap.val());
+      } else if (isBA()) {
+        await window.syncNowWithFirebase(true);
+      }
+
+      fbUnsubscribe = onValue(dbRef, (snapshot) => {
+        setFbStatusUI('connected', `RTDB Live (${workspaceId})`, `เชื่อมต่อ Firebase Realtime Database สำเร็จ — ห้อง: <b>${escapeHTML(workspaceId)}</b>`);
+        if (snapshot.exists()) {
+          applyRemoteData(snapshot.val());
+        }
+      }, (err) => {
+        console.error('RTDB listener error:', err);
+        setFbStatusUI('error', 'RTDB Error', `<b>RTDB Listener Error:</b> ${escapeHTML(err.message || String(err))}`);
+      });
+
+      setFbStatusUI('connected', `RTDB Live (${workspaceId})`, `เชื่อมต่อ Firebase Realtime Database สำเร็จ — ห้อง: <b>${escapeHTML(workspaceId)}</b>`);
+    }
+
+    async function initFirebaseConnection(configObj, workspaceId) {
+      if (typeof fbUnsubscribe === 'function') {
+        try { fbUnsubscribe(); } catch (e) {}
+        fbUnsubscribe = null;
+      }
+
+      fbWorkspaceId = (workspaceId || 'default-operation-room').trim().replace(/[.#$\[\]\/]/g, '_') || 'default-operation-room';
+      setFbStatusUI('syncing', 'กำลังเชื่อมต่อ Firebase...');
+
+      try {
+        const existingApps = getApps();
+        for (const a of existingApps) {
+          try { await deleteApp(a); } catch (e) {}
+        }
+
+        fbApp = initializeApp(configObj);
+
+        // Try Cloud Firestore first
+        try {
+          const db = getFirestore(fbApp);
+          const refDoc = doc(db, 'dev_queue_workspaces', fbWorkspaceId);
+          const testSnap = await getDoc(refDoc);
+
+          fbDb = db;
+          fbRtdb = null;
+          fbEngine = 'firestore';
+
+          if (testSnap.exists()) {
+            applyRemoteData(testSnap.data());
+          } else if (isBA()) {
+            await window.syncNowWithFirebase(true);
+          }
+
+          fbUnsubscribe = onSnapshot(refDoc, (snap) => {
+            setFbStatusUI('connected', `Firestore Live (${fbWorkspaceId})`, `เชื่อมต่อ Cloud Firestore สำเร็จ — ห้อง: <b>${escapeHTML(fbWorkspaceId)}</b>`);
+            if (snap.exists()) {
+              applyRemoteData(snap.data());
+            }
+          }, async (err) => {
+            console.warn('Firestore snapshot error, trying RTDB fallback:', err);
+            if (configObj.databaseURL) {
+              try {
+                await attachRealtimeDatabase(fbApp, fbWorkspaceId);
+              } catch (rtdbErr) {
+                setFbStatusUI('error', 'Firebase Error', `<b>Firestore:</b> ${escapeHTML(err.message)}<br><b>RTDB:</b> ${escapeHTML(rtdbErr.message)}`);
+              }
+            } else {
+              setFbStatusUI('error', 'Firestore Error', `<b>Firestore Error:</b> ${escapeHTML(err.message)}`);
+            }
+          });
+
+          setFbStatusUI('connected', `Firestore Live (${fbWorkspaceId})`, `เชื่อมต่อ Cloud Firestore สำเร็จ — ห้อง: <b>${escapeHTML(fbWorkspaceId)}</b>`);
+          return true;
+        } catch (firestoreErr) {
+          console.warn('Firestore unavailable, switching to Realtime Database:', firestoreErr);
+          if (configObj.databaseURL) {
+            await attachRealtimeDatabase(fbApp, fbWorkspaceId);
+            return true;
+          }
+          throw firestoreErr;
+        }
+      } catch (err) {
+        console.error('Firebase init failed:', err);
+        fbEngine = null;
+        fbDb = null;
+        fbRtdb = null;
+        setFbStatusUI(
+          'error',
+          'เชื่อมต่อ Firebase ไม่สำเร็จ',
+          `<b>สาเหตุ:</b> ${escapeHTML(err.message || String(err))}<br><span class="text-[11px]">กรุณาตรวจสอบการเปิดใช้งาน Firestore หรือ Realtime Database และตั้งค่า Security Rules ใน Firebase Console</span>`
+        );
+        return false;
+      }
+    }
+
+    window.saveAndConnectFirebase = async function () {
+      if (!isBA()) {
+        showToast('เฉพาะ Role BA เท่านั้นที่ตั้งค่าการเชื่อมต่อ Firebase ได้', 'error');
+        return;
+      }
+      const rawJson = document.getElementById('fb-config-json').value.trim();
+      const wsId = document.getElementById('fb-workspace-id').value.trim() || 'default-operation-room';
+      if (!rawJson) {
+        showToast('กรุณาวาง Firebase Config JSON ก่อนเชื่อมต่อ', 'error');
+        return;
+      }
+      try {
+        const cleaned = rawJson
+          .replace(/^[^{]*/, '')
+          .replace(/[^}]*$/, '');
+        const cfg = JSON.parse(cleaned);
+        if (!cfg.projectId || !cfg.apiKey) {
+          showToast('Config JSON ไม่ครบถ้วน (ต้องมี apiKey และ projectId)', 'error');
+          return;
+        }
+        const ok = await initFirebaseConnection(cfg, wsId);
+        if (ok) {
+          localStorage.setItem(FB_META_KEY, JSON.stringify({ config: cfg, workspaceId: wsId, disabled: false }));
+          showToast('เชื่อมต่อฐานข้อมูล Firebase สำเร็จแล้ว', 'success');
+        } else {
+          showToast('เชื่อมต่อ Firebase ไม่สำเร็จ กรุณาดูข้อความแจ้งเตือนด้านบน', 'error');
+        }
+      } catch (e) {
+        showToast('รูปแบบ JSON ไม่ถูกต้อง กรุณาตรวจสอบเครื่องหมายปีกกาและเครื่องหมายคำพูด', 'error');
+      }
+    };
+
+    window.resetFirebaseConfigToDefault = async function () {
+      if (!isBA()) return;
+      const wsId = document.getElementById('fb-workspace-id')?.value.trim() || 'default-operation-room';
+      document.getElementById('fb-config-json').value = JSON.stringify(DEFAULT_FIREBASE_CONFIG, null, 2);
+      localStorage.setItem(FB_META_KEY, JSON.stringify({ config: DEFAULT_FIREBASE_CONFIG, workspaceId: wsId, disabled: false }));
+      const ok = await initFirebaseConnection(DEFAULT_FIREBASE_CONFIG, wsId);
+      if (ok) showToast('รีเซ็ตและเชื่อมต่อ Firebase เริ่มต้นสำเร็จ', 'success');
+    };
+
+    window.disconnectFirebase = function () {
+      if (!isBA()) return;
+      if (typeof fbUnsubscribe === 'function') {
+        try { fbUnsubscribe(); } catch (e) {}
+        fbUnsubscribe = null;
+      }
+      fbEngine = null;
+      fbDb = null;
+      fbRtdb = null;
+      const raw = localStorage.getItem(FB_META_KEY);
+      let prev = {};
+      try { prev = raw ? JSON.parse(raw) : {}; } catch (e) {}
+      localStorage.setItem(FB_META_KEY, JSON.stringify({ ...prev, disabled: true }));
+      setFbStatusUI('local', 'Local Storage Mode');
+      showToast('ตัดการเชื่อมต่อ Firebase แล้ว (ใช้งาน Local Storage ในเครื่อง)', 'info');
+    };
+
+    // Connect Firebase after UI is ready
+    (async function connectFirebaseBoot() {
+      const wsInput = document.getElementById('fb-workspace-id');
+      const cfgInput = document.getElementById('fb-config-json');
+      try {
+        const raw = localStorage.getItem(FB_META_KEY);
+        if (raw) {
+          const meta = JSON.parse(raw);
+          if (wsInput && meta.workspaceId) wsInput.value = meta.workspaceId;
+          if (cfgInput && meta.config) cfgInput.value = JSON.stringify(meta.config, null, 2);
+          if (meta.disabled) {
+            setFbStatusUI('local', 'Local Storage Mode');
+            return;
+          }
+          if (meta.config) {
+            await initFirebaseConnection(meta.config, meta.workspaceId || 'default-operation-room');
+            return;
+          }
+        }
+      } catch (e) { console.error(e); }
+
+      if (wsInput) wsInput.value = 'default-operation-room';
+      if (cfgInput) cfgInput.value = JSON.stringify(DEFAULT_FIREBASE_CONFIG, null, 2);
+      await initFirebaseConnection(DEFAULT_FIREBASE_CONFIG, 'default-operation-room');
+    })();
   </script>
 </body>
 </html>
